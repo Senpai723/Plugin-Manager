@@ -39,6 +39,22 @@ return {
         }
     },
     {
+        Name = "Code Finder",
+        Desc = "Menemukan Code angka dan Huruf",
+        RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/CodeFinder",
+        SubFeatures = {
+            { Name = "Code Finder", Desc = "Menemukan CODE", Cmd = "CODE", UnCmd = "" }
+        }
+    },
+    {
+        Name = "Admin Detect",
+        Desc = "Mendeteksi Owner dan Admin",
+        RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/AdminDetect",
+        SubFeatures = {
+            { Name = "Admin Detect", Desc = "Mendeteksi Owner dan Admin", Cmd = "cad", UnCmd = "" }
+        }
+    },
+    {
         Name = "F1Lock",
         Desc = "Camera Lock Keybind F1",
         RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/F1Lock",
