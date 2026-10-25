@@ -99,17 +99,28 @@ return function(speaker)
     SubMenuContainer.Visible = false
     SubMenuContainer.Parent = Frame
 
+    -- Variabel untuk mengingat status halaman aktif (apakah sedang di sub-menu atau di menu utama)
+    local isCurrentlyInSubMenu = false
+
     local minimized = false
     MinBtn.MouseButton1Click:Connect(function()
         minimized = not minimized
-        ScrollingFrame.Visible = not minimized
-        SubMenuContainer.Visible = not minimized and SubMenuContainer.Visible
         if minimized then
             Frame.Size = UDim2.new(0, 280, 0, 30)
             MinBtn.Text = "+"
+            ScrollingFrame.Visible = false
+            SubMenuContainer.Visible = false
         else
             Frame.Size = UDim2.new(0, 280, 0, 310)
             MinBtn.Text = "-"
+            -- Mengembalikan tampilan sesuai posisi terakhir sebelum di-minimize
+            if isCurrentlyInSubMenu then
+                SubMenuContainer.Visible = true
+                ScrollingFrame.Visible = false
+            else
+                SubMenuContainer.Visible = false
+                ScrollingFrame.Visible = true
+            end
         end
     end)
 
@@ -147,7 +158,7 @@ return function(speaker)
         TextBox.Position = UDim2.new(0, 10, 0, 35)
         TextBox.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
         TextBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-        TextBox.PlaceholderText = "Ketik ID / Argumen di sini..."
+        TextBox.PlaceholderText = "Ketik ID / Argumen disini..."
         TextBox.Text = ""
         TextBox.Font = Enum.Font.Gotham
         TextBox.TextSize = 11
@@ -191,6 +202,7 @@ return function(speaker)
     end
 
     local function showSubMenu(menuTitle, rawUrl, subFeatures)
+        isCurrentlyInSubMenu = true -- Tandai bahwa kita sedang di dalam sub-menu
         for _, child in ipairs(SubMenuContainer:GetChildren()) do
             child:Destroy()
         end
@@ -222,6 +234,7 @@ return function(speaker)
         SubLayout.Parent = SubScroll
 
         BackBtn.MouseButton1Click:Connect(function()
+            isCurrentlyInSubMenu = false -- Tandai kembali ke menu utama
             SubMenuContainer.Visible = false
             ScrollingFrame.Visible = true
         end)
@@ -274,7 +287,6 @@ return function(speaker)
 
             Instance.new("UICorner", ExecSub).CornerRadius = UDim.new(0, 4)
 
-            -- Atur teks & warna awal tombol jika fitur tidak memiliki UnCmd (agar tidak bisa jadi merah/unexecute)
             local hasUnCmd = subFeat.UnCmd and subFeat.UnCmd ~= ""
             if not hasUnCmd then
                 ExecSub.Text = "EXECUTE"
@@ -284,7 +296,6 @@ return function(speaker)
             ExecSub.MouseButton1Click:Connect(function()
                 local function runCommand(customArgs)
                     pcall(function()
-                        -- Cache modul agar tidak reload ulang terus-menerus
                         if not loadedModules[rawUrl] then
                             loadedModules[rawUrl] = loadstring(game:HttpGet(rawUrl))()
                         end
@@ -309,7 +320,6 @@ return function(speaker)
                         end
                     end)
 
-                    -- Hanya ubah status toggle jika memiliki UnCmd yang valid
                     if hasUnCmd then
                         featureStates[subFeat.Name] = not featureStates[subFeat.Name]
                         if featureStates[subFeat.Name] then
@@ -320,13 +330,11 @@ return function(speaker)
                             ExecSub.BackgroundColor3 = Color3.fromRGB(0, 150, 90)
                         end
                     else
-                        -- Jika tidak punya UnCmd, paksa tombol tetap Hijau & bertuliskan EXECUTE
                         ExecSub.Text = "EXECUTE"
                         ExecSub.BackgroundColor3 = Color3.fromRGB(0, 150, 90)
                     end
                 end
 
-                -- Cek apakah fitur ini butuh input (seperti Play Music)
                 if subFeat.NeedInput then
                     showInputDialog(subFeat.Name, function(typedText)
                         local argsTable = {}
