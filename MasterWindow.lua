@@ -113,7 +113,7 @@ return function(speaker)
         end
     end)
 
-    -- Fungsi Pop-up Input Keyword/ID yang disempurnakan
+    -- Kotak Dialog Input Popup
     local function showInputDialog(titleText, onSubmit)
         local PromptOverlay = Instance.new("Frame")
         PromptOverlay.Size = UDim2.new(1, 0, 1, 0)
@@ -274,21 +274,23 @@ return function(speaker)
 
             Instance.new("UICorner", ExecSub).CornerRadius = UDim.new(0, 4)
 
+            -- Atur teks & warna awal tombol jika fitur tidak memiliki UnCmd (agar tidak bisa jadi merah/unexecute)
+            local hasUnCmd = subFeat.UnCmd and subFeat.UnCmd ~= ""
+            if not hasUnCmd then
+                ExecSub.Text = "EXECUTE"
+                ExecSub.BackgroundColor3 = Color3.fromRGB(0, 150, 90)
+            end
+
             ExecSub.MouseButton1Click:Connect(function()
                 local function runCommand(customArgs)
                     pcall(function()
+                        -- Cache modul agar tidak reload ulang terus-menerus
                         if not loadedModules[rawUrl] then
                             loadedModules[rawUrl] = loadstring(game:HttpGet(rawUrl))()
                         end
                         local pluginMod = loadedModules[rawUrl]
                         if pluginMod and pluginMod.Commands then
-                            local targetCmd = featureStates[subFeat.Name] and subFeat.UnCmd or subFeat.Cmd
-                            if featureStates[subFeat.Name] and (not targetCmd or targetCmd == "") then
-                                featureStates[subFeat.Name] = false
-                                ExecSub.Text = "EXECUTE"
-                                ExecSub.BackgroundColor3 = Color3.fromRGB(0, 150, 90)
-                                return
-                            end
+                            local targetCmd = (hasUnCmd and featureStates[subFeat.Name]) and subFeat.UnCmd or subFeat.Cmd
 
                             local foundFunc = nil
                             for cmdName, cmdData in pairs(pluginMod.Commands) do
@@ -307,8 +309,8 @@ return function(speaker)
                         end
                     end)
 
-                    -- Ubah status tombol khusus jika bukan fitur input musik berulang
-                    if subFeat.Cmd ~= "playmusic" then
+                    -- Hanya ubah status toggle jika memiliki UnCmd yang valid
+                    if hasUnCmd then
                         featureStates[subFeat.Name] = not featureStates[subFeat.Name]
                         if featureStates[subFeat.Name] then
                             ExecSub.Text = "UNEXECUTE"
@@ -317,10 +319,14 @@ return function(speaker)
                             ExecSub.Text = "EXECUTE"
                             ExecSub.BackgroundColor3 = Color3.fromRGB(0, 150, 90)
                         end
+                    else
+                        -- Jika tidak punya UnCmd, paksa tombol tetap Hijau & bertuliskan EXECUTE
+                        ExecSub.Text = "EXECUTE"
+                        ExecSub.BackgroundColor3 = Color3.fromRGB(0, 150, 90)
                     end
                 end
 
-                -- Jika butuh input (seperti playmusic)
+                -- Cek apakah fitur ini butuh input (seperti Play Music)
                 if subFeat.NeedInput then
                     showInputDialog(subFeat.Name, function(typedText)
                         local argsTable = {}
