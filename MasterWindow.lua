@@ -113,6 +113,83 @@ return function(speaker)
         end
     end)
 
+    -- Fungsi untuk memunculkan Pop-up Input Keyword/ID
+    local function showInputDialog(titleText, onSubmit)
+        local PromptOverlay = Instance.new("Frame")
+        PromptOverlay.Size = UDim2.new(1, 0, 1, 0)
+        PromptOverlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+        PromptOverlay.BackgroundTransparency = 0.5
+        PromptOverlay.ZIndex = 50
+        PromptOverlay.Parent = Frame
+
+        local PromptBox = Instance.new("Frame")
+        PromptBox.Size = UDim2.new(0, 220, 0, 110)
+        PromptBox.Position = UDim2.new(0.5, -110, 0.5, -55)
+        PromptBox.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
+        PromptBox.BorderSizePixel = 0
+        PromptBox.ZIndex = 51
+        PromptBox.Parent = PromptOverlay
+        Instance.new("UICorner", PromptBox).CornerRadius = UDim.new(0, 6)
+
+        local PromptTitle = Instance.new("TextLabel")
+        PromptTitle.Size = UDim2.new(1, 0, 0, 25)
+        PromptTitle.Position = UDim2.new(0, 0, 0, 5)
+        PromptTitle.BackgroundTransparency = 1
+        PromptTitle.Font = Enum.Font.GothamBold
+        PromptTitle.Text = "INPUT: " .. titleText
+        PromptTitle.TextColor3 = Color3.fromRGB(0, 220, 255)
+        PromptTitle.TextSize = 11
+        PromptTitle.ZIndex = 52
+        PromptTitle.Parent = PromptBox
+
+        local TextBox = Instance.new("TextBox")
+        TextBox.Size = UDim2.new(1, -20, 0, 30)
+        TextBox.Position = UDim2.new(0, 10, 0, 35)
+        TextBox.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+        TextBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+        TextBox.PlaceholderText = "Ketik ID / Argumen di sini..."
+        TextBox.Text = ""
+        TextBox.Font = Enum.Font.Gotham
+        TextBox.TextSize = 11
+        TextBox.ZIndex = 52
+        TextBox.Parent = PromptBox
+        Instance.new("UICorner", TextBox).CornerRadius = UDim.new(0, 4)
+
+        local SubmitBtn = Instance.new("TextButton")
+        SubmitBtn.Size = UDim2.new(0, 95, 0, 24)
+        SubmitBtn.Position = UDim2.new(0, 10, 0, 75)
+        SubmitBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 90)
+        SubmitBtn.Text = "SUBMIT"
+        SubmitBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        SubmitBtn.Font = Enum.Font.GothamBold
+        SubmitBtn.TextSize = 10
+        SubmitBtn.ZIndex = 52
+        SubmitBtn.Parent = PromptBox
+        Instance.new("UICorner", SubmitBtn).CornerRadius = UDim.new(0, 4)
+
+        local CancelBtn = Instance.new("TextButton")
+        CancelBtn.Size = UDim2.new(0, 95, 0, 24)
+        CancelBtn.Position = UDim2.new(1, -105, 0, 75)
+        CancelBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+        CancelBtn.Text = "CANCEL"
+        CancelBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        CancelBtn.Font = Enum.Font.GothamBold
+        CancelBtn.TextSize = 10
+        CancelBtn.ZIndex = 52
+        CancelBtn.Parent = PromptBox
+        Instance.new("UICorner", CancelBtn).CornerRadius = UDim.new(0, 4)
+
+        SubmitBtn.MouseButton1Click:Connect(function()
+            local inputVal = TextBox.Text
+            PromptOverlay:Destroy()
+            if onSubmit then onSubmit(inputVal) end
+        end)
+
+        CancelBtn.MouseButton1Click:Connect(function()
+            PromptOverlay:Destroy()
+        end)
+    end
+
     local function showSubMenu(menuTitle, rawUrl, subFeatures)
         for _, child in ipairs(SubMenuContainer:GetChildren()) do
             child:Destroy()
@@ -198,42 +275,61 @@ return function(speaker)
             Instance.new("UICorner", ExecSub).CornerRadius = UDim.new(0, 4)
 
             ExecSub.MouseButton1Click:Connect(function()
-                featureStates[subFeat.Name] = not featureStates[subFeat.Name]
+                local function runCommand(customArgs)
+                    pcall(function()
+                        if not loadedModules[rawUrl] then
+                            loadedModules[rawUrl] = loadstring(game:HttpGet(rawUrl))()
+                        end
+                        local pluginMod = loadedModules[rawUrl]
+                        if pluginMod and pluginMod.Commands then
+                            local targetCmd = featureStates[subFeat.Name] and subFeat.UnCmd or subFeat.Cmd
+                            if featureStates[subFeat.Name] and (not targetCmd or targetCmd == "") then
+                                -- Kalau status unexecute tapi uncmd kosong, cukup ubah status UI-nya saja
+                                featureStates[subFeat.Name] = false
+                                ExecSub.Text = "EXECUTE"
+                                ExecSub.BackgroundColor3 = Color3.fromRGB(0, 150, 90)
+                                return
+                            end
 
-                pcall(function()
-                    if not loadedModules[rawUrl] then
-                        loadedModules[rawUrl] = loadstring(game:HttpGet(rawUrl))()
-                    end
-                    local pluginMod = loadedModules[rawUrl]
-                    if pluginMod and pluginMod.Commands then
-                        local targetCmd = featureStates[subFeat.Name] and subFeat.Cmd or subFeat.UnCmd
-                        local foundFunc = nil
-                        
-                        for cmdName, cmdData in pairs(pluginMod.Commands) do
-                            if string.lower(cmdName) == string.lower(tostring(targetCmd)) then
-                                if type(cmdData.Function) == "function" then
-                                    foundFunc = cmdData.Function
-                                    break
+                            local foundFunc = nil
+                            for cmdName, cmdData in pairs(pluginMod.Commands) do
+                                if string.lower(cmdName) == string.lower(tostring(targetCmd)) then
+                                    if type(cmdData.Function) == "function" then
+                                        foundFunc = cmdData.Function
+                                        break
+                                    end
                                 end
                             end
-                        end
 
-                        if foundFunc then
-                            task.spawn(function() foundFunc({}, speaker) end)
-                        elseif menuTitle == "STREAMING RADAR" and not featureStates[subFeat.Name] then
-                            local winName = subFeat.Name == "SCP" and "TeleportCP_SCP_Window" or "TeleportCP_CPN_Window"
-                            local win = CoreGui:FindFirstChild(winName)
-                            if win then win.Enabled = false end
+                            if foundFunc then
+                                local finalArgs = customArgs or {}
+                                task.spawn(function() foundFunc(finalArgs, speaker) end)
+                            end
                         end
+                    end)
+
+                    featureStates[subFeat.Name] = not featureStates[subFeat.Name]
+                    if featureStates[subFeat.Name] then
+                        ExecSub.Text = "UNEXECUTE"
+                        ExecSub.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+                    else
+                        ExecSub.Text = "EXECUTE"
+                        ExecSub.BackgroundColor3 = Color3.fromRGB(0, 150, 90)
                     end
-                end)
+                end
 
-                if featureStates[subFeat.Name] then
-                    ExecSub.Text = "UNEXECUTE"
-                    ExecSub.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+                -- Cek apakah butuh input teks atau langsung eksekusi
+                if subFeat.NeedInput and not featureStates[subFeat.Name] then
+                    showInputDialog(subFeat.Name, function(typedText)
+                        -- Memecah argumen berdasarkan spasi (misal input: "123456 1 1")
+                        local argsTable = {}
+                        for word in string.gmatch(typedText, "%S+") do
+                            table.insert(argsTable, word)
+                        end
+                        runCommand(argsTable)
+                    end)
                 else
-                    ExecSub.Text = "EXECUTE"
-                    ExecSub.BackgroundColor3 = Color3.fromRGB(0, 150, 90)
+                    runCommand({})
                 end
             end)
         end
@@ -280,7 +376,7 @@ return function(speaker)
                 DescLabel.TextWrapped = true
                 DescLabel.Parent = ItemFrame
 
-                    local OpenBtn = Instance.new("TextButton")
+                local OpenBtn = Instance.new("TextButton")
                 OpenBtn.Size = UDim2.new(0, 75, 0, 24)
                 OpenBtn.Position = UDim2.new(1, -80, 0, 14)
                 OpenBtn.BackgroundColor3 = Color3.fromRGB(50, 120, 220)
@@ -291,7 +387,7 @@ return function(speaker)
                 OpenBtn.TextSize = 10
                 OpenBtn.Parent = ItemFrame
 
-                Instance.new("UICorner", OpenBtn).CornerRadius = UDim.new(0, 4)
+                    Instance.new("UICorner", OpenBtn).CornerRadius = UDim.new(0, 4)
 
                 OpenBtn.MouseButton1Click:Connect(function()
                     if menu.SubFeatures then
