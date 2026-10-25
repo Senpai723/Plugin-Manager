@@ -17,8 +17,8 @@ return {
         Desc = "Player & Enemy ESP",
         RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/colorESP",
         SubFeatures = {
-            { Name = "PESP", Desc = "Player ESP (All Green)", Cmd = "pesp", UnCmd = "unloadColorESP" },
-            { Name = "EESP", Desc = "Enemy / NPC ESP", Cmd = "eesp", UnCmd = "unloadColorESP" }
+            { Name = "PESP", Desc = "Menampilkan ESP Body dan mama Player", Cmd = "pesp", UnCmd = "unloadColorESP" },
+            { Name = "EESP", Desc = "Menampilkan ESP Musuh dan NPC ( Merah sudah dipastikan Musuh )", Cmd = "eesp", UnCmd = "unloadColorESP" }
         }
     },
     {
@@ -26,7 +26,7 @@ return {
         Desc = "Always instant interaction",
         RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/InstanPrompt",
         SubFeatures = {
-            { Name = "INSTANTPROMPTS", Desc = "Always Instant Proximity", Cmd = "instantprompts", UnCmd = "uninstantprompts" }
+            { Name = "INSTANTPROMPTS", Desc = "Selalu Instan saat mengklik Prompt ( Tidak semuanya )", Cmd = "instantprompts", UnCmd = "uninstantprompts" }
         }
     },
     {
@@ -34,8 +34,8 @@ return {
         Desc = "Checkpoint & Waypoint Manager",
         RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Waypoint",
         SubFeatures = {
-            { Name = "SCP", Desc = "Streaming Radar Window", Cmd = "scp", UnCmd = "scp_close" },
-            { Name = "CPN", Desc = "Waypoint/CP Manager Window", Cmd = "cpn", UnCmd = "cpn_close" }
+            { Name = "SCP", Desc = "Menampilkan Checkpoint yang belum di sentuh", Cmd = "scp", UnCmd = "scp_close" },
+            { Name = "CPN", Desc = "Menampilkan Checkpoint atau Waypoint yang sudah di simpan", Cmd = "cpn", UnCmd = "cpn_close" }
         }
     },
     {
@@ -43,7 +43,7 @@ return {
         Desc = "Menemukan Code angka dan Huruf",
         RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/CodeFinder",
         SubFeatures = {
-            { Name = "Code Finder", Desc = "Menemukan CODE", Cmd = "CODE", UnCmd = "" }
+            { Name = "Code Finder", Desc = "Menemukan CODE yang sudah masuk ke Client Side", Cmd = "CODE", UnCmd = "" }
         }
     },
     {
@@ -51,12 +51,12 @@ return {
         Desc = "Mendeteksi Owner dan Admin",
         RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/AdminDetect",
         SubFeatures = {
-            { Name = "Admin Detect", Desc = "Mendeteksi Owner dan Admin", Cmd = "cad", UnCmd = "" }
+            { Name = "Admin Detect", Desc = "Tunggu beberapa detik setelah Execute sampai muncul Notif", Cmd = "cad", UnCmd = "" }
         }
     },
     {
-        Name = "F1Lock",
-        Desc = "Camera Lock Keybind F1",
+        Name = "F1Lock ( Khusus Keyboard )",
+        Desc = "Mengubah Shift Lock ke F1",
         RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/F1Lock",
         SubFeatures = {
             { Name = "F1LOCK", Desc = "Bind Shift Lock to F1", Cmd = "f1lock", UnCmd = "unlockedcam" }
