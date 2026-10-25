@@ -59,7 +59,7 @@ return {
         Desc = "Memutar dan Membisukan Sound",
         RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/MusicTimeML",
         SubFeatures = {
-            { Name = "Play Music", Desc = "Memutar musik berdasarkan [ID] (Pitch) (volume)", Cmd = "playmusic", UnCmd = "stopmusic", NeedInput = true },
+            { Name = "Play Music", Desc = "Memutar musik dengan ID lagu, Langsung masukan IDnya", Cmd = "playmusic", UnCmd = "", NeedInput = true },
             { Name = "Stop Music", Desc = "Menstop lagu yang sedang di putar", Cmd = "stopmusic", UnCmd = "" },
             { Name = "Mute Sound", Desc = "Membisukan Sound Latar Belakang Map", Cmd = "mutesound", UnCmd = "unmutesound" }
         }
