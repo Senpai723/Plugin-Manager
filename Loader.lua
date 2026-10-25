@@ -55,6 +55,16 @@ return {
         }
     },
     {
+        Name = "MusicTimeML",
+        Desc = "Memutar dan Membisukan Sound",
+        RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/MusicTimeML.iy",
+        SubFeatures = {
+            { Name = "Play Music", Desc = "Memutar musik berdasarkan [ID] (Pitch) (volume)", Cmd = "playmusic", UnCmd = "stopmusic", NeedInput = true },
+            { Name = "Stop Music", Desc = "Menstop lagu yang sedang di putar", Cmd = "stopmusic", UnCmd = "" },
+            { Name = "Mute Sound", Desc = "Membisukan Sound Latar Belakang Map" Cmd = "mutesound", UnCmd = "unmutesound" }
+        }
+    },
+    {
         Name = "F1Lock ( Khusus Keyboard )",
         Desc = "Mengubah Shift Lock ke F1",
         RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/F1Lock",
