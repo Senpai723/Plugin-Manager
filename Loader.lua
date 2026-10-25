@@ -4,12 +4,12 @@ return {
         Desc = "Proximity, Door, Click, Touch & ITP",
         RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Interactable",
         SubFeatures = {
-            { Name = "PPESP", Desc = "Proximity Prompt ESP", Cmd = "proximityesp", UnCmd = "unproximityesp" },
-            { Name = "ITP", Desc = "Item Teleport Window", Cmd = "itp", UnCmd = "itp" },
-            { Name = "CDESP", Desc = "ClickDetector ESP", Cmd = "clickdetectoresp", UnCmd = "unclickdetectoresp" },
-            { Name = "DESP", Desc = "Door Proximity ESP", Cmd = "dooresp", UnCmd = "undooresp" },
-            { Name = "ITESP", Desc = "Item Touch ESP", Cmd = "itemtouchesp", UnCmd = "untouchinterestesp" },
-            { Name = "TESP", Desc = "Touch Trigger/CP ESP", Cmd = "touchinterestesp", UnCmd = "untouchinterestesp" }
+            { Name = "PPESP", Desc = "Memunculkan Box dan Nama ESP Objek yang di Pencet/Tekan", Cmd = "proximityesp", UnCmd = "unproximityesp" },
+            { Name = "ITP", Desc = "Memunculkan window berisikan list objek yang bisa diteleport", Cmd = "itp", UnCmd = "itp" },
+            { Name = "CDESP", Desc = "Memunculkan Box dan Nama ESP Objek yang di Klik", Cmd = "clickdetectoresp", UnCmd = "unclickdetectoresp" },
+            { Name = "DESP", Desc = "Memuncukkan ESP sebuah Pintu", Cmd = "dooresp", UnCmd = "undooresp" },
+            { Name = "ITESP", Desc = "Memunculkan Box dan Nama ESP yang di sentuh", Cmd = "itemtouchesp", UnCmd = "untouchinterestesp" },
+            { Name = "TESP", Desc = "Memunculkan ESP Trigger / Scene Event", Cmd = "touchinterestesp", UnCmd = "untouchinterestesp" }
         }
     },
     {
