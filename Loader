@@ -1,0 +1,456 @@
+local CoreGui = game:GetService("CoreGui")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+-- Status global persisten untuk semua fitur
+local featureStates = {
+    ["PPESP"] = false,
+    ["ITP"] = false,
+    ["CDESP"] = false,
+    ["DESP"] = false,
+    ["ITESP"] = false,
+    ["TESP"] = false,
+    ["PESP"] = false,
+    ["EESP"] = false,
+    ["SCP"] = false,
+    ["CPN"] = false,
+    ["INSTANTPROMPTS"] = false,
+    ["F1LOCK"] = false
+}
+
+local loadedInteractableModule = nil
+local loadedColorESPModule = nil
+local loadedWaypointModule = nil
+local loadedInstantPromptModule = nil
+local loadedF1LockModule = nil
+
+-- Link Raw GitHub permanen
+local RAW_INTERACTABLE = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Interactable"
+local RAW_COLORESP = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/colorESP"
+local RAW_WAYPOINT = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Waypoint"
+local RAW_INSTANTPROMPT = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/InstanPrompt"
+local RAW_F1LOCK = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/F1Lock"
+
+local Plugin = {
+    ["PluginName"] = "Unified Master Hub",
+    ["PluginDescription"] = "Master Hub multi-kategori dengan link raw otomatis & minimize.",
+    ["Commands"] = {
+        ["hub"] = {
+            ["ListName"] = "hub / masterhub",
+            ["Description"] = "Membuka jendela utama Plugin Manager Hub",
+            ["Aliases"] = {"masterhub"},
+            ["Function"] = function(args, speaker)
+                
+                -- Hapus UI lama jika ada
+                local old = CoreGui:FindFirstChild("MasterPluginHub")
+                if old then old:Destroy() end
+
+                local ScreenGui = Instance.new("ScreenGui")
+                ScreenGui.Name = "MasterPluginHub"
+                ScreenGui.ResetOnSpawn = false
+                pcall(function() ScreenGui.Parent = CoreGui end)
+                if not ScreenGui.Parent then ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui") end
+
+                -- Ukuran ramping ala ITP & bersifat Draggable
+                local Frame = Instance.new("Frame")
+                Frame.Size = UDim2.new(0, 280, 0, 310)
+                Frame.Position = UDim2.new(0.5, -140, 0.5, -155)
+                Frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+                Frame.BorderSizePixel = 0
+                Frame.Active = true
+                Frame.Draggable = true
+                Frame.Parent = ScreenGui
+
+                Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 6)
+
+                -- TopBar / Header Utama (Bisa untuk Drag & Minimize universal)
+                local TopBar = Instance.new("Frame")
+                TopBar.Size = UDim2.new(1, 0, 0, 30)
+                TopBar.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+                TopBar.BorderSizePixel = 0
+                TopBar.ZIndex = 10
+                TopBar.Parent = Frame
+
+                Instance.new("UICorner", TopBar).CornerRadius = UDim.new(0, 6)
+
+                local TopCover = Instance.new("Frame")
+                TopCover.Size = UDim2.new(1, 0, 0, 6)
+                TopCover.Position = UDim2.new(0, 0, 1, -6)
+                TopCover.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+                TopCover.BorderSizePixel = 0
+                TopCover.ZIndex = 10
+                TopCover.Parent = TopBar
+
+                local TitleLabel = Instance.new("TextLabel")
+                TitleLabel.Size = UDim2.new(1, -70, 1, 0)
+                TitleLabel.Position = UDim2.new(0, 8, 0, 0)
+                TitleLabel.BackgroundTransparency = 1
+                TitleLabel.Font = Enum.Font.GothamBold
+                TitleLabel.Text = "PLUGIN MANAGER"
+                TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+                TitleLabel.TextSize = 12
+                TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+                TitleLabel.ZIndex = 11
+                TitleLabel.Parent = TopBar
+
+                local CloseBtn = Instance.new("TextButton")
+                CloseBtn.Size = UDim2.new(0, 20, 0, 20)
+                CloseBtn.Position = UDim2.new(1, -25, 0, 5)
+                CloseBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+                CloseBtn.BorderSizePixel = 0
+                CloseBtn.Font = Enum.Font.GothamBold
+                CloseBtn.Text = "X"
+                CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+                CloseBtn.TextSize = 10
+                CloseBtn.ZIndex = 11
+                CloseBtn.Parent = TopBar
+                Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(0, 4)
+
+                CloseBtn.MouseButton1Click:Connect(function()
+                    ScreenGui:Destroy()
+                end)
+
+                local MinBtn = Instance.new("TextButton")
+                MinBtn.Size = UDim2.new(0, 20, 0, 20)
+                MinBtn.Position = UDim2.new(1, -50, 0, 5)
+                MinBtn.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+                MinBtn.BorderSizePixel = 0
+                MinBtn.Font = Enum.Font.GothamBold
+                MinBtn.Text = "-"
+                MinBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+                MinBtn.TextSize = 11
+                MinBtn.ZIndex = 11
+                MinBtn.Parent = TopBar
+                Instance.new("UICorner", MinBtn).CornerRadius = UDim.new(0, 4)
+
+                -- Container Utama untuk Menu
+                local ScrollingFrame = Instance.new("ScrollingFrame")
+                ScrollingFrame.Size = UDim2.new(1, -12, 1, -40)
+                ScrollingFrame.Position = UDim2.new(0, 6, 0, 36)
+                ScrollingFrame.BackgroundTransparency = 1
+                ScrollingFrame.BorderSizePixel = 0
+                ScrollingFrame.ScrollBarThickness = 4
+                ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+                ScrollingFrame.Parent = Frame
+
+                local UIListLayout = Instance.new("UIListLayout")
+                UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+                UIListLayout.Padding = UDim.new(0, 4)
+                UIListLayout.Parent = ScrollingFrame
+
+                -- Container untuk Sub-Menu agar Header Tetap di Luar & Bisa di-Minimize/Drag
+                local SubMenuContainer = Instance.new("Frame")
+                SubMenuContainer.Size = UDim2.new(1, -12, 1, -40)
+                SubMenuContainer.Position = UDim2.new(0, 6, 0, 36)
+                SubMenuContainer.BackgroundTransparency = 1
+                SubMenuContainer.BorderSizePixel = 0
+                SubMenuContainer.Visible = false
+                SubMenuContainer.Parent = Frame
+
+                -- Logika Minimize Jendela Utama (Ikut melipat Sub-Menu jika sedang dibuka)
+                local minimized = false
+                MinBtn.MouseButton1Click:Connect(function()
+                    minimized = not minimized
+                    ScrollingFrame.Visible = not minimized
+                    SubMenuContainer.Visible = not minimized and SubMenuContainer.Visible
+                    if minimized then
+                        Frame.Size = UDim2.new(0, 280, 0, 30)
+                        MinBtn.Text = "+"
+                    else
+                        Frame.Size = UDim2.new(0, 280, 0, 310)
+                        MinBtn.Text = "-"
+                    end
+                end)
+
+                -- Fungsi Helper untuk Menampilkan Sub-Menu di dalam Container Khusus
+                local function showSubMenu(titleText, featuresList)
+                    for _, child in ipairs(SubMenuContainer:GetChildren()) do
+                        child:Destroy()
+                    end
+                    SubMenuContainer.Visible = true
+                    ScrollingFrame.Visible = false
+
+                    local BackBtn = Instance.new("TextButton")
+                    BackBtn.Size = UDim2.new(1, 0, 0, 26)
+                    BackBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 55)
+                    BackBtn.BorderSizePixel = 0
+                    BackBtn.Font = Enum.Font.GothamBold
+                    BackBtn.Text = "< BACK : " .. titleText
+                    BackBtn.TextColor3 = Color3.fromRGB(0, 200, 255)
+                    BackBtn.TextSize = 10
+                    BackBtn.Parent = SubMenuContainer
+                    Instance.new("UICorner", BackBtn).CornerRadius = UDim.new(0, 4)
+
+                    local SubScroll = Instance.new("ScrollingFrame")
+                    SubScroll.Size = UDim2.new(1, 0, 1, -30)
+                    SubScroll.Position = UDim2.new(0, 0, 0, 30)
+                    SubScroll.BackgroundTransparency = 1
+                    SubScroll.BorderSizePixel = 0
+                    SubScroll.ScrollBarThickness = 4
+                    SubScroll.Parent = SubMenuContainer
+
+                    local SubLayout = Instance.new("UIListLayout")
+                    SubLayout.SortOrder = Enum.SortOrder.LayoutOrder
+                    SubLayout.Padding = UDim.new(0, 4)
+                    SubLayout.Parent = SubScroll
+
+                    BackBtn.MouseButton1Click:Connect(function()
+                        SubMenuContainer.Visible = false
+                        ScrollingFrame.Visible = true
+                    end)
+
+                    for _, subFeat in ipairs(featuresList) do
+                        local Item = Instance.new("Frame")
+                        Item.Size = UDim2.new(1, 0, 0, 42)
+                        Item.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+                        Item.BorderSizePixel = 0
+                        Item.Parent = SubScroll
+
+                        Instance.new("UICorner", Item).CornerRadius = UDim.new(0, 4)
+
+                        local LblName = Instance.new("TextLabel")
+                        LblName.Size = UDim2.new(0, 110, 0, 18)
+                        LblName.Position = UDim2.new(0, 8, 0, 4)
+                        LblName.BackgroundTransparency = 1
+                        LblName.Text = subFeat.Name
+                        LblName.TextColor3 = Color3.fromRGB(0, 220, 255)
+                        LblName.Font = Enum.Font.GothamBold
+                        LblName.TextSize = 11
+                        LblName.TextXAlignment = Enum.TextXAlignment.Left
+                        LblName.Parent = Item
+
+                        local LblDesc = Instance.new("TextLabel")
+                        LblDesc.Size = UDim2.new(1, -115, 0, 16)
+                        LblDesc.Position = UDim2.new(0, 8, 0, 22)
+                        LblDesc.BackgroundTransparency = 1
+                        LblDesc.Text = subFeat.Desc
+                        LblDesc.TextColor3 = Color3.fromRGB(160, 160, 165)
+                        LblDesc.Font = Enum.Font.Gotham
+                        LblDesc.TextSize = 10
+                        LblDesc.TextXAlignment = Enum.TextXAlignment.Left
+                        LblDesc.Parent = Item
+
+                        local ExecSub = Instance.new("TextButton")
+                        ExecSub.Size = UDim2.new(0, 75, 0, 22)
+                        ExecSub.Position = UDim2.new(1, -80, 0.5, -11)
+                        ExecSub.BackgroundColor3 = featureStates[subFeat.Name] and Color3.fromRGB(200, 50, 50) or Color3.fromRGB(0, 150, 90)
+                        ExecSub.BorderSizePixel = 0
+                        ExecSub.Text = featureStates[subFeat.Name] and "UNEXECUTE" or "EXECUTE"
+                        ExecSub.TextColor3 = Color3.fromRGB(255, 255, 255)
+                        ExecSub.Font = Enum.Font.GothamBold
+                        ExecSub.TextSize = 10
+                        ExecSub.Parent = Item
+
+                        Instance.new("UICorner", ExecSub).CornerRadius = UDim.new(0, 4)
+
+                        ExecSub.MouseButton1Click:Connect(function()
+                            featureStates[subFeat.Name] = not featureStates[subFeat.Name]
+                            subFeat.Action(featureStates[subFeat.Name])
+                            if featureStates[subFeat.Name] then
+                                ExecSub.Text = "UNEXECUTE"
+                                ExecSub.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+                            else
+                                ExecSub.Text = "EXECUTE"
+                                ExecSub.BackgroundColor3 = Color3.fromRGB(0, 150, 90)
+                            end
+                        end)
+                    end
+                    SubScroll.CanvasSize = UDim2.new(0, 0, 0, #featuresList * 46)
+                end
+
+                -- 1. Sub-Menu Interactable
+                local function openInteractableSubMenu()
+                    local list = {
+                        { Name = "PPESP", Desc = "Proximity Prompt ESP", Action = function(state)
+                            pcall(function()
+                                if not loadedInteractableModule then loadedInteractableModule = loadstring(game:HttpGet(RAW_INTERACTABLE))() end
+                                local cmd = loadedInteractableModule.Commands[state and "proximityesp" or "unproximityesp"]
+                                if cmd then task.spawn(function() cmd.Function({}, speaker) end) end
+                            end)
+                        end},
+                        { Name = "ITP", Desc = "Item Teleport Window", Action = function(state)
+                            pcall(function()
+                                if not loadedInteractableModule then loadedInteractableModule = loadstring(game:HttpGet(RAW_INTERACTABLE))() end
+                                local cmd = loadedInteractableModule.Commands["itp"]
+                                if cmd then task.spawn(function() cmd.Function({}, speaker) end) end
+                            end)
+                        end},
+                        { Name = "CDESP", Desc = "ClickDetector ESP", Action = function(state)
+                            pcall(function()
+                                if not loadedInteractableModule then loadedInteractableModule = loadstring(game:HttpGet(RAW_INTERACTABLE))() end
+                                local cmd = loadedInteractableModule.Commands[state and "clickdetectoresp" or "unclickdetectoresp"]
+                                if cmd then task.spawn(function() cmd.Function({}, speaker) end) end
+                            end)
+                        end},
+                        { Name = "DESP", Desc = "Door Proximity ESP", Action = function(state)
+                            pcall(function()
+                                if not loadedInteractableModule then loadedInteractableModule = loadstring(game:HttpGet(RAW_INTERACTABLE))() end
+                                local cmd = loadedInteractableModule.Commands[state and "dooresp" or "undooresp"]
+                                if cmd then task.spawn(function() cmd.Function({}, speaker) end) end
+                            end)
+                        end},
+                        { Name = "ITESP", Desc = "Item Touch ESP", Action = function(state)
+                            pcall(function()
+                                if not loadedInteractableModule then loadedInteractableModule = loadstring(game:HttpGet(RAW_INTERACTABLE))() end
+                                local cmd = loadedInteractableModule.Commands[state and "itemtouchesp" or "untouchinterestesp"]
+                                if cmd then task.spawn(function() cmd.Function({}, speaker) end) end
+                            end)
+                        end},
+                        { Name = "TESP", Desc = "Touch Trigger/CP ESP", Action = function(state)
+                            pcall(function()
+                                if not loadedInteractableModule then loadedInteractableModule = loadstring(game:HttpGet(RAW_INTERACTABLE))() end
+                                local cmd = loadedInteractableModule.Commands[state and "touchinterestesp" or "untouchinterestesp"]
+                                if cmd then task.spawn(function() cmd.Function({}, speaker) end) end
+                            end)
+                        end}
+                    }
+                    showSubMenu("INTERACTABLE", list)
+                end
+
+                -- 2. Sub-Menu Color ESP
+                local function openColorESPSubMenu()
+                    local list = {
+                        { Name = "PESP", Desc = "Player ESP (All Green)", Action = function(state)
+                            pcall(function()
+                                if not loadedColorESPModule then loadedColorESPModule = loadstring(game:HttpGet(RAW_COLORESP))() end
+                                local cmd = loadedColorESPModule.Commands[state and "pesp" or "unloadColorESP"]
+                                if cmd then task.spawn(function() cmd.Function({}, speaker) end) end
+                            end)
+                        end},
+                        { Name = "EESP", Desc = "Enemy / NPC ESP", Action = function(state)
+                            pcall(function()
+                                if not loadedColorESPModule then loadedColorESPModule = loadstring(game:HttpGet(RAW_COLORESP))() end
+                                local cmd = loadedColorESPModule.Commands[state and "eesp" or "unloadColorESP"]
+                                if cmd then task.spawn(function() cmd.Function({}, speaker) end) end
+                            end)
+                        end}
+                    }
+                    showSubMenu("COLOR ESP", list)
+                end
+
+                -- 3. Sub-Menu Streaming Radar (Waypoint)
+                local function openWaypointSubMenu()
+                    local list = {
+                        { Name = "SCP", Desc = "Streaming Radar Window", Action = function(state)
+                            pcall(function()
+                                if not loadedWaypointModule then loadedWaypointModule = loadstring(game:HttpGet(RAW_WAYPOINT))() end
+                                if state then
+                                    local cmd = loadedWaypointModule.Commands["scp"]
+                                    if cmd then task.spawn(function() cmd.Function({}, speaker) end) end
+                                else
+                                    local win = CoreGui:FindFirstChild("TeleportCP_SCP_Window")
+                                    if win then win.Enabled = false end
+                                end
+                            end)
+                        end},
+                        { Name = "CPN", Desc = "Waypoint/CP Manager Window", Action = function(state)
+                            pcall(function()
+                                if not loadedWaypointModule then loadedWaypointModule = loadstring(game:HttpGet(RAW_WAYPOINT))() end
+                                if state then
+                                    local cmd = loadedWaypointModule.Commands["cpn"]
+                                    if cmd then task.spawn(function() cmd.Function({}, speaker) end) end
+                                else
+                                    local win = CoreGui:FindFirstChild("TeleportCP_CPN_Window")
+                                    if win then win.Enabled = false end
+                                end
+                            end)
+                        end}
+                    }
+                    showSubMenu("STREAMING RADAR", list)
+                end
+
+                -- 4. Sub-Menu Instant Prompt (Diperbaiki sesuai command asli: instantprompts / uninstantprompts)[span_2](start_span)[span_2](end_span)
+                local function openInstantPromptSubMenu()
+                    local list = {
+                        { Name = "INSTANTPROMPTS", Desc = "Always Instant Proximity", Action = function(state)
+                            pcall(function()
+                                if not loadedInstantPromptModule then loadedInstantPromptModule = loadstring(game:HttpGet(RAW_INSTANTPROMPT))() end
+                                local cmdKey = state and "instantprompts" or "uninstantprompts"
+                                local cmd = loadedInstantPromptModule.Commands[cmdKey]
+                                if cmd then task.spawn(function() cmd.Function({}, speaker) end) end
+                            end)
+                        end}
+                    }
+                    showSubMenu("INSTANT PROMPT", list)
+                end
+
+                -- 5. Sub-Menu F1Lock (Diperbaiki sesuai command asli: f1lock / unlockedcam)[span_3](start_span)[span_3](end_span)
+                local function openF1LockSubMenu()
+                    local list = {
+                        { Name = "F1LOCK", Desc = "Bind Shift Lock to F1", Action = function(state)
+                            pcall(function()
+                                if not loadedF1LockModule then loadedF1LockModule = loadstring(game:HttpGet(RAW_F1LOCK))() end
+                                local cmdKey = state and "f1lock" or "unlockedcam"
+                                local cmd = loadedF1LockModule.Commands[cmdKey]
+                                if cmd then task.spawn(function() cmd.Function({}, speaker) end) end
+                            end)
+                        end}
+                    }
+                    showSubMenu("F1 LOCK", list)
+                end
+
+                -- Tombol Menu Utama (Hub Utama)
+                local mainMenus = {
+                    { Name = "Interactable / ITP", Desc = "Proximity, Door, Click, Touch & ITP", Action = openInteractableSubMenu },
+                    { Name = "Color ESP", Desc = "Player & Enemy ESP", Action = openColorESPSubMenu },
+                    { Name = "Instant Prompts", Desc = "Always instant interaction", Action = openInstantPromptSubMenu },
+                    { Name = "Streaming Radar", Desc = "Checkpoint & Waypoint Manager", Action = openWaypointSubMenu },
+                    { Name = "F1Lock", Desc = "Camera Lock Keybind F1", Action = openF1LockSubMenu },
+                }
+
+                for _, menu in ipairs(mainMenus) do
+                    local ItemFrame = Instance.new("Frame")
+                    ItemFrame.Size = UDim2.new(1, 0, 0, 42)
+                    ItemFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+                    ItemFrame.BorderSizePixel = 0
+                    ItemFrame.Parent = ScrollingFrame
+
+                    Instance.new("UICorner", ItemFrame).CornerRadius = UDim.new(0, 4)
+
+                    local NameLabel = Instance.new("TextLabel")
+                    NameLabel.Size = UDim2.new(0, 120, 0, 18)
+                    NameLabel.Position = UDim2.new(0, 8, 0, 4)
+                    NameLabel.BackgroundTransparency = 1
+                    NameLabel.Text = menu.Name
+                    NameLabel.TextColor3 = Color3.fromRGB(0, 220, 255)
+                    NameLabel.Font = Enum.Font.GothamBold
+                    NameLabel.TextSize = 11
+                    NameLabel.TextXAlignment = Enum.TextXAlignment.Left
+                    NameLabel.Parent = ItemFrame
+
+                    local DescLabel = Instance.new("TextLabel")
+                    DescLabel.Size = UDim2.new(1, -95, 0, 16)
+                    DescLabel.Position = UDim2.new(0, 8, 0, 22)
+                    DescLabel.BackgroundTransparency = 1
+                    DescLabel.Text = menu.Desc
+                    DescLabel.TextColor3 = Color3.fromRGB(160, 160, 165)
+                    DescLabel.Font = Enum.Font.Gotham
+                    DescLabel.TextSize = 10
+                    DescLabel.TextXAlignment = Enum.TextXAlignment.Left
+                    DescLabel.Parent = ItemFrame
+
+                    local OpenBtn = Instance.new("TextButton")
+                    OpenBtn.Size = UDim2.new(0, 75, 0, 22)
+                    OpenBtn.Position = UDim2.new(1, -80, 0.5, -11)
+                    OpenBtn.BackgroundColor3 = Color3.fromRGB(50, 120, 220)
+                    OpenBtn.BorderSizePixel = 0
+                    OpenBtn.Text = "OPEN MENU"
+                    OpenBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+                    OpenBtn.Font = Enum.Font.GothamBold
+                    OpenBtn.TextSize = 10
+                    OpenBtn.Parent = ItemFrame
+
+                    Instance.new("UICorner", OpenBtn).CornerRadius = UDim.new(0, 4)
+
+                    OpenBtn.MouseButton1Click:Connect(function()
+                        if menu.Action then menu.Action() end
+                    end)
+                end
+
+                ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, #mainMenus * 46)
+            end
+        }
+    }
+}
+
+return Plugin
