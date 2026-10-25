@@ -2,36 +2,48 @@ return {
     {
         Name = "Interactable / ITP",
         Desc = "Proximity, Door, Click, Touch & ITP",
-        RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Interactable"
+        RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Interactable",
+        SubFeatures = {
+            { Name = "PPESP", Desc = "Proximity Prompt ESP", Cmd = "proximityesp", UnCmd = "unproximityesp" },
+            { Name = "ITP", Desc = "Item Teleport Window", Cmd = "itp", UnCmd = "itp" },
+            { Name = "CDESP", Desc = "ClickDetector ESP", Cmd = "clickdetectoresp", UnCmd = "unclickdetectoresp" },
+            { Name = "DESP", Desc = "Door Proximity ESP", Cmd = "dooresp", UnCmd = "undooresp" },
+            { Name = "ITESP", Desc = "Item Touch ESP", Cmd = "itemtouchesp", UnCmd = "untouchinterestesp" },
+            { Name = "TESP", Desc = "Touch Trigger/CP ESP", Cmd = "touchinterestesp", UnCmd = "untouchinterestesp" }
+        }
     },
     {
         Name = "Color ESP",
         Desc = "Player & Enemy ESP",
-        RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/colorESP"
+        RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/colorESP",
+        SubFeatures = {
+            { Name = "PESP", Desc = "Player ESP (All Green)", Cmd = "pesp", UnCmd = "unloadColorESP" },
+            { Name = "EESP", Desc = "Enemy / NPC ESP", Cmd = "eesp", UnCmd = "unloadColorESP" }
+        }
     },
     {
         Name = "Instant Prompts",
         Desc = "Always instant interaction",
-        RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/InstanPrompt"
+        RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/InstanPrompt",
+        SubFeatures = {
+            { Name = "INSTANTPROMPTS", Desc = "Always Instant Proximity", Cmd = "instantprompts", UnCmd = "uninstantprompts" }
+        }
     },
     {
         Name = "Streaming Radar",
         Desc = "Checkpoint & Waypoint Manager",
-        RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Waypoint"
+        RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Waypoint",
+        SubFeatures = {
+            { Name = "SCP", Desc = "Streaming Radar Window", Cmd = "scp", UnCmd = "scp_close" },
+            { Name = "CPN", Desc = "Waypoint/CP Manager Window", Cmd = "cpn", UnCmd = "cpn_close" }
+        }
     },
     {
         Name = "F1Lock",
         Desc = "Camera Lock Keybind F1",
-        RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/F1Lock"
+        RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/F1Lock",
+        SubFeatures = {
+            { Name = "F1LOCK", Desc = "Bind Shift Lock to F1", Cmd = "f1lock", UnCmd = "unlockedcam" }
+        }
     }
-    --[[ 
-        Nanti kalau lu mau nambah fitur baru (misal Fly atau Speed), 
-        lu tinggal tambah baris baru di sini di GitHub tanpa perlu kirim file ke teman lagi!
-        Contoh:
-        {
-            Name = "Fly Menu",
-            Desc = "Fly around the map",
-            RawUrl = "LINK_RAW_FLY_LU"
-        },
-    ]]--
 }
