@@ -113,7 +113,7 @@ return function(speaker)
         end
     end)
 
-    -- Fungsi untuk memunculkan Pop-up Input Keyword/ID
+    -- Fungsi Pop-up Input Keyword/ID yang disempurnakan
     local function showInputDialog(titleText, onSubmit)
         local PromptOverlay = Instance.new("Frame")
         PromptOverlay.Size = UDim2.new(1, 0, 1, 0)
@@ -284,7 +284,6 @@ return function(speaker)
                         if pluginMod and pluginMod.Commands then
                             local targetCmd = featureStates[subFeat.Name] and subFeat.UnCmd or subFeat.Cmd
                             if featureStates[subFeat.Name] and (not targetCmd or targetCmd == "") then
-                                -- Kalau status unexecute tapi uncmd kosong, cukup ubah status UI-nya saja
                                 featureStates[subFeat.Name] = false
                                 ExecSub.Text = "EXECUTE"
                                 ExecSub.BackgroundColor3 = Color3.fromRGB(0, 150, 90)
@@ -308,20 +307,22 @@ return function(speaker)
                         end
                     end)
 
-                    featureStates[subFeat.Name] = not featureStates[subFeat.Name]
-                    if featureStates[subFeat.Name] then
-                        ExecSub.Text = "UNEXECUTE"
-                        ExecSub.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-                    else
-                        ExecSub.Text = "EXECUTE"
-                        ExecSub.BackgroundColor3 = Color3.fromRGB(0, 150, 90)
+                    -- Ubah status tombol khusus jika bukan fitur input musik berulang
+                    if subFeat.Cmd ~= "playmusic" then
+                        featureStates[subFeat.Name] = not featureStates[subFeat.Name]
+                        if featureStates[subFeat.Name] then
+                            ExecSub.Text = "UNEXECUTE"
+                            ExecSub.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+                        else
+                            ExecSub.Text = "EXECUTE"
+                            ExecSub.BackgroundColor3 = Color3.fromRGB(0, 150, 90)
+                        end
                     end
                 end
 
-                -- Cek apakah butuh input teks atau langsung eksekusi
-                if subFeat.NeedInput and not featureStates[subFeat.Name] then
+                -- Jika butuh input (seperti playmusic)
+                if subFeat.NeedInput then
                     showInputDialog(subFeat.Name, function(typedText)
-                        -- Memecah argumen berdasarkan spasi (misal input: "123456 1 1")
                         local argsTable = {}
                         for word in string.gmatch(typedText, "%S+") do
                             table.insert(argsTable, word)
@@ -387,7 +388,7 @@ return function(speaker)
                 OpenBtn.TextSize = 10
                 OpenBtn.Parent = ItemFrame
 
-                    Instance.new("UICorner", OpenBtn).CornerRadius = UDim.new(0, 4)
+                Instance.new("UICorner", OpenBtn).CornerRadius = UDim.new(0, 4)
 
                 OpenBtn.MouseButton1Click:Connect(function()
                     if menu.SubFeatures then
