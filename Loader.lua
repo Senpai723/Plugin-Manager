@@ -61,7 +61,7 @@ return {
         SubFeatures = {
             { Name = "Play Music", Desc = "Memutar musik berdasarkan [ID] (Pitch) (volume)", Cmd = "playmusic", UnCmd = "stopmusic", NeedInput = true },
             { Name = "Stop Music", Desc = "Menstop lagu yang sedang di putar", Cmd = "stopmusic", UnCmd = "" },
-            { Name = "Mute Sound", Desc = "Membisukan Sound Latar Belakang Map" Cmd = "mutesound", UnCmd = "unmutesound" }
+            { Name = "Mute Sound", Desc = "Membisukan Sound Latar Belakang Map", Cmd = "mutesound", UnCmd = "unmutesound" }
         }
     },
     {
