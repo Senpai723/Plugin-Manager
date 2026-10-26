@@ -72,6 +72,15 @@ return {
         }
     },
     {
+        Name = "Simple Aimbot",
+        Desc = "Aimbot Untuk Map yang mempunyai fitur Shooter",
+        RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/SimpleAimbot",
+        SubFeatures = {
+            { Name = "Aimbot", Desc = "Mengaktifkan dan Menonaktifkan Aimbot yang mengincar Kepala/Body", Cmd = "startaimbot", UnCmd = "stopaimbot" },
+            { Name = "Set Radius", Desc = "Masukan angka untuk menentukan Radius Aimbot, Misal 250 Radius", Cmd = "setradius", UnCmd = "", NeedInput = true }
+        }
+    },
+    {
         Name = "F1Lock ( Khusus Keyboard )",
         Desc = "Mengubah Shift Lock ke F1",
         RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/F1Lock",
