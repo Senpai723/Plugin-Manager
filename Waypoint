@@ -1,3 +1,7 @@
+-- Lindungi agar tidak ke-load dobel di memori
+if _G.TeleportCP_Loaded then return end
+_G.TeleportCP_Loaded = true
+
 local gotonext = {
     ["PluginName"] = "TeleportCP_Universal_Waypoint",
     ["PluginDescription"] = "Universal Checkpoint Engine - Optimized & Anti-Stutter",
