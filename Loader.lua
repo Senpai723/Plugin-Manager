@@ -30,7 +30,7 @@ return {
         }
     },
     {
-        Name = "Streaming Radar",
+        Name = "Radar CP & Waypoint",
         Desc = "Checkpoint & Waypoint Manager",
         RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Waypoint",
         SubFeatures = {
