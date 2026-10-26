@@ -59,7 +59,7 @@ return {
         Desc = "Mendengar dan Membisukan Sound di Map",
         RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/SoundManage",
         SubFeatures = {
-            { Name = "Voice Spy", Desc = "Menguping Voice Chat Target, Masukan nama target ( Min 3 huruf pertama )", Cmd = "vspy", UnCmd = "unvspy", NeedInput = true },
+            { Name = "Voice Spy", Desc = "Menguping Voice Chat Target, Masukan nama target ( Min 3 huruf pertama )", Cmd = "voicespy", UnCmd = "unvoicespy", NeedInput = true },
             { Name = "Mute Sound", Desc = "Membisukan suara Latar Belakang Map", Cmd = "mutesound", UnCmd = "unmutesound" }
         }
     },
