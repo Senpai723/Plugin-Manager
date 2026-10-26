@@ -398,12 +398,19 @@ local function processAndHookPart(obj)
 
         if updateRadarGuiContent then updateRadarGuiContent() end
 
+        -- ==========================================================
+        -- TARUH / TIMPA BAGIAN INI DI SINI (BAGIAN TRIGGER AUTOSAVE)
+        -- ==========================================================
         local function triggerAutoSave()
-            local uniqueVisitKey = tostring(cpKey) .. "_" .. tostring(partDesc)
+            -- Pengaman: Jika key/desc kosong tapi kesentuh, paksa simpan pakai nama part asli
+            local finalKey = cpKey or "CP"
+            local finalDesc = partDesc or realPart.Name
+            
+            local uniqueVisitKey = tostring(finalKey) .. "_" .. tostring(finalDesc)
             if not visitedKeys[uniqueVisitKey] then
-                addOrUpdateSavedCP(cpKey, partDesc, targetCFrame)
+                addOrUpdateSavedCP(finalKey, finalDesc, targetCFrame)
                 
-                if cpKey == "SUMMIT" or string.find(string.lower(tostring(partDesc)), "summit") then
+                if finalKey == "SUMMIT" or string.find(string.lower(tostring(finalDesc)), "summit") then
                     for cacheKey, cacheData in pairs(streamingCache) do
                         if cacheData.key == "SUMMIT" or string.find(string.lower(tostring(cacheData.desc)), "summit") then
                             if cacheData.part and cacheData.part.Parent and realPart and realPart.Parent then
@@ -418,7 +425,7 @@ local function processAndHookPart(obj)
                     if updateRadarGuiContent then updateRadarGuiContent() end
                 else
                     for cacheKey, cacheData in pairs(streamingCache) do
-                        if tostring(cacheData.key) == tostring(cpKey) then
+                        if tostring(cacheData.key) == tostring(finalKey) then
                             if cacheData.part and cacheData.part.Parent and realPart and realPart.Parent then
                                 local dist = (cacheData.part.Position - realPart.Position).Magnitude
                                 if dist <= 25 then
@@ -432,6 +439,7 @@ local function processAndHookPart(obj)
                 end
             end
         end
+        -- ==========================================================
 
         local touch = realPart:FindFirstChild("TouchInterest") or realPart:FindFirstChildOfClass("TouchTransmitter")
         if touch then
