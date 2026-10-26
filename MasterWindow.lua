@@ -3,7 +3,13 @@ return function(speaker)
     local Players = game:GetService("Players")
     local LocalPlayer = Players.LocalPlayer
 
-    local featureStates = {}
+    -- PERBAIKAN: Menggunakan variabel global (_G) agar status aktif (merah/unexecute) 
+    -- tidak hilang atau ter-reset jika window tidak sengaja tertutup (klik tombol X).
+    if not _G.MasterPluginHub_States then
+        _G.MasterPluginHub_States = {}
+    end
+    local featureStates = _G.MasterPluginHub_States
+    
     local loadedModules = {}
 
     local oldCore = CoreGui:FindFirstChild("MasterPluginHub")
@@ -319,8 +325,6 @@ return function(speaker)
             ExecSub.MouseButton1Click:Connect(function()
                 local function runCommand(customArgs)
                     pcall(function()
-                        -- SISTEM PEWARISAN 2 RAWURL:
-                        -- Jika subFeat punya RawUrl sendiri, pakai itu. Jika kosong, pakai rawUrl menu utama.
                         local targetRaw = (subFeat.RawUrl and subFeat.RawUrl ~= "") and subFeat.RawUrl or rawUrl
 
                         if not loadedModules[targetRaw] then
