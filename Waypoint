@@ -1,12 +1,3 @@
--- Lindungi agar tidak ke-load dobel di memori, tapi tetap izinkan Hub membuka window-nya
-if _G.TeleportCP_Loaded then
-    if type(_G.TeleportCP_OpenSCP) == "function" then
-        _G.TeleportCP_OpenSCP()
-    end
-    return
-end
-_G.TeleportCP_Loaded = true
-
 local gotonext = {
     ["PluginName"] = "TeleportCP_Universal_Waypoint",
     ["PluginDescription"] = "Universal Checkpoint Engine - Optimized & Anti-Stutter",
@@ -37,23 +28,18 @@ local HEIGHT_OFFSET = 1.0
 local MASTER_FILE_NAME = "TeleportCP_MasterSaves.json"
 
 local function getMapKey()
-    -- Murni menggunakan angka PlaceId agar konsisten dan tidak berubah-ubah antar sesi/room
     return tostring(PlaceId)
 end
 
 local CURRENT_MAP_KEY = getMapKey()
 
 local IGNORE_KEYWORDS = {
-    -- Filter Teleport & Trigger Palsu
     "teleport", "tp", "tele", "coin", "gold", "reward", "cash", "money", "gem", "stop", "jump", "ready",
     "time", "seluncur", "remove", "clone", "seat", "laying", "down", "fall", "jatuh", "chat", "block",
     "cave", "lake", "goa", "tutorial", "hit", "same", "spin", "kill", "brick", "birhday", "gift", "fun",
     "tanjakan", "maut", "uang", "join", "community", "komunitas", "enter", "handle", "squish", "stand",
-    -- Filter Hewan, NPC, & Monster
     "crocodile", "alligator", "mob", "npc", "monster", "animal", "pet", "zombie", "boss", "bear",
-    -- Filter Part Langit & Batasan Map
     "sky", "skypart", "skybox", "cloud", "atmosphere", "barrier", "invisible", "boundary",
-    -- Filter Dekorasi & Alam
     "tree", "pohon", "branch", "trunk", "foliage", "leaf", "leaves", "mushroom", "axe", "ice",
     "fence", "pagar", "bridge", "jembatan", "ladder", "stair", "tangga", "fog", "hat",
     "wood", "stone", "rock", "batu", "bambu", "raft", "platform", "floor", "step", "pijakan",
@@ -71,14 +57,10 @@ local streamingCache = {}
 local savedCheckpointsList = {}
 local visitedKeys = {}
 
--- UI REFS
 local radarGui, radarMainFrame, radarScrollContainer, isRadarMinimized = nil, nil, nil, false
 local cpnGui, cpnMainFrame, cpnScrollContainer, isCpnMinimized = nil, nil, nil, false
 local updateRadarGuiContent, updateCpnGuiContent = nil, nil
 
---==================================================
--- NOTIFICATION HELPER
---==================================================
 local function notify(title, text, duration)
     pcall(function()
         StarterGui:SetCore("SendNotification", {
@@ -89,9 +71,6 @@ local function notify(title, text, duration)
     end)
 end
 
---==================================================
--- FILE SYSTEM PERSISTENCE (MASTER JSON + AUTO-MIGRATE)
---==================================================
 local function loadSavedCheckpoints()
     savedCheckpointsList = {}
     visitedKeys = {}
@@ -105,7 +84,6 @@ local function loadSavedCheckpoints()
                 if type(decoded) == "table" then masterData = decoded end
             end
 
-            -- Migrasi otomatis file JSON lama yang berserakan
             local files = listfiles("")
             for _, filePath in ipairs(files) do
                 if string.match(filePath, "TeleportCP_.+_Saves%.json$") and not string.match(filePath, "Master") then
@@ -156,9 +134,6 @@ end
 
 loadSavedCheckpoints()
 
---==================================================
--- UTILITIES & STRICT FILTER LOGIC
---==================================================
 local function getHRP()
     local char = LocalPlayer.Character
     return char and char:FindFirstChild("HumanoidRootPart")
@@ -196,11 +171,9 @@ local function getValidCheckpointPart(obj)
     if not obj or not (obj:IsA("BasePart") or obj:IsA("MeshPart") or obj:IsA("UnionOperation") or obj:IsA("Model")) then return nil end
     if isBlacklisted(obj.Name) then return nil end
 
-    -- Cek 1: Memiliki TouchInterest langsung
     local hasTouch = obj:FindFirstChild("TouchInterest") or obj:FindFirstChildOfClass("TouchTransmitter")
     if hasTouch then return obj end
 
-    -- Cek 2: Memiliki ProximityPrompt langsung
     local hasPrompt = obj:FindFirstChildOfClass("ProximityPrompt") or obj:FindFirstChildWhichIsA("ProximityPrompt", true)
     if hasPrompt then
         if obj:IsA("Model") then
@@ -209,7 +182,6 @@ local function getValidCheckpointPart(obj)
         return obj
     end
 
-    -- Cek 3: Cek anak-anak objek (Hanya terima jika ada TouchInterest atau ProximityPrompt)
     for _, desc in ipairs(obj:GetDescendants()) do
         if (desc:IsA("BasePart") or desc:IsA("MeshPart") or desc:IsA("UnionOperation")) and not isBlacklisted(desc.Name) then
             if desc:FindFirstChild("TouchInterest") or desc:FindFirstChildOfClass("TouchTransmitter") or desc:FindFirstChildOfClass("ProximityPrompt") then
@@ -218,10 +190,8 @@ local function getValidCheckpointPart(obj)
         end
     end
 
-    -- DIBUANG: Fallback BillboardGui/SurfaceGui tanpa Touch/Prompt ditiadakan agar papan dekorasi palsu tidak ter-scan!
     return nil
 end
-
 
 local function parseCPIdentity(obj)
     local validPart = getValidCheckpointPart(obj)
@@ -232,13 +202,9 @@ local function parseCPIdentity(obj)
     local parentName = obj.Parent and obj.Parent.Name or ""
     local lowerParent = string.lower(parentName)
 
-    -- Filter awal
     if lowerName == "text" or lowerParent == "text" or isBlacklisted(lowerName) or isBlacklisted(lowerParent) then return nil, nil, nil end
     if string.find(lowerName, "teleport", 1, true) or string.find(lowerName, "tp", 1, true) or string.find(lowerName, "tele", 1, true) then return nil, nil, nil end
 
-    -- ==================================================
-    -- 1. DETEKSI SUMMIT STRICT (SUPER STERIL)
-    -- ==================================================
     local summitKeywords = {"summit", "peak", "finish", "puncak", "winpad"}
     local summitBlacklist = {
         "board", "papan", "donat", "donation", "detik", "time", "sec", "sign", 
@@ -257,7 +223,6 @@ local function parseCPIdentity(obj)
     local isSummit = false
     local summitName = name
 
-    -- Cek dari Nama Objek atau Parent
     if not isSummitBlacklisted(lowerName) and not isSummitBlacklisted(lowerParent) then
         for _, kw in ipairs(summitKeywords) do
             if string.find(lowerName, kw, 1, true) or string.find(lowerParent, kw, 1, true) then
@@ -267,7 +232,6 @@ local function parseCPIdentity(obj)
         end
     end
 
-    -- Cek dari BillboardGui / SurfaceGui jika belum ketemu
     if not isSummit then
         local hasGui = validPart:FindFirstChildOfClass("BillboardGui") or validPart:FindFirstChildOfClass("SurfaceGui")
         if not hasGui and validPart.Parent and validPart.Parent:IsA("Model") then
@@ -295,9 +259,6 @@ local function parseCPIdentity(obj)
         return "SUMMIT", summitName, validPart
     end
 
-    -- ==================================================
-    -- 2. DOKTRIN STRICT: CEK ATAU KATA KUNCI CHECKPOINT WAJIB ADA
-    -- ==================================================
     local combined = lowerParent .. " " .. lowerName
     local hasCPKeyword = string.find(combined, "checkpoint") or 
                          string.find(combined, "cekpoin") or 
@@ -307,7 +268,6 @@ local function parseCPIdentity(obj)
                          string.find(combined, "stage") or 
                          string.find(combined, "pos")
 
-    -- Ambil teks dari BillboardGui jika ada
     local guiText = ""
     local hasGui = validPart:FindFirstChildOfClass("BillboardGui") or validPart:FindFirstChildOfClass("SurfaceGui")
     if not hasGui and validPart.Parent and validPart.Parent:IsA("Model") then
@@ -324,12 +284,10 @@ local function parseCPIdentity(obj)
         end
     end
 
-    -- JIKA TIDAK MEMILIKI KATA KUNCI CHECKPOINT SAH = BUANG / TOLAK MUTLAK!
     if not hasCPKeyword then
         return nil, nil, nil
     end
 
-    -- 3. PARSING NOMOR CHECKPOINT (Hanya jika lolos verifikasi Kata Kunci di atas)
     local num = string.match(combined, "checkpoints?%s*(%d+)") or
                 string.match(combined, "checkpoint%s*(%d+)") or
                 string.match(combined, "cekpoin%s*[%s_]*(%d+)") or 
@@ -356,13 +314,9 @@ local function parseCPIdentity(obj)
         end
     end
 
-    -- Fallback Label String jika valid CP tanpa angka
     return "CP", name, validPart
 end
 
---==================================================
--- AUTO-SAVE SYSTEM & VISITED TRACKER
---==================================================
 local function addOrUpdateSavedCP(key, desc, cf)
     local serializedCF = {cf:GetComponents()}
     
@@ -397,19 +351,19 @@ local function addOrUpdateSavedCP(key, desc, cf)
     notify("Auto-Save CP", "Checkpoint tersimpan: " .. tostring(key) .. " (" .. tostring(desc) .. ")", 2)
 end
 
---==================================================
--- PERBAIKAN 3: PURE EVENT-DRIVEN & ANTI-STUTTER (NO BACKGROUND LOOP)
---==================================================
-local hookedParts = {}
+-- PENGAMAN GLOBAL TABLE UNTUK MENCEGAH AUTO-SAVE DOBEL ANTAR INSTANS
+if not _G.TeleportCP_HookedParts then
+    _G.TeleportCP_HookedParts = {}
+end
 
 local function processAndHookPart(obj)
     if not obj or not (obj:IsA("BasePart") or obj:IsA("MeshPart") or obj:IsA("UnionOperation") or obj:IsA("Model")) then return end
-    if hookedParts[obj] then return end
+    if _G.TeleportCP_HookedParts[obj] then return end
 
     local cpKey, partDesc, realPart = parseCPIdentity(obj)
     
-    if cpKey and realPart and not hookedParts[realPart] then
-        hookedParts[realPart] = true
+    if cpKey and realPart and not _G.TeleportCP_HookedParts[realPart] then
+        _G.TeleportCP_HookedParts[realPart] = true
         
         local targetCFrame = realPart:IsA("Model") and (realPart.PrimaryPart and realPart.PrimaryPart.CFrame or realPart:GetAttribute("CFrame") or realPart:GetPivot()) or realPart.CFrame
 
@@ -428,7 +382,6 @@ local function processAndHookPart(obj)
             if not visitedKeys[uniqueVisitKey] then
                 addOrUpdateSavedCP(cpKey, partDesc, targetCFrame)
                 
-                -- LOGIKA SUMMIT DENGAN FILTER JARAK (DISTANCE CHECK)
                 if cpKey == "SUMMIT" or string.find(string.lower(tostring(partDesc)), "summit") then
                     for cacheKey, cacheData in pairs(streamingCache) do
                         if cacheData.key == "SUMMIT" or string.find(string.lower(tostring(cacheData.desc)), "summit") then
@@ -443,7 +396,6 @@ local function processAndHookPart(obj)
                     end
                     if updateRadarGuiContent then updateRadarGuiContent() end
                 else
-                    -- LOGIKA CP BIASA: Hilangkan duplikat key yang sama jika jaraknya dekat/satu tempat
                     for cacheKey, cacheData in pairs(streamingCache) do
                         if tostring(cacheData.key) == tostring(cpKey) then
                             if cacheData.part and cacheData.part.Parent and realPart and realPart.Parent then
@@ -465,7 +417,6 @@ local function processAndHookPart(obj)
             realPart.Touched:Connect(function(hit)
                 local char = LocalPlayer.Character
                 if char and hit:IsDescendantOf(char) then
-                    -- Pastikan bagian HumanoidRootPart atau tubuh player yang menyentuh
                     local humanoid = char:FindFirstChildOfClass("Humanoid")
                     if humanoid and humanoid.Health > 0 then
                         triggerAutoSave()
@@ -485,9 +436,6 @@ local function processAndHookPart(obj)
     end
 end
 
---==================================================
--- GUI: SCP FLOATING WINDOW
---==================================================
 updateRadarGuiContent = function()
     if not radarScrollContainer then return end
 
@@ -496,9 +444,12 @@ updateRadarGuiContent = function()
     end
 
     local list = {}
+    local seenKeys = {}
+    
     for _, data in pairs(streamingCache) do
         local uniqueVisitKey = tostring(data.key) .. "_" .. tostring(data.desc)
-        if not visitedKeys[uniqueVisitKey] then
+        if not visitedKeys[uniqueVisitKey] and not seenKeys[uniqueVisitKey] then
+            seenKeys[uniqueVisitKey] = true
             table.insert(list, data)
         end
     end
@@ -559,18 +510,16 @@ updateRadarGuiContent = function()
         btnCorner.CornerRadius = UDim.new(0, 4)
         btnCorner.Parent = teleBtn
 
-                                teleBtn.MouseButton1Click:Connect(function()
+        teleBtn.MouseButton1Click:Connect(function()
             if data.part and data.part.Parent then
                 safeTeleport(data.part.CFrame)
                 addOrUpdateSavedCP(data.key, data.desc, data.part.CFrame)
                 
-                -- LOGIKA SUMMIT TELEPORT DENGAN FILTER JARAK
                 if data.key == "SUMMIT" or string.find(string.lower(tostring(data.desc)), "summit") then
                     for cacheKey, cacheData in pairs(streamingCache) do
                         if cacheData.key == "SUMMIT" or string.find(string.lower(tostring(cacheData.desc)), "summit") then
                             if cacheData.part and cacheData.part.Parent and data.part and data.part.Parent then
                                 local dist = (cacheData.part.Position - data.part.Position).Magnitude
-                                -- Sembunyikan hanya jika posisinya berdekatan (satu tempat/duplikat)
                                 if dist <= 25 then
                                     local uniqueVisitKey = tostring(cacheData.key) .. "_" .. tostring(cacheData.desc)
                                     visitedKeys[uniqueVisitKey] = true
@@ -710,8 +659,7 @@ local function createSCPWindow()
         end
     end)
 
-        refBtn.MouseButton1Click:Connect(function()
-        -- TAMBAHKAN SCAN ULANG SAAT TOMBOL R DIKLIK
+    refBtn.MouseButton1Click:Connect(function()
         for _, obj in ipairs(Workspace:GetDescendants()) do
             processAndHookPart(obj)
         end
@@ -729,21 +677,9 @@ local function createSCPWindow()
         radarGui.Enabled = false
     end)
 
-    -- Daftarkan ke _G agar bisa dipanggil langsung saat ter-load dua kali
-_G.TeleportCP_OpenSCP = function()
-    createSCPWindow()
-end
-
-_G.TeleportCP_OpenCPN = function()
-    createCPNWindow()
-end
-
     updateRadarGuiContent()
 end
 
---==================================================
--- GUI: CPN MANAGER WINDOW
---==================================================
 local function showCustomNamePrompt(callback)
     local pGui = Instance.new("ScreenGui")
     pGui.Name = "TeleportCP_Prompt"
@@ -919,14 +855,11 @@ updateCpnGuiContent = function()
         dBtnCorner.CornerRadius = UDim.new(0, 4)
         dBtnCorner.Parent = delBtn
 
-                delBtn.MouseButton1Click:Connect(function()
+        delBtn.MouseButton1Click:Connect(function()
             local removed = table.remove(savedCheckpointsList, index)
             if removed and removed.key then
                 local removedKey = tostring(removed.key)
                 
-                -- HAPUS SEMUA ENTRY DENGAN KEY / NOMOR CP YANG SAMA DARI VISITEDKEYS
-                -- Agar kalau di map awal ada 2 CP dengan nomor sama (misal CP 10 pakai spasi & tanpa spasi),
-                -- KEDUANYA BALIK LAGI SECARA NORMAL KE SCP RADAR!
                 for visitedKey, _ in pairs(visitedKeys) do
                     local prefix = string.match(visitedKey, "^([^_]+)_")
                     if prefix and prefix == removedKey then
@@ -1104,9 +1037,6 @@ local function createCPNWindow()
     updateCpnGuiContent()
 end
 
---==================================================
--- COMMAND REGISTRATION
---==================================================
 gotonext.Commands["scp"] = {
     ["ListName"] = "scp",
     ["Description"] = "Buka Floating Radar SCP Real-time",
@@ -1125,11 +1055,6 @@ gotonext.Commands["cpn"] = {
     end
 }
 
---==================================================
--- OPTIMIZED EVENT-DRIVEN & ANTI-STUTTER SCANNER
---==================================================
-
--- 1. Scan Instan untuk Objek Baru yang Dimuat (Anti-Stutter & Anti-Lag)
 Workspace.DescendantAdded:Connect(function(obj)
     task.delay(0.2, function()
         pcall(function()
@@ -1138,15 +1063,13 @@ Workspace.DescendantAdded:Connect(function(obj)
     end)
 end)
 
--- 2. Smooth Background Batching Scanner (Mencegah Lag Setiap Detik)
 task.spawn(function()
     while true do
-        task.wait(5.0) -- Interval diperlonggar jadi 5 detik
+        task.wait(5.0)
         pcall(function()
             local allDescendants = Workspace:GetDescendants()
             for i, obj in ipairs(allDescendants) do
                 processAndHookPart(obj)
-                -- Tiap 50 objek, beri jeda 1 frame agar CPU tidak stutter/lag!
                 if i % 50 == 0 then
                     task.wait()
                 end
@@ -1154,6 +1077,5 @@ task.spawn(function()
         end)
     end
 end)
-
 
 return gotonext
