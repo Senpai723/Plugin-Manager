@@ -57,19 +57,12 @@ return {
     },
     {
         Name = "Sound Manage",
-        Desc = "Mendengar dan Membisukan Sound di Map",
-        RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/SoundManage",
+        Desc = "Mengatur suara di map dan memutar Lagu",
+        RawUrl = "",
         SubFeatures = {
-            { Name = "Voice Spy", Desc = "Menguping Voice Chat Target, Masukan nama target ( Min 3 huruf pertama )", Cmd = "voicespy", UnCmd = "unvoicespy", NeedInput = true },
-            { Name = "Mute Sound", Desc = "Membisukan suara Latar Belakang Map", Cmd = "mutesound", UnCmd = "unmutesound" }
-        }
-    },
-    {
-        Name = "MusicTimeML",
-        Desc = "Memutar dan Membisukan Sound",
-        RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/MusicTimeML",
-        SubFeatures = {
-            { Name = "Play Music", Desc = "Memutar musik dengan ID lagu, Langsung masukan IDnya", Cmd = "playmusic", UnCmd = "stopmusic", NeedInput = true }
+            { Name = "Voice Spy", Desc = "Menguping Voice Chat Target, Masukan nama target ( Min 3 huruf pertama )", Cmd = "voicespy", UnCmd = "unvoicespy", NeedInput = true, RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/SoundManage" },
+            { Name = "Mute Sound", Desc = "Membisukan suara Latar Belakang Map", Cmd = "mutesound", UnCmd = "unmutesound", RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/SoundManage" },
+            { Name = "Play Music", Desc = "Mendengarkan musik, Masukan ID lagu yang Valid", Cmd = "playmusic", UnCmd = "stopmusic", NeedInput = true, RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/MusicTimeML" }
         }
     },
     {
