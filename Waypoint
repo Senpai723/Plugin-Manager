@@ -1,7 +1,5 @@
--- Cek apakah core fungsi sudah pernah dimuat sebelumnya
+-- Lindungi agar tidak ke-load dobel di memori, tapi tetap izinkan Hub membuka window-nya
 if _G.TeleportCP_Loaded then
-    -- Kalau sudah pernah diload (misal lewat autoexec), 
-    -- saat dipanggil lagi lewat hub, langsung jalankan ulang fungsi window-nya saja!
     if type(_G.TeleportCP_OpenSCP) == "function" then
         _G.TeleportCP_OpenSCP()
     end
