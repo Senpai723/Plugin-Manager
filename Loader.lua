@@ -55,7 +55,6 @@ return {
         }
     },
     {
-        {
         Name = "Sound Manage",
         Desc = "Mendengar dan Membisukan Sound di Map",
         RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/SoundManage",
@@ -64,6 +63,7 @@ return {
             { Name = "Mute Sound", Desc = "Membisukan suara Latar Belakang Map", Cmd = "mutesound", UnCmd = "unmutesound" }
         }
     },
+    {
         Name = "MusicTimeML",
         Desc = "Memutar dan Membisukan Sound",
         RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/MusicTimeML",
