@@ -59,8 +59,7 @@ return {
         Desc = "Mendengar dan Membisukan Sound di Map",
         RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/SoundManage",
         SubFeatures = {
-            { Name = "Voice Spy", Desc = "Menguping Voice Chat Target, Masukan nama target ( Min 3 huruf pertama )", Cmd = "voicespy", UnCmd = "", NeedInput = true },
-            { Name = "Unvoice Spy", Desc = "Mematikan Fitur Voice Spy", Cmd = "unvoicespy", UnCmd = "" },
+            { Name = "Voice Spy", Desc = "Menguping Voice Chat Target, Masukan nama target ( Min 3 huruf pertama )", Cmd = "voicespy", UnCmd = "unvoicespy", NeedInput = true },
             { Name = "Mute Sound", Desc = "Membisukan suara Latar Belakang Map", Cmd = "mutesound", UnCmd = "unmutesound" }
         }
     },
@@ -69,8 +68,7 @@ return {
         Desc = "Memutar dan Membisukan Sound",
         RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/MusicTimeML",
         SubFeatures = {
-            { Name = "Play Music", Desc = "Memutar musik dengan ID lagu, Langsung masukan IDnya", Cmd = "playmusic", UnCmd = "", NeedInput = true },
-            { Name = "Stop Music", Desc = "Menstop lagu yang sedang di putar", Cmd = "stopmusic", UnCmd = "" }
+            { Name = "Play Music", Desc = "Memutar musik dengan ID lagu, Langsung masukan IDnya", Cmd = "playmusic", UnCmd = "stopmusic", NeedInput = true }
         }
     },
     {
