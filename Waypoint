@@ -71,10 +71,29 @@ local function notify(title, text, duration)
     end)
 end
 
-local function loadSavedCheckpoints()
-    savedCheckpointsList = {}
-    visitedKeys = {}
+--==================================================
+-- FILE SYSTEM PERSISTENCE (ROBUST SYNC & MASTER JSON)
+--==================================================
+local function saveCheckpointsToFile()
+    if writefile and readfile then
+        pcall(function()
+            local masterData = {}
+            if isfile(MASTER_FILE_NAME) then
+                local content = readfile(MASTER_FILE_NAME)
+                local decoded = HttpService:JSONDecode(content)
+                if type(decoded) == "table" then
+                    masterData = decoded
+                end
+            end
 
+            -- Pastikan selalu menggabungkan data terbaru dari memori aktif
+            masterData[CURRENT_MAP_KEY] = savedCheckpointsList
+            writefile(MASTER_FILE_NAME, HttpService:JSONEncode(masterData))
+        end)
+    end
+end
+
+local function loadSavedCheckpoints()
     if writefile and readfile and isfile and listfiles then
         pcall(function()
             local masterData = {}
@@ -84,6 +103,7 @@ local function loadSavedCheckpoints()
                 if type(decoded) == "table" then masterData = decoded end
             end
 
+            -- Migrasi otomatis file JSON lama jika ada
             local files = listfiles("")
             for _, filePath in ipairs(files) do
                 if string.match(filePath, "TeleportCP_.+_Saves%.json$") and not string.match(filePath, "Master") then
@@ -102,7 +122,20 @@ local function loadSavedCheckpoints()
             writefile(MASTER_FILE_NAME, HttpService:JSONEncode(masterData))
 
             if masterData[CURRENT_MAP_KEY] then
-                savedCheckpointsList = masterData[CURRENT_MAP_KEY]
+                -- Merge data dengan aman agar tidak ada yang tertimpa kosong
+                for _, diskItem in ipairs(masterData[CURRENT_MAP_KEY]) do
+                    local exists = false
+                    for _, memItem in ipairs(savedCheckpointsList) do
+                        if tostring(memItem.key) == tostring(diskItem.key) and tostring(memItem.desc) == tostring(diskItem.desc) then
+                            exists = true
+                            break
+                        end
+                    end
+                    if not exists then
+                        table.insert(savedCheckpointsList, diskItem)
+                    end
+                end
+
                 for _, item in ipairs(savedCheckpointsList) do
                     if item.desc then 
                         local uniqueVisitKey = tostring(item.key) .. "_" .. tostring(item.desc)
@@ -110,24 +143,6 @@ local function loadSavedCheckpoints()
                     end
                 end
             end
-        end)
-    end
-end
-
-local function saveCheckpointsToFile()
-    if writefile and readfile then
-        pcall(function()
-            local masterData = {}
-            if isfile(MASTER_FILE_NAME) then
-                local content = readfile(MASTER_FILE_NAME)
-                local decoded = HttpService:JSONDecode(content)
-                if type(decoded) == "table" then
-                    masterData = decoded
-                end
-            end
-
-            masterData[CURRENT_MAP_KEY] = savedCheckpointsList
-            writefile(MASTER_FILE_NAME, HttpService:JSONEncode(masterData))
         end)
     end
 end
@@ -318,8 +333,11 @@ local function parseCPIdentity(obj)
 end
 
 local function addOrUpdateSavedCP(key, desc, cf)
+    -- Muat ulang data terbaru dari disk terlebih dahulu sebelum melakukan penambahan,
+    -- untuk mencegah bentrok data jika ada instance ganda (auto-exec & manual hub)
+    loadSavedCheckpoints()
+
     local serializedCF = {cf:GetComponents()}
-    
     local uniqueVisitKey = tostring(key) .. "_" .. tostring(desc)
     visitedKeys[uniqueVisitKey] = true
 
@@ -351,7 +369,6 @@ local function addOrUpdateSavedCP(key, desc, cf)
     notify("Auto-Save CP", "Checkpoint tersimpan: " .. tostring(key) .. " (" .. tostring(desc) .. ")", 2)
 end
 
--- PENGAMAN GLOBAL TABLE UNTUK MENCEGAH AUTO-SAVE DOBEL ANTAR INSTANS
 if not _G.TeleportCP_HookedParts then
     _G.TeleportCP_HookedParts = {}
 end
@@ -769,6 +786,9 @@ updateCpnGuiContent = function()
         if child:IsA("Frame") then child:Destroy() end
     end
 
+    -- Sinkronisasi data terbaru sebelum render tabel CPN
+    loadSavedCheckpoints()
+
     local yOffset = 0
     for index, data in ipairs(savedCheckpointsList) do
         local itemFrame = Instance.new("Frame")
@@ -855,17 +875,15 @@ updateCpnGuiContent = function()
         dBtnCorner.CornerRadius = UDim.new(0, 4)
         dBtnCorner.Parent = delBtn
 
-                delBtn.MouseButton1Click:Connect(function()
+        delBtn.MouseButton1Click:Connect(function()
             local removed = table.remove(savedCheckpointsList, index)
             if removed and removed.key then
                 local removedKey = tostring(removed.key)
                 local removedDesc = tostring(removed.desc)
                 
-                -- 1. Hapus dari visitedKeys berdasarkan key persis
                 local uniqueVisitKey = removedKey .. "_" .. removedDesc
                 visitedKeys[uniqueVisitKey] = nil
                 
-                -- 2. Hapus juga semua variasi key yang mirip agar radar SCP meresetnya
                 for visitedKey, _ in pairs(visitedKeys) do
                     local prefix = string.match(visitedKey, "^([^_]+)_")
                     if prefix and prefix == removedKey then
@@ -873,7 +891,6 @@ updateCpnGuiContent = function()
                     end
                 end
             end
-            
             saveCheckpointsToFile()
             updateCpnGuiContent()
             if updateRadarGuiContent then updateRadarGuiContent() end
@@ -1022,7 +1039,7 @@ local function createCPNWindow()
             end
         end
 
-        if not nearestName then
+       if not nearestName then
             showCustomNamePrompt(function(customText)
                 addOrUpdateSavedCP("", customText, hrp.CFrame)
             end)
