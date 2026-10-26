@@ -320,8 +320,8 @@ return function(speaker)
                 ExecSub.BackgroundColor3 = Color3.fromRGB(0, 150, 90)
             end
 
-            ExecSub.MouseButton1Click:Connect(function()
-                local function runCommand(customArgs)
+                        ExecSub.MouseButton1Click:Connect(function()
+                local function runCommand(customArgs, isUnexec)
                     pcall(function()
                         local targetRaw = (subFeat.RawUrl and subFeat.RawUrl ~= "") and subFeat.RawUrl or rawUrl
 
@@ -330,7 +330,8 @@ return function(speaker)
                         end
                         local pluginMod = loadedModules[targetRaw]
                         if pluginMod and pluginMod.Commands then
-                            local targetCmd = (hasUnCmd and featureStates[subFeat.Name]) and subFeat.UnCmd or subFeat.Cmd
+                            -- Jika ini proses unexecute, gunakan UnCmd. Jika execute biasa, gunakan Cmd.
+                            local targetCmd = isUnexec and subFeat.UnCmd or subFeat.Cmd
 
                             local foundFunc = nil
                             for cmdName, cmdData in pairs(pluginMod.Commands) do
@@ -350,6 +351,7 @@ return function(speaker)
                     end)
 
                     if hasUnCmd then
+                        -- Balik status state global
                         featureStates[subFeat.Name] = not featureStates[subFeat.Name]
                         
                         if featureStates[subFeat.Name] then
@@ -367,19 +369,22 @@ return function(speaker)
 
                 local isCurrentlyActive = featureStates[subFeat.Name]
                 
+                -- LOGIKA UTAMA: 
+                -- Jika tombol sedang merah (isCurrentlyActive = true), berarti user mau MEMATIKAN (Unexecute)
                 if isCurrentlyActive then
-                    runCommand({})
+                    runCommand({}, true) -- Kirim sinyal true untuk memaksa pakai UnCmd
                 else
+                    -- Jika sedang hijau, mau menyalakan (Execute)
                     if subFeat.NeedInput then
                         showInputDialog(subFeat.Name, function(typedText)
                             local argsTable = {}
                             for word in string.gmatch(typedText, "%S+") do
                                 table.insert(argsTable, word)
                             end
-                            runCommand(argsTable)
+                            runCommand(argsTable, false)
                         end)
                     else
-                        runCommand({})
+                        runCommand({}, false)
                     end
                 end
             end)
