@@ -14,6 +14,7 @@ local Workspace = game:GetService("Workspace")
 local CoreGui = game:GetService("CoreGui")
 local UserInputService = game:GetService("UserInputService")
 local StarterGui = game:GetService("StarterGui")
+local MarketplaceService = game:GetService("MarketplaceService")
 
 local LocalPlayer = Players.LocalPlayer
 local PlaceId = game.PlaceId
@@ -22,6 +23,8 @@ local PlaceId = game.PlaceId
 -- CONFIG & STRICT BLACKLIST
 --==================================================
 local HEIGHT_OFFSET = 1.0
+
+-- NAMA FILE MASTER TUNGGAL
 local MASTER_FILE_NAME = "TeleportCP_MasterSaves.json"
 
 local function getMapKey()
@@ -31,12 +34,16 @@ end
 local CURRENT_MAP_KEY = getMapKey()
 
 local IGNORE_KEYWORDS = {
+    -- Filter Teleport & Trigger Palsu
     "teleport", "tp", "tele", "coin", "gold", "reward", "cash", "money", "gem", "stop", "jump", "ready",
     "time", "seluncur", "remove", "clone", "seat", "laying", "down", "fall", "jatuh", "chat", "block",
     "cave", "lake", "goa", "tutorial", "hit", "same", "spin", "kill", "brick", "birhday", "gift", "fun",
     "tanjakan", "maut", "uang", "join", "community", "komunitas", "enter", "handle", "squish", "stand",
+    -- Filter Hewan, NPC, & Monster
     "crocodile", "alligator", "mob", "npc", "monster", "animal", "pet", "zombie", "boss", "bear",
+    -- Filter Part Langit & Batasan Map
     "sky", "skypart", "skybox", "cloud", "atmosphere", "barrier", "invisible", "boundary",
+    -- Filter Dekorasi & Alam
     "tree", "pohon", "branch", "trunk", "foliage", "leaf", "leaves", "mushroom", "axe", "ice",
     "fence", "pagar", "bridge", "jembatan", "ladder", "stair", "tangga", "fog", "hat",
     "wood", "stone", "rock", "batu", "bambu", "raft", "platform", "floor", "step", "pijakan",
@@ -52,11 +59,16 @@ local IGNORE_KEYWORDS = {
 --==================================================
 local streamingCache = {}
 local savedCheckpointsList = {}
+local visitedKeys = {}
 
+-- UI REFS
 local radarGui, radarMainFrame, radarScrollContainer, isRadarMinimized = nil, nil, nil, false
 local cpnGui, cpnMainFrame, cpnScrollContainer, isCpnMinimized = nil, nil, nil, false
 local updateRadarGuiContent, updateCpnGuiContent = nil, nil
 
+--==================================================
+-- NOTIFICATION HELPER
+--==================================================
 local function notify(title, text, duration)
     pcall(function()
         StarterGui:SetCore("SendNotification", {
@@ -68,27 +80,12 @@ local function notify(title, text, duration)
 end
 
 --==================================================
--- FILE SYSTEM PERSISTENCE
+-- FILE SYSTEM PERSISTENCE (MASTER JSON + AUTO-MIGRATE)
 --==================================================
-local function saveCheckpointsToFile()
-    if writefile and readfile then
-        pcall(function()
-            local masterData = {}
-            if isfile(MASTER_FILE_NAME) then
-                local content = readfile(MASTER_FILE_NAME)
-                local decoded = HttpService:JSONDecode(content)
-                if type(decoded) == "table" then
-                    masterData = decoded
-                end
-            end
-
-            masterData[CURRENT_MAP_KEY] = savedCheckpointsList
-            writefile(MASTER_FILE_NAME, HttpService:JSONEncode(masterData))
-        end)
-    end
-end
-
 local function loadSavedCheckpoints()
+    savedCheckpointsList = {}
+    visitedKeys = {}
+
     if writefile and readfile and isfile and listfiles then
         pcall(function()
             local masterData = {}
@@ -98,6 +95,7 @@ local function loadSavedCheckpoints()
                 if type(decoded) == "table" then masterData = decoded end
             end
 
+            -- Migrasi otomatis file JSON lama yang berserakan
             local files = listfiles("")
             for _, filePath in ipairs(files) do
                 if string.match(filePath, "TeleportCP_.+_Saves%.json$") and not string.match(filePath, "Master") then
@@ -116,17 +114,41 @@ local function loadSavedCheckpoints()
             writefile(MASTER_FILE_NAME, HttpService:JSONEncode(masterData))
 
             if masterData[CURRENT_MAP_KEY] then
-                savedCheckpointsList = {}
-                for _, diskItem in ipairs(masterData[CURRENT_MAP_KEY]) do
-                    table.insert(savedCheckpointsList, diskItem)
+                savedCheckpointsList = masterData[CURRENT_MAP_KEY]
+                for _, item in ipairs(savedCheckpointsList) do
+                    if item.desc then 
+                        local uniqueVisitKey = tostring(item.key) .. "_" .. tostring(item.desc)
+                        visitedKeys[uniqueVisitKey] = true 
+                    end
                 end
             end
         end)
     end
 end
 
+local function saveCheckpointsToFile()
+    if writefile and readfile then
+        pcall(function()
+            local masterData = {}
+            if isfile(MASTER_FILE_NAME) then
+                local content = readfile(MASTER_FILE_NAME)
+                local decoded = HttpService:JSONDecode(content)
+                if type(decoded) == "table" then
+                    masterData = decoded
+                end
+            end
+
+            masterData[CURRENT_MAP_KEY] = savedCheckpointsList
+            writefile(MASTER_FILE_NAME, HttpService:JSONEncode(masterData))
+        end)
+    end
+end
+
 loadSavedCheckpoints()
 
+--==================================================
+-- UTILITIES & STRICT FILTER LOGIC
+--==================================================
 local function getHRP()
     local char = LocalPlayer.Character
     return char and char:FindFirstChild("HumanoidRootPart")
@@ -310,10 +332,14 @@ local function parseCPIdentity(obj)
     return "CP", name, validPart
 end
 
+--==================================================
+-- AUTO-SAVE SYSTEM & VISITED TRACKER
+--==================================================
 local function addOrUpdateSavedCP(key, desc, cf)
-    loadSavedCheckpoints()
-
     local serializedCF = {cf:GetComponents()}
+    
+    local uniqueVisitKey = tostring(key) .. "_" .. tostring(desc)
+    visitedKeys[uniqueVisitKey] = true
 
     for _, item in ipairs(savedCheckpointsList) do
         if tostring(item.key) == tostring(key) and tostring(item.desc) == tostring(desc) then
@@ -340,22 +366,25 @@ local function addOrUpdateSavedCP(key, desc, cf)
     saveCheckpointsToFile()
     if updateCpnGuiContent then updateCpnGuiContent() end
     if updateRadarGuiContent then updateRadarGuiContent() end
-    -- PERBAIKAN TYPO: Menggunakan string concatenation (..) bukan (+)
     notify("Auto-Save CP", "Checkpoint tersimpan: " .. tostring(key) .. " (" .. tostring(desc) .. ")", 2)
 end
 
+--==================================================
+-- HOOKING & DOUBLE EXECUTABLE PROTECTION
+--==================================================
 if not _G.TeleportCP_HookedParts then
     _G.TeleportCP_HookedParts = {}
 end
+local hookedParts = _G.TeleportCP_HookedParts
 
 local function processAndHookPart(obj)
     if not obj or not (obj:IsA("BasePart") or obj:IsA("MeshPart") or obj:IsA("UnionOperation") or obj:IsA("Model")) then return end
-    if _G.TeleportCP_HookedParts[obj] then return end
+    if hookedParts[obj] then return end
 
     local cpKey, partDesc, realPart = parseCPIdentity(obj)
     
-    if cpKey and realPart and not _G.TeleportCP_HookedParts[realPart] then
-        _G.TeleportCP_HookedParts[realPart] = true
+    if cpKey and realPart and not hookedParts[realPart] then
+        hookedParts[realPart] = true
         
         local targetCFrame = realPart:IsA("Model") and (realPart.PrimaryPart and realPart.PrimaryPart.CFrame or realPart:GetAttribute("CFrame") or realPart:GetPivot()) or realPart.CFrame
 
@@ -370,8 +399,38 @@ local function processAndHookPart(obj)
         if updateRadarGuiContent then updateRadarGuiContent() end
 
         local function triggerAutoSave()
-            addOrUpdateSavedCP(cpKey, partDesc, targetCFrame)
-            if updateRadarGuiContent then updateRadarGuiContent() end
+            local uniqueVisitKey = tostring(cpKey) .. "_" .. tostring(partDesc)
+            if not visitedKeys[uniqueVisitKey] then
+                addOrUpdateSavedCP(cpKey, partDesc, targetCFrame)
+                
+                if cpKey == "SUMMIT" or string.find(string.lower(tostring(partDesc)), "summit") then
+                    for cacheKey, cacheData in pairs(streamingCache) do
+                        if cacheData.key == "SUMMIT" or string.find(string.lower(tostring(cacheData.desc)), "summit") then
+                            if cacheData.part and cacheData.part.Parent and realPart and realPart.Parent then
+                                local dist = (cacheData.part.Position - realPart.Position).Magnitude
+                                if dist <= 25 then
+                                    local summitVisitKey = tostring(cacheData.key) .. "_" .. tostring(cacheData.desc)
+                                    visitedKeys[summitVisitKey] = true
+                                end
+                            end
+                        end
+                    end
+                    if updateRadarGuiContent then updateRadarGuiContent() end
+                else
+                    for cacheKey, cacheData in pairs(streamingCache) do
+                        if tostring(cacheData.key) == tostring(cpKey) then
+                            if cacheData.part and cacheData.part.Parent and realPart and realPart.Parent then
+                                local dist = (cacheData.part.Position - realPart.Position).Magnitude
+                                if dist <= 25 then
+                                    local sameVisitKey = tostring(cacheData.key) .. "_" .. tostring(cacheData.desc)
+                                    visitedKeys[sameVisitKey] = true
+                                end
+                            end
+                        end
+                    end
+                    if updateRadarGuiContent then updateRadarGuiContent() end
+                end
+            end
         end
 
         local touch = realPart:FindFirstChild("TouchInterest") or realPart:FindFirstChildOfClass("TouchTransmitter")
@@ -398,6 +457,9 @@ local function processAndHookPart(obj)
     end
 end
 
+--==================================================
+-- GUI: SCP FLOATING WINDOW
+--==================================================
 updateRadarGuiContent = function()
     if not radarScrollContainer then return end
 
@@ -405,24 +467,10 @@ updateRadarGuiContent = function()
         if child:IsA("Frame") then child:Destroy() end
     end
 
-    loadSavedCheckpoints()
-
     local list = {}
-    local seenKeys = {}
-    
     for _, data in pairs(streamingCache) do
-        local uniqueKey = tostring(data.key) .. "_" .. tostring(data.desc)
-        
-        local isAlreadySaved = false
-        for _, saved in ipairs(savedCheckpointsList) do
-            if tostring(saved.key) == tostring(data.key) and tostring(saved.desc) == tostring(data.desc) then
-                isAlreadySaved = true
-                break
-            end
-        end
-
-        if not isAlreadySaved and not seenKeys[uniqueKey] then
-            seenKeys[uniqueKey] = true
+        local uniqueVisitKey = tostring(data.key) .. "_" .. tostring(data.desc)
+        if not visitedKeys[uniqueVisitKey] then
             table.insert(list, data)
         end
     end
@@ -487,6 +535,22 @@ updateRadarGuiContent = function()
             if data.part and data.part.Parent then
                 safeTeleport(data.part.CFrame)
                 addOrUpdateSavedCP(data.key, data.desc, data.part.CFrame)
+                
+                if data.key == "SUMMIT" or string.find(string.lower(tostring(data.desc)), "summit") then
+                    for cacheKey, cacheData in pairs(streamingCache) do
+                        if cacheData.key == "SUMMIT" or string.find(string.lower(tostring(cacheData.desc)), "summit") then
+                            if cacheData.part and cacheData.part.Parent and data.part and data.part.Parent then
+                                local dist = (cacheData.part.Position - data.part.Position).Magnitude
+                                if dist <= 25 then
+                                    local uniqueVisitKey = tostring(cacheData.key) .. "_" .. tostring(cacheData.desc)
+                                    visitedKeys[uniqueVisitKey] = true
+                                end
+                            end
+                        end
+                    end
+                    if updateRadarGuiContent then updateRadarGuiContent() end
+                end
+
                 notify("TeleportCP", "Berhasil Teleport & Disave!", 1.5)
             end
         end)
@@ -637,6 +701,9 @@ local function createSCPWindow()
     updateRadarGuiContent()
 end
 
+--==================================================
+-- GUI: CPN MANAGER WINDOW
+--==================================================
 local function showCustomNamePrompt(callback)
     local pGui = Instance.new("ScreenGui")
     pGui.Name = "TeleportCP_Prompt"
@@ -726,8 +793,6 @@ updateCpnGuiContent = function()
         if child:IsA("Frame") then child:Destroy() end
     end
 
-    loadSavedCheckpoints()
-
     local yOffset = 0
     for index, data in ipairs(savedCheckpointsList) do
         local itemFrame = Instance.new("Frame")
@@ -816,6 +881,15 @@ updateCpnGuiContent = function()
 
         delBtn.MouseButton1Click:Connect(function()
             local removed = table.remove(savedCheckpointsList, index)
+            if removed and removed.key then
+                local removedKey = tostring(removed.key)
+                for visitedKey, _ in pairs(visitedKeys) do
+                    local prefix = string.match(visitedKey, "^([^_]+)_")
+                    if prefix and prefix == removedKey then
+                        visitedKeys[visitedKey] = nil
+                    end
+                end
+            end
             saveCheckpointsToFile()
             updateCpnGuiContent()
             if updateRadarGuiContent then updateRadarGuiContent() end
@@ -913,7 +987,7 @@ local function createCPNWindow()
 
     local closeCorner = Instance.new("UICorner")
     closeCorner.CornerRadius = UDim.new(0, 4)
-    closeCorner.Parent = cpnMainFrame -- Diperbaiki agar rapi
+    closeCorner.Parent = closeBtn
 
     cpnScrollContainer = Instance.new("ScrollingFrame")
     cpnScrollContainer.Size = UDim2.new(1, 0, 1, -32)
@@ -986,6 +1060,9 @@ plusBtn.MouseButton1Click:Connect(function()
     updateCpnGuiContent()
 end
 
+--==================================================
+-- COMMAND REGISTRATION
+--==================================================
 gotonext.Commands["scp"] = {
     ["ListName"] = "scp",
     ["Description"] = "Buka Floating Radar SCP Real-time",
@@ -1004,6 +1081,9 @@ gotonext.Commands["cpn"] = {
     end
 }
 
+--==================================================
+-- OPTIMIZED EVENT-DRIVEN & ANTI-STUTTER SCANNER
+--==================================================
 Workspace.DescendantAdded:Connect(function(obj)
     task.delay(0.2, function()
         pcall(function()
