@@ -855,11 +855,17 @@ updateCpnGuiContent = function()
         dBtnCorner.CornerRadius = UDim.new(0, 4)
         dBtnCorner.Parent = delBtn
 
-        delBtn.MouseButton1Click:Connect(function()
+                delBtn.MouseButton1Click:Connect(function()
             local removed = table.remove(savedCheckpointsList, index)
             if removed and removed.key then
                 local removedKey = tostring(removed.key)
+                local removedDesc = tostring(removed.desc)
                 
+                -- 1. Hapus dari visitedKeys berdasarkan key persis
+                local uniqueVisitKey = removedKey .. "_" .. removedDesc
+                visitedKeys[uniqueVisitKey] = nil
+                
+                -- 2. Hapus juga semua variasi key yang mirip agar radar SCP meresetnya
                 for visitedKey, _ in pairs(visitedKeys) do
                     local prefix = string.match(visitedKey, "^([^_]+)_")
                     if prefix and prefix == removedKey then
@@ -867,10 +873,11 @@ updateCpnGuiContent = function()
                     end
                 end
             end
+            
             saveCheckpointsToFile()
             updateCpnGuiContent()
             if updateRadarGuiContent then updateRadarGuiContent() end
-            notify("CPN Manager", "Saved CP dihapus & semua duplikatnya dimunculkan kembali di SCP!", 1.5)
+            notify("CPN Manager", "Saved CP dihapus & dimunculkan kembali di SCP!", 1.5)
         end)
 
         yOffset = yOffset + 32
