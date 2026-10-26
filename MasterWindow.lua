@@ -3,8 +3,6 @@ return function(speaker)
     local Players = game:GetService("Players")
     local LocalPlayer = Players.LocalPlayer
 
-    -- PERBAIKAN: Menggunakan variabel global (_G) agar status aktif (merah/unexecute) 
-    -- tidak hilang atau ter-reset jika window tidak sengaja tertutup (klik tombol X).
     if not _G.MasterPluginHub_States then
         _G.MasterPluginHub_States = {}
     end
@@ -268,7 +266,7 @@ return function(speaker)
             ScrollingFrame.Visible = true
         end)
 
-            for _, subFeat in ipairs(subFeatures) do
+        for _, subFeat in ipairs(subFeatures) do
             if featureStates[subFeat.Name] == nil then featureStates[subFeat.Name] = false end
 
             local Item = Instance.new("Frame")
@@ -385,7 +383,7 @@ return function(speaker)
                     end
                 end
             end)
-        end -- <--- INI KURUNG TUTUP FOR LOOP YANG SEBELUMNYA KETINGGALAN/SALAH POSISI!
+        end
         
         SubScroll.CanvasSize = UDim2.new(0, 0, 0, #subFeatures * 57)
     end
@@ -438,7 +436,7 @@ return function(speaker)
             NameLabel.TextXAlignment = Enum.TextXAlignment.Left
             NameLabel.Parent = ItemFrame
 
-            local DescLabel = Instance.new("TextLabel")
+.           local DescLabel = Instance.new("TextLabel")
             DescLabel.Size = UDim2.new(1, -90, 0, 26)
             DescLabel.Position = UDim2.new(0, 8, 0, 22)
             DescLabel.BackgroundTransparency = 1
