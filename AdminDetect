@@ -1,26 +1,3 @@
-local Plugin = {
-    ["PluginName"] = "Admin Detector (Fixed UI Notification Edition)",
-    ["PluginDescription"] = "Detektor Owner, Admin Resmi, & Staff dengan UI Notifikasi yang dijamin muncul",
-    ["Commands"] = {
-        ["cad"] = {
-            ["ListName"] = "cad",
-            ["Description"] = "Cek manual daftar admin/owner di server",
-            ["Aliases"] = {"checkadmin", "scanadmin", "ca"},
-            ["Function"] = function(args, speaker)
-                scanServerAdmins(true, true)
-            end
-        }
-    }
-}
-
--- STORAGE GLOBAL & RESET MEMORI
-_G.AdminDetector_LockedAdmins = {}
-_G.AdminDetector_LastNotifyTime = 0
-_G.AdminDetector_HadAdminsBefore = false
-_G.AdminDetector_NoAdminNotified = false
-_G.AdminDetector_LastHash = ""
-_G.AdminDetector_StartupTime = os.time()
-
 local Players = game:GetService("Players")
 local CoreGui = game:GetService("CoreGui")
 local SoundService = game:GetService("SoundService")
@@ -28,8 +5,26 @@ local TextChatService = game:GetService("TextChatService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local LocalPlayer = Players.LocalPlayer
 
+-- STORAGE GLOBAL & RESET MEMORI
+_G.AdminDetector_LockedAdmins = _G.AdminDetector_LockedAdmins or {}
+_G.AdminDetector_LastNotifyTime = _G.AdminDetector_LastNotifyTime or 0
+_G.AdminDetector_HadAdminsBefore = _G.AdminDetector_HadAdminsBefore or false
+_G.AdminDetector_NoAdminNotified = _G.AdminDetector_NoAdminNotified or false
+_G.AdminDetector_LastHash = _G.AdminDetector_LastHash or ""
+_G.AdminDetector_StartupTime = os.time()
+
+local function notify(text)
+    pcall(function()
+        game:GetService("StarterGui"):SetCore("SendNotification", {
+            Title = "Admin Detector",
+            Text = text,
+            Duration = 3
+        })
+    end)
+end
+
 -- ==========================================
--- 📱 CUSTOM SCROLLABLE UI NOTIFICATION (FIXED PARENT)
+-- 📱 CUSTOM SCROLLABLE UI NOTIFICATION
 -- ==========================================
 local function showScrollableNotify(titleText, adminList)
     pcall(function()
@@ -155,17 +150,14 @@ end
 -- ==========================================
 local function validatePrefixText(prefixStr)
     local lowerPrefix = string.lower(prefixStr or "")
-    
     if string.find(lowerPrefix, "kekasih") or string.find(lowerPrefix, "abang") or string.find(lowerPrefix, "king") or string.find(lowerPrefix, "princess") or string.find(lowerPrefix, "pendaki") or string.find(lowerPrefix, "looking for more games") or string.find(lowerPrefix, "kohl's admin") or string.find(lowerPrefix, "vip") or string.find(lowerPrefix, "biduan") or string.find(lowerPrefix, "member") or string.find(lowerPrefix, "blonde") then
         return false, ""
     end
 
     local isCrownOwner = string.find(prefixStr, "👑") and (string.find(lowerPrefix, "pemilik") or string.find(lowerPrefix, "owner") or string.find(lowerPrefix, "founder") or string.find(lowerPrefix, "admin") or string.find(lowerPrefix, "dev"))
-
     if string.find(prefixStr, "🛡️") or string.find(prefixStr, "🔨") or isCrownOwner or string.match(lowerPrefix, "%f[%a]admin%f[%A]") or string.match(lowerPrefix, "%f[%a]dev%f[%A]") or string.match(lowerPrefix, "%f[%a]mod%f[%A]") or string.match(lowerPrefix, "%f[%a]staff%f[%A]") or lowerPrefix == "pemilik" then
         return true, prefixStr ~= "" and prefixStr or "Chat Admin Tag"
     end
-    
     return false, ""
 end
 
@@ -194,11 +186,7 @@ pcall(function()
             end
 
             if isValid and not _G.AdminDetector_LockedAdmins[player.UserId] then
-                _G.AdminDetector_LockedAdmins[player.UserId] = {
-                    Name = player.DisplayName,
-                    Username = player.Name,
-                    Role = roleName
-                }
+                _G.AdminDetector_LockedAdmins[player.UserId] = { Name = player.DisplayName, Username = player.Name, Role = roleName }
                 scanServerAdmins(false, true)
             end
         end)
@@ -213,11 +201,7 @@ pcall(function()
                 local prefix = message.PrefixText or ""
                 local isValid, roleName = validatePrefixText(prefix)
                 if isValid and not _G.AdminDetector_LockedAdmins[player.UserId] then
-                    _G.AdminDetector_LockedAdmins[player.UserId] = {
-                        Name = player.DisplayName,
-                        Username = player.Name,
-                        Role = roleName
-                    }
+                    _G.AdminDetector_LockedAdmins[player.UserId] = { Name = player.DisplayName, Username = player.Name, Role = roleName }
                     scanServerAdmins(false, true)
                 end
             end
@@ -225,9 +209,6 @@ pcall(function()
     end
 end)
 
--- ==========================================
--- 🕵️ STEALTH ADMIN: TOOLS & ANNOUNCEMENTS ONLY
--- ==========================================
 local function checkPlayerTools(player)
     if not player.Character then return nil end
     local containers = {player.Backpack, player.Character}
@@ -246,7 +227,6 @@ local function checkPlayerTools(player)
     return nil
 end
 
--- Deteksi Announcement via PlayerGui (Aman)
 pcall(function()
     if LocalPlayer and LocalPlayer:FindFirstChild("PlayerGui") then
         LocalPlayer.PlayerGui.DescendantAdded:Connect(function(obj)
@@ -258,11 +238,7 @@ pcall(function()
                         if player ~= LocalPlayer then
                             if string.find(txt, player.Name) or string.find(txt, player.DisplayName) then
                                 if not _G.AdminDetector_LockedAdmins[player.UserId] then
-                                    _G.AdminDetector_LockedAdmins[player.UserId] = {
-                                        Name = player.DisplayName,
-                                        Username = player.Name,
-                                        Role = "Stealth Admin 🕵️ (Announcement)"
-                                    }
+                                    _G.AdminDetector_LockedAdmins[player.UserId] = { Name = player.DisplayName, Username = player.Name, Role = "Stealth Admin 🕵️ (Announcement)" }
                                     scanServerAdmins(false, true)
                                 end
                             end
@@ -275,10 +251,9 @@ pcall(function()
 end)
 
 -- ==========================================
--- 🔍 MAIN SCANNER (OPTIMIZED & VERIFIED)
+-- 🔍 MAIN SCANNER (LOGIKA LENGKAP ASLI)
 -- ==========================================
 local isScanning = false
-
 function scanServerAdmins(isManual, isStateChange)
     if isScanning then return end
     isScanning = true
@@ -292,20 +267,12 @@ function scanServerAdmins(isManual, isStateChange)
         for userId, _ in pairs(_G.AdminDetector_LockedAdmins) do
             local isStillInServer = false
             for _, p in ipairs(Players:GetPlayers()) do
-                if p.UserId == userId then
-                    isStillInServer = true
-                    break
-                end
+                if p.UserId == userId then isStillInServer = true break end
             end
-
-            if not isStillInServer then
-                _G.AdminDetector_LockedAdmins[userId] = nil
-            end
+            if not isStillInServer then _G.AdminDetector_LockedAdmins[userId] = nil end
         end
 
         local activeAdminsList = {}
-        local hasNewAdminJoined = false
-
         for _, player in ipairs(Players:GetPlayers()) do
             if player ~= LocalPlayer then
                 local isTarget = false
@@ -315,7 +282,6 @@ function scanServerAdmins(isManual, isStateChange)
                     isTarget = true
                     detectedRole = _G.AdminDetector_LockedAdmins[player.UserId].Role
                 else
-                    -- TIER 1: CREATOR USER ID CHECK
                     if creatorId > 1000 then
                         local isUserType = (creatorType == Enum.CreatorType.User) or (tostring(creatorType) == "Enum.CreatorType.User") or (creatorType == 0)
                         if isUserType and player.UserId == creatorId then
@@ -324,7 +290,6 @@ function scanServerAdmins(isManual, isStateChange)
                         end
                     end
 
-                    -- TIER 1: GROUP RANK & ROLE CHECK
                     local isGroupType = (creatorType == Enum.CreatorType.Group) or (tostring(creatorType) == "Enum.CreatorType.Group") or (creatorType == 1)
                     local playerGroupRank = 0
                     local playerGroupRole = ""
@@ -332,17 +297,14 @@ function scanServerAdmins(isManual, isStateChange)
                     if not isTarget and creatorId > 0 and isGroupType then
                         local successRank, rank = pcall(function() return player:GetRankInGroup(creatorId) end)
                         local successRole, roleName = pcall(function() return player:GetRoleInGroup(creatorId) end)
-
                         if successRank and type(rank) == "number" then playerGroupRank = rank end
                         if successRole and type(roleName) == "string" then playerGroupRole = roleName end
 
                         if playerGroupRole ~= "" then
                             local lowerRole = string.lower(playerGroupRole)
                             local isErrorMsg = string.find(lowerRole, "error") or string.find(lowerRole, "datamodel") or string.find(lowerRole, "not in")
-                            
                             if not isErrorMsg then
                                 local isDevRole = string.find(lowerRole, "dev") or string.find(lowerRole, "creator") or string.find(lowerRole, "owner") or string.find(lowerRole, "admin") or string.find(lowerRole, "staff") or string.find(lowerRole, "mod") or string.find(lowerRole, "collaborator") or string.find(lowerRole, "builder") or string.find(lowerRole, "scripter") or string.find(lowerRole, "helper") or string.find(lowerRole, "manager")
-
                                 if (playerGroupRank >= 2) or isDevRole then
                                     isTarget = true
                                     if playerGroupRank == 255 then
@@ -355,13 +317,11 @@ function scanServerAdmins(isManual, isStateChange)
                         end
                     end
 
-                    -- TIER 2: OVERHEAD SPECIAL TITLE SCANNER
                     if not isTarget and player.Character then
                         for _, obj in ipairs(player.Character:GetDescendants()) do
                             if obj:IsA("TextLabel") or obj:IsA("TextBox") then
                                 local rawText = obj.Text or ""
                                 local lowerText = string.lower(rawText)
-
                                 local isJunk = string.find(lowerText, "kekasih") or string.find(lowerText, "abang") or string.find(lowerText, "king") or string.find(lowerText, "princess") or string.find(lowerText, "pendaki") or string.find(lowerText, "dhontol") or string.find(lowerText, "patung") or string.find(lowerText, "statue") or string.find(lowerText, "hdadmin") or string.find(lowerText, "founderadmin") or string.find(lowerText, "looking for more games") or string.find(lowerText, "kohl's admin") or string.find(lowerText, "vip") or string.find(lowerText, "biduan") or string.find(lowerText, "member") or string.find(lowerText, "blonde")
                                 
                                 if not isJunk and rawText ~= "" then
@@ -374,39 +334,18 @@ function scanServerAdmins(isManual, isStateChange)
                                         local isCustomPemilikName = string.find(lowerText, "pemilik ") or string.find(lowerText, "pemilik_") or string.find(lowerText, "owner ") or string.find(lowerText, "owner_")
 
                                         local isVerifiedTag = false
-                                        local containsStaffKeyword = isPurePemilik 
-                                            or string.find(lowerText, "founder") 
-                                            or string.find(lowerText, "head admin") 
-                                            or string.find(lowerText, "headadmin") 
-                                            or string.find(lowerText, "super admin") 
-                                            or string.find(lowerText, "admin") 
-                                            or string.find(lowerText, "dev") 
-                                            or string.find(lowerText, "mod") 
-                                            or string.find(playerGroupRole ~= "" and string.lower(playerGroupRole) or "", "staff")
+                                        local containsStaffKeyword = isPurePemilik or string.find(lowerText, "founder") or string.find(lowerText, "head admin") or string.find(lowerText, "headadmin") or string.find(lowerText, "super admin") or string.find(lowerText, "admin") or string.find(lowerText, "dev") or string.find(lowerText, "mod") or string.find(playerGroupRole ~= "" and string.lower(playerGroupRole) or "", "staff")
 
                                         if containsStaffKeyword and not isCustomPemilikName then
                                             if creatorId > 0 and isGroupType then
-                                                if playerGroupRank >= 2 or player.UserId == creatorId then
-                                                    isVerifiedTag = true
-                                                end
+                                                if playerGroupRank >= 2 or player.UserId == creatorId then isVerifiedTag = true end
                                             else
                                                 local hasAdminTool = checkPlayerTools(player)
-                                                if hasAdminTool or player.UserId == creatorId then
-                                                    isVerifiedTag = true
-                                                end
+                                                if hasAdminTool or player.UserId == creatorId then isVerifiedTag = true end
                                             end
                                         end
 
-                                        local hasSpecialTag = string.find(rawText, "🛡️") 
-                                            or string.find(rawText, "🔨") 
-                                            or isVerifiedTag
-                                            or string.find(lowerText, "pathfinder") 
-                                            or string.find(lowerText, "prioritas") 
-                                            or string.find(lowerText, "apprentice") 
-                                            or string.find(lowerText, "builder") 
-                                            or string.find(lowerText, "scripter") 
-                                            or string.match(lowerText, "%[%s*admin%s*%]") 
-                                            or string.match(lowerText, "%[%s*dev%s*%]")
+                                        local hasSpecialTag = string.find(rawText, "🛡️") or string.find(rawText, "🔨") or isVerifiedTag or string.find(lowerText, "pathfinder") or string.find(lowerText, "prioritas") or string.find(lowerText, "apprentice") or string.find(lowerText, "builder") or string.find(lowerText, "scripter") or string.match(lowerText, "%[%s*admin%s*%]") or string.match(lowerText, "%[%s*dev%s*%]")
                                         
                                         if hasSpecialTag then
                                             isTarget = true
@@ -419,7 +358,6 @@ function scanServerAdmins(isManual, isStateChange)
                         end
                     end
 
-                    -- TIER 3: CUSTOM UI / PLAYERLIST MAP SCANNER
                     if not isTarget and LocalPlayer.PlayerGui then
                         pcall(function()
                             for _, gui in ipairs(LocalPlayer.PlayerGui:GetDescendants()) do
@@ -432,18 +370,7 @@ function scanServerAdmins(isManual, isStateChange)
                                                 if subObj:IsA("TextLabel") and subObj ~= gui then
                                                     local subText = subObj.Text or ""
                                                     local subTxt = string.lower(subText)
-                                                    
-                                                    local isAdOrJunk = string.find(subTxt, "looking for more games") 
-                                                        or string.find(subTxt, "kohl's admin") 
-                                                        or string.find(subTxt, "summit") 
-                                                        or string.find(subTxt, "checkpoint")
-                                                        or string.find(subTxt, "open up studio")
-                                                        or string.find(subTxt, "update your loader")
-                                                        or string.find(subTxt, "toolbox")
-                                                        or string.find(subTxt, "vip")
-                                                        or string.find(subTxt, "biduan")
-                                                        or string.find(subTxt, "member")
-                                                        or string.find(subTxt, "blonde")
+                                                    local isAdOrJunk = string.find(subTxt, "looking for more games") or string.find(subTxt, "kohl's admin") or string.find(subTxt, "summit") or string.find(subTxt, "checkpoint") or string.find(subTxt, "open up studio") or string.find(subTxt, "update your loader") or string.find(subTxt, "toolbox") or string.find(subTxt, "vip") or string.find(subTxt, "biduan") or string.find(subTxt, "member") or string.find(subTxt, "blonde")
                                                     
                                                     if not isAdOrJunk and (string.find(subText, "🛡️") or string.find(subText, "🔨") or subTxt == "pemilik" or string.find(subTxt, "admin") or string.find(subTxt, "dev") or string.find(subTxt, "staff") or string.find(subTxt, "%f[%a]mod%f[%A]") or string.find(subText, "builder")) then
                                                         isTarget = true
@@ -460,7 +387,6 @@ function scanServerAdmins(isManual, isStateChange)
                         end)
                     end
 
-                    -- TIER 4 (CADANGAN): STEALTH ADMIN BACKPACK TOOL CHECK
                     if not isTarget then
                         local stealthRole = checkPlayerTools(player)
                         if stealthRole then
@@ -470,31 +396,17 @@ function scanServerAdmins(isManual, isStateChange)
                     end
 
                     if isTarget then
-                        _G.AdminDetector_LockedAdmins[player.UserId] = {
-                            Name = player.DisplayName,
-                            Username = player.Name,
-                            Role = detectedRole
-                        }
-                        hasNewAdminJoined = true
+                        _G.AdminDetector_LockedAdmins[player.UserId] = { Name = player.DisplayName, Username = player.Name, Role = detectedRole }
                     end
                 end
 
                 if isTarget then
-                    table.insert(activeAdminsList, {
-                        Name = player.DisplayName,
-                        Username = player.Name,
-                        Role = detectedRole,
-                        UserId = player.UserId
-                    })
+                    table.insert(activeAdminsList, { Name = player.DisplayName, Username = player.Name, Role = detectedRole, UserId = player.UserId })
                 end
             end
-            
             task.wait()
         end
 
-        -- ==========================================
-        -- 🛑 HASH CHECK & NOTIFICATIONS
-        -- ==========================================
         table.sort(activeAdminsList, function(a, b) return a.UserId < b.UserId end)
         local currentHash = ""
         for _, item in ipairs(activeAdminsList) do
@@ -507,68 +419,48 @@ function scanServerAdmins(isManual, isStateChange)
         if #activeAdminsList > 0 then
             _G.AdminDetector_HadAdminsBefore = true
             _G.AdminDetector_NoAdminNotified = false
-
             if listChanged or isManual or (currentTime - _G.AdminDetector_LastNotifyTime) >= 300 then
                 _G.AdminDetector_LastNotifyTime = currentTime
                 playBeep()
-
-                local headerTitle = "🚨 ADMIN/DEV DETECTED (" .. #activeAdminsList .. ")"
-                showScrollableNotify(headerTitle, activeAdminsList)
+                showScrollableNotify("🚨 ADMIN/DEV DETECTED (" .. #activeAdminsList .. ")", activeAdminsList)
             end
         else
             local isStillLoading = (currentTime - _G.AdminDetector_StartupTime) < 8
-            
-            if isStillLoading then
-                isScanning = false
-                return
-            end
+            if isStillLoading then isScanning = false return end
 
             if _G.AdminDetector_HadAdminsBefore then
                 _G.AdminDetector_HadAdminsBefore = false
                 _G.AdminDetector_NoAdminNotified = true
-                
                 _G.AdminDetector_LastHash = ""
                 pcall(function()
                     local oldUI = CoreGui:FindFirstChild("AdminDetectorUI") or (LocalPlayer and LocalPlayer:FindFirstChild("PlayerGui") and LocalPlayer.PlayerGui:FindFirstChild("AdminDetectorUI"))
                     if oldUI then oldUI:Destroy() end
                 end)
-
                 playBeep()
-                if notify then notify("✅ KONDISI AMAN | Semua Admin/Owner telah keluar server!") end
+                notify("✅ KONDISI AMAN | Semua Admin/Owner telah keluar server!")
             elseif not _G.AdminDetector_NoAdminNotified then
                 _G.AdminDetector_NoAdminNotified = true
-                if notify then notify("🛡️ AMAN | Tidak ada Admin/Owner terdeteksi di server ini.") end
-            elseif isManual then
-                if notify then notify("🛡️ AMAN | Tidak ada Admin/Owner terdeteksi.") end
+                notify("🛡️ AMAN | Tidak ada Admin/Owner terdeteksi di server ini.")
             end
         end
-
         isScanning = false
     end)
 end
 
--- ==========================================
--- ⚡ EVENT TRIGGERS
--- ==========================================
+-- Event Triggers
 local function setupPlayerEvents(player)
     player.CharacterAdded:Connect(function(char)
-        task.delay(0.5, function()
-            scanServerAdmins(false, false)
-        end)
+        task.delay(0.5, function() scanServerAdmins(false, false) end)
     end)
     if player.Backpack then
-        player.Backpack.ChildAdded:Connect(function()
-            scanServerAdmins(false, false)
-        end)
+        player.Backpack.ChildAdded:Connect(function() scanServerAdmins(false, false) end)
     end
 end
 
 Players.PlayerRemoving:Connect(function(player)
     if _G.AdminDetector_LockedAdmins[player.UserId] then
         _G.AdminDetector_LockedAdmins[player.UserId] = nil
-        task.delay(0.3, function()
-            scanServerAdmins(false, true)
-        end)
+        task.delay(0.3, function() scanServerAdmins(false, true) end)
     end
 end)
 
@@ -578,12 +470,10 @@ Players.PlayerAdded:Connect(function(player)
 end)
 
 for _, p in ipairs(Players:GetPlayers()) do
-    if p ~= LocalPlayer then
-        setupPlayerEvents(p)
-    end
+    if p ~= LocalPlayer then setupPlayerEvents(p) end
 end
 
--- Periodic Loop (30 Detik)
+-- Periodic Loop
 task.spawn(function()
     while true do
         scanServerAdmins(false, false)
@@ -591,22 +481,23 @@ task.spawn(function()
     end
 end)
 
--- Pindaian Bertahap Startup
+-- Pindaian Startup Wajib Auto-Run
 task.spawn(function()
     task.wait(2)
     scanServerAdmins(false, true)
-    task.wait(3)
-    scanServerAdmins(false, true)
-    task.wait(4)
+    task.wait(2)
     scanServerAdmins(false, true)
 end)
 
--- Tambahan pemicu agar fungsi auto-scan langsung jalan mandiri saat di-auto-exec
-task.spawn(function()
-    task.wait(3)
-    pcall(function()
-        scanServerAdmins(false, true)
-    end)
-end)
-
-return Plugin
+return {
+    ["PluginName"] = "Admin Detector",
+    ["Commands"] = {
+        ["cad"] = {
+            ["ListName"] = "cad",
+            ["Description"] = "Cek manual daftar admin",
+            ["Function"] = function(args, speaker)
+                scanServerAdmins(true, true)
+            end
+        }
+    }
+}
