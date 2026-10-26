@@ -4,8 +4,8 @@ return {
         Desc = "Proximity, Door, Click, Touch & ITP",
         RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Interactable",
         SubFeatures = {
-            { Name = "PPESP", Desc = "Memunculkan Box dan Nama ESP Objek yang di Pencet/Tekan", Cmd = "proximityesp", UnCmd = "unproximityesp" },
             { Name = "ITP", Desc = "Memunculkan window berisikan list objek yang bisa diteleport", Cmd = "itp", UnCmd = "itp" },
+            { Name = "PPESP", Desc = "Memunculkan Box dan Nama ESP Objek yang di Pencet/Tekan", Cmd = "proximityesp", UnCmd = "unproximityesp" },
             { Name = "CDESP", Desc = "Memunculkan Box dan Nama ESP Objek yang di Klik", Cmd = "clickdetectoresp", UnCmd = "unclickdetectoresp" },
             { Name = "DESP", Desc = "Memuncukkan ESP sebuah Pintu", Cmd = "dooresp", UnCmd = "undooresp" },
             { Name = "ITESP", Desc = "Memunculkan Box dan Nama ESP yang di sentuh", Cmd = "itemtouchesp", UnCmd = "untouchinterestesp" },
@@ -36,6 +36,14 @@ return {
         SubFeatures = {
             { Name = "SCP", Desc = "Menampilkan Checkpoint yang belum di sentuh", Cmd = "scp", UnCmd = "scp_close" },
             { Name = "CPN", Desc = "Menampilkan Checkpoint atau Waypoint yang sudah di simpan", Cmd = "cpn", UnCmd = "cpn_close" }
+        }
+    },
+    {
+        Name = "Player Teleport ( Kaming Sun )",
+        Desc = "Menteleport ke Player lain dengan 1 klik",
+        RawUrl = "",
+        SubFeatures = {
+            { Name = "Teleport to Player", Desc = "Menampilkan List Player yang ingin di Teleport", Cmd = "tp", UnCmd = "" }
         }
     },
     {
