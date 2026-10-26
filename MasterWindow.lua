@@ -268,7 +268,7 @@ return function(speaker)
             ScrollingFrame.Visible = true
         end)
 
-        for _, subFeat in ipairs(subFeatures) do
+            for _, subFeat in ipairs(subFeatures) do
             if featureStates[subFeat.Name] == nil then featureStates[subFeat.Name] = false end
 
             local Item = Instance.new("Frame")
@@ -322,7 +322,7 @@ return function(speaker)
                 ExecSub.BackgroundColor3 = Color3.fromRGB(0, 150, 90)
             end
 
-                        ExecSub.MouseButton1Click:Connect(function()
+            ExecSub.MouseButton1Click:Connect(function()
                 local function runCommand(customArgs)
                     pcall(function()
                         local targetRaw = (subFeat.RawUrl and subFeat.RawUrl ~= "") and subFeat.RawUrl or rawUrl
@@ -332,8 +332,6 @@ return function(speaker)
                         end
                         local pluginMod = loadedModules[targetRaw]
                         if pluginMod and pluginMod.Commands then
-                            -- PERBAIKAN: Tentukan command yang akan dipanggil berdasarkan status saat ini
-                            -- Jika sedang aktif lalu dipencet unexecute, gunakan UnCmd. Jika baru mau execute, gunakan Cmd.
                             local targetCmd = (hasUnCmd and featureStates[subFeat.Name]) and subFeat.UnCmd or subFeat.Cmd
 
                             local foundFunc = nil
@@ -354,7 +352,6 @@ return function(speaker)
                     end)
 
                     if hasUnCmd then
-                        -- Ubah status state global
                         featureStates[subFeat.Name] = not featureStates[subFeat.Name]
                         
                         if featureStates[subFeat.Name] then
@@ -372,13 +369,9 @@ return function(speaker)
 
                 local isCurrentlyActive = featureStates[subFeat.Name]
                 
-                -- PERBAIKAN LOGIKA: 
-                -- Jika fitur SEDANG AKTIF (merah/unexecute) dan user memencetnya untuk mematikan (UNEXECUTE),
-                -- kita langsung jalankan runCommand({}) tanpa menuntut input ulang dari user!
                 if isCurrentlyActive then
                     runCommand({})
                 else
-                    -- Jika sedang mati (hijau/execute) dan butuh input (seperti Voice Spy), baruunculkan dialog input
                     if subFeat.NeedInput then
                         showInputDialog(subFeat.Name, function(typedText)
                             local argsTable = {}
@@ -392,6 +385,8 @@ return function(speaker)
                     end
                 end
             end)
+        end -- <--- INI KURUNG TUTUP FOR LOOP YANG SEBELUMNYA KETINGGALAN/SALAH POSISI!
+        
         SubScroll.CanvasSize = UDim2.new(0, 0, 0, #subFeatures * 57)
     end
 
