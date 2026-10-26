@@ -1,5 +1,12 @@
--- Lindungi agar tidak ke-load dobel di memori
-if _G.TeleportCP_Loaded then return end
+-- Cek apakah core fungsi sudah pernah dimuat sebelumnya
+if _G.TeleportCP_Loaded then
+    -- Kalau sudah pernah diload (misal lewat autoexec), 
+    -- saat dipanggil lagi lewat hub, langsung jalankan ulang fungsi window-nya saja!
+    if type(_G.TeleportCP_OpenSCP) == "function" then
+        _G.TeleportCP_OpenSCP()
+    end
+    return
+end
 _G.TeleportCP_Loaded = true
 
 local gotonext = {
@@ -723,6 +730,15 @@ local function createSCPWindow()
     closeBtn.MouseButton1Click:Connect(function()
         radarGui.Enabled = false
     end)
+
+    -- Daftarkan ke _G agar bisa dipanggil langsung saat ter-load dua kali
+_G.TeleportCP_OpenSCP = function()
+    createSCPWindow()
+end
+
+_G.TeleportCP_OpenCPN = function()
+    createCPNWindow()
+end
 
     updateRadarGuiContent()
 end
