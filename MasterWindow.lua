@@ -290,11 +290,24 @@ return function(speaker)
                 ExecSub.BackgroundColor3 = Color3.fromRGB(0, 150, 90)
             end
 
-                        ExecSub.MouseButton1Click:Connect(function()
+                                    ExecSub.MouseButton1Click:Connect(function()
                 local function runCommand(customArgs)
                     pcall(function()
-                        -- Ambil RawUrl langsung dari sub-fiturnya masing-masing!
-                        local targetRaw = subFeat.RawUrl or rawUrl
+                        -- PERBAIKAN DI SINI: Cari RawUrl ke atas kalau baris ini kosong
+                        local targetRaw = subFeat.RawUrl
+                        if not targetRaw or targetRaw == "" then
+                            -- Cari ke atas dari sub-fitur sebelumnya di dalam menu yang sama
+                            for i = _, sf in ipairs(subFeatures) do
+                                if sf == subFeat then break end
+                                if sf.RawUrl and sf.RawUrl ~= "" then
+                                    targetRaw = sf.RawUrl
+                                end
+                            end
+                        end
+                        -- Kalau tetap gak ketemu, fallback ke raw utama menu induk
+                        if not targetRaw or targetRaw == "" then
+                            targetRaw = rawUrl
+                        end
                         
                         if not loadedModules[targetRaw] then
                             loadedModules[targetRaw] = loadstring(game:HttpGet(targetRaw))()
