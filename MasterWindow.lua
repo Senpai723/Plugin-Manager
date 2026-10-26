@@ -158,7 +158,7 @@ return function(speaker)
         TextBox.Position = UDim2.new(0, 10, 0, 35)
         TextBox.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
         TextBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-        TextBox.PlaceholderText = "Ketik ID / Argumen disini..."
+        TextBox.PlaceholderText = "Baca Deskripsi Command sebelum mengetik..."
         TextBox.Text = ""
         TextBox.Font = Enum.Font.Gotham
         TextBox.TextSize = 11
