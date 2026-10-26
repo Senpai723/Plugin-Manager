@@ -290,7 +290,7 @@ return function(speaker)
                 ExecSub.BackgroundColor3 = Color3.fromRGB(0, 150, 90)
             end
 
-                                    ExecSub.MouseButton1Click:Connect(function()
+            ExecSub.MouseButton1Click:Connect(function()
                 local function runCommand(customArgs)
                     pcall(function()
                         -- PERBAIKAN DI SINI: Cari RawUrl ke atas kalau baris ini kosong
