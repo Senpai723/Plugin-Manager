@@ -30,22 +30,15 @@ return {
         }
     },
     {
-        Name = "Radar CP & Waypoint",
-        Desc = "Checkpoint & Waypoint Manager",
-        RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Waypoint",
-        SubFeatures = {
-            { Name = "SCP", Desc = "Menampilkan Checkpoint yang belum di sentuh", Cmd = "scp", UnCmd = "scp_close" },
-            { Name = "CPN", Desc = "Menampilkan Checkpoint atau Waypoint yang sudah di simpan", Cmd = "cpn", UnCmd = "cpn_close" }
-        }
-    },
-    {
-        Name = "Player Teleport ( Kaming Sun )",
-        Desc = "Menteleport ke Player lain dengan 1 klik",
+        Name = "Fitur Player",
+        Desc = "Waypoint & Teleport",
         RawUrl = "",
         SubFeatures = {
-           -- { Name = "Teleport to Player", Desc = "Menampilkan List Player yang ingin di Teleport", Cmd = "tp", UnCmd = "" }
+            { Name = "SCP", Desc = "Menampilkan Checkpoint yang belum di sentuh", Cmd = "scp", UnCmd = "scp_close", RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Waypoint" },
+            { Name = "CPN", Desc = "Menampilkan Checkpoint atau Waypoint yang sudah di simpan", Cmd = "cpn", UnCmd = "cpn_close" },
+            { Name = "Teleport to Player", Desc = "Teleport ke player dengan 1 klik", Cmd = "tp", UnCmd = "", RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/PlayerTeleport" }
         }
-    }, 
+    },
     {
         Name = "Code Finder",
         Desc = "Menemukan Code angka dan Huruf",
