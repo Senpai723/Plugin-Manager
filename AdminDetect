@@ -601,4 +601,10 @@ task.spawn(function()
     scanServerAdmins(false, true)
 end)
 
+-- Pemicu agar scan langsung jalan otomatis saat di-auto-exec
+task.spawn(function()
+    task.wait(2)
+    scanServerAdmins(false, true)
+end)
+
 return Plugin
