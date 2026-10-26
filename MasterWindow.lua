@@ -322,7 +322,7 @@ return function(speaker)
                 ExecSub.BackgroundColor3 = Color3.fromRGB(0, 150, 90)
             end
 
-            ExecSub.MouseButton1Click:Connect(function()
+                        ExecSub.MouseButton1Click:Connect(function()
                 local function runCommand(customArgs)
                     pcall(function()
                         local targetRaw = (subFeat.RawUrl and subFeat.RawUrl ~= "") and subFeat.RawUrl or rawUrl
@@ -332,6 +332,8 @@ return function(speaker)
                         end
                         local pluginMod = loadedModules[targetRaw]
                         if pluginMod and pluginMod.Commands then
+                            -- PERBAIKAN: Tentukan command yang akan dipanggil berdasarkan status saat ini
+                            -- Jika sedang aktif lalu dipencet unexecute, gunakan UnCmd. Jika baru mau execute, gunakan Cmd.
                             local targetCmd = (hasUnCmd and featureStates[subFeat.Name]) and subFeat.UnCmd or subFeat.Cmd
 
                             local foundFunc = nil
@@ -352,7 +354,9 @@ return function(speaker)
                     end)
 
                     if hasUnCmd then
+                        -- Ubah status state global
                         featureStates[subFeat.Name] = not featureStates[subFeat.Name]
+                        
                         if featureStates[subFeat.Name] then
                             ExecSub.Text = "UNEXECUTE"
                             ExecSub.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
@@ -367,19 +371,27 @@ return function(speaker)
                 end
 
                 local isCurrentlyActive = featureStates[subFeat.Name]
-                if subFeat.NeedInput and not isCurrentlyActive then
-                    showInputDialog(subFeat.Name, function(typedText)
-                        local argsTable = {}
-                        for word in string.gmatch(typedText, "%S+") do
-                            table.insert(argsTable, word)
-                        end
-                        runCommand(argsTable)
-                    end)
-                else
+                
+                -- PERBAIKAN LOGIKA: 
+                -- Jika fitur SEDANG AKTIF (merah/unexecute) dan user memencetnya untuk mematikan (UNEXECUTE),
+                -- kita langsung jalankan runCommand({}) tanpa menuntut input ulang dari user!
+                if isCurrentlyActive then
                     runCommand({})
+                else
+                    -- Jika sedang mati (hijau/execute) dan butuh input (seperti Voice Spy), baruunculkan dialog input
+                    if subFeat.NeedInput then
+                        showInputDialog(subFeat.Name, function(typedText)
+                            local argsTable = {}
+                            for word in string.gmatch(typedText, "%S+") do
+                                table.insert(argsTable, word)
+                            end
+                            runCommand(argsTable)
+                        end)
+                    else
+                        runCommand({})
+                    end
                 end
             end)
-        end
         SubScroll.CanvasSize = UDim2.new(0, 0, 0, #subFeatures * 57)
     end
 
