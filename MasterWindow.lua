@@ -99,7 +99,6 @@ return function(speaker)
     SubMenuContainer.Visible = false
     SubMenuContainer.Parent = Frame
 
-    -- Variabel untuk mengingat status halaman aktif (apakah sedang di sub-menu atau di menu utama)
     local isCurrentlyInSubMenu = false
 
     local minimized = false
@@ -113,7 +112,6 @@ return function(speaker)
         else
             Frame.Size = UDim2.new(0, 280, 0, 310)
             MinBtn.Text = "-"
-            -- Mengembalikan tampilan sesuai posisi terakhir sebelum di-minimize
             if isCurrentlyInSubMenu then
                 SubMenuContainer.Visible = true
                 ScrollingFrame.Visible = false
@@ -124,7 +122,6 @@ return function(speaker)
         end
     end)
 
-    -- Kotak Dialog Input Popup
     local function showInputDialog(titleText, onSubmit)
         local PromptOverlay = Instance.new("Frame")
         PromptOverlay.Size = UDim2.new(1, 0, 1, 0)
@@ -202,7 +199,7 @@ return function(speaker)
     end
 
     local function showSubMenu(menuTitle, rawUrl, subFeatures)
-        isCurrentlyInSubMenu = true -- Tandai bahwa kita sedang di dalam sub-menu
+        isCurrentlyInSubMenu = true
         for _, child in ipairs(SubMenuContainer:GetChildren()) do
             child:Destroy()
         end
@@ -234,7 +231,7 @@ return function(speaker)
         SubLayout.Parent = SubScroll
 
         BackBtn.MouseButton1Click:Connect(function()
-            isCurrentlyInSubMenu = false -- Tandai kembali ke menu utama
+            isCurrentlyInSubMenu = false
             SubMenuContainer.Visible = false
             ScrollingFrame.Visible = true
         end)
@@ -335,7 +332,9 @@ return function(speaker)
                     end
                 end
 
-                if subFeat.NeedInput then
+                -- SYARAT PERBAIKAN: Jika butuh input DAN sedang aktif (mau unexecute), JANGAN munculkan kotak input!
+                local isCurrentlyActive = featureStates[subFeat.Name]
+                if subFeat.NeedInput and not isCurrentlyActive then
                     showInputDialog(subFeat.Name, function(typedText)
                         local argsTable = {}
                         for word in string.gmatch(typedText, "%S+") do
