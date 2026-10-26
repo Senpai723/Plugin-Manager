@@ -290,13 +290,16 @@ return function(speaker)
                 ExecSub.BackgroundColor3 = Color3.fromRGB(0, 150, 90)
             end
 
-            ExecSub.MouseButton1Click:Connect(function()
+                        ExecSub.MouseButton1Click:Connect(function()
                 local function runCommand(customArgs)
                     pcall(function()
-                        if not loadedModules[rawUrl] then
-                            loadedModules[rawUrl] = loadstring(game:HttpGet(rawUrl))()
+                        -- Ambil RawUrl langsung dari sub-fiturnya masing-masing!
+                        local targetRaw = subFeat.RawUrl or rawUrl
+                        
+                        if not loadedModules[targetRaw] then
+                            loadedModules[targetRaw] = loadstring(game:HttpGet(targetRaw))()
                         end
-                        local pluginMod = loadedModules[rawUrl]
+                        local pluginMod = loadedModules[targetRaw]
                         if pluginMod and pluginMod.Commands then
                             local targetCmd = (hasUnCmd and featureStates[subFeat.Name]) and subFeat.UnCmd or subFeat.Cmd
 
@@ -332,7 +335,6 @@ return function(speaker)
                     end
                 end
 
-                -- SYARAT PERBAIKAN: Jika butuh input DAN sedang aktif (mau unexecute), JANGAN munculkan kotak input!
                 local isCurrentlyActive = featureStates[subFeat.Name]
                 if subFeat.NeedInput and not isCurrentlyActive then
                     showInputDialog(subFeat.Name, function(typedText)
