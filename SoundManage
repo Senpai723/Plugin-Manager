@@ -3,9 +3,14 @@ local RunService = game:GetService("RunService")
 local SoundService = game:GetService("SoundService")
 local LocalPlayer = Players.LocalPlayer
 
-local isSpying = false
-local spyTarget = nil
-local spyConnection = nil
+-- GUNAKAN GLOBAL VARIABEL (_G) AGAR STATE TIDAK MUDAH HILANG SAAT WINDOW TUTUP-BUKA
+_G.__VoiceSpyState = _G.__VoiceSpyState or {
+    isSpying = false,
+    spyTarget = nil,
+    spyConnection = nil
+}
+
+local state = _G.__VoiceSpyState
 
 local Plugin = {
     ["PluginName"] = "VoiceSpy & MuteManager",
@@ -35,14 +40,14 @@ local Plugin = {
                     return
                 end
 
-                spyTarget = foundTarget
-                isSpying = true
+                state.spyTarget = foundTarget
+                state.isSpying = true
 
-                if spyConnection then spyConnection:Disconnect() end
+                if state.spyConnection then state.spyConnection:Disconnect() end
 
-                spyConnection = RunService.RenderStepped:Connect(function()
-                    if isSpying and spyTarget and spyTarget.Character and spyTarget.Character:FindFirstChild("Head") then
-                        local headCFrame = spyTarget.Character.Head.CFrame
+                state.spyConnection = RunService.RenderStepped:Connect(function()
+                    if state.isSpying and state.spyTarget and state.spyTarget.Character and state.spyTarget.Character:FindFirstChild("Head") then
+                        local headCFrame = state.spyTarget.Character.Head.CFrame
                         
                         pcall(function()
                             SoundService:SetListener(Enum.ListenerType.CFrame, headCFrame)
@@ -68,12 +73,12 @@ local Plugin = {
             ["Description"] = "Mengembalikan pendengaran suara ke kamera sendiri",
             ["Aliases"] = {"unvspy"},
             ["Function"] = function(args, speaker)
-                isSpying = false
-                spyTarget = nil
+                state.isSpying = false
+                state.spyTarget = nil
                 
-                if spyConnection then
-                    spyConnection:Disconnect()
-                    spyConnection = nil
+                if state.spyConnection then
+                    state.spyConnection:Disconnect()
+                    state.spyConnection = nil
                 end
                 
                 pcall(function()
@@ -105,8 +110,8 @@ local Plugin = {
                     addedConnection = nil
                 }
 
-                local state = _G.__VoiceSpyMuteState
-                state.enabled = true
+                local muteState = _G.__VoiceSpyMuteState
+                muteState.enabled = true
 
                 local allowedSoundNames = {
                     "checkpoint", "respawn", "cp", "pos", "pos pemeriksaan", "pospemeriksaan", "uuhh", "oof", "OOF", "Oof",
@@ -143,37 +148,37 @@ local Plugin = {
                 end
 
                 local function muteSound(sound)
-                    if not state.enabled or not sound or not sound:IsA("Sound") or not sound.Parent then return end
+                    if not muteState.enabled or not sound or not sound:IsA("Sound") or not sound.Parent then return end
                     if isAllowedSound(sound) then return end
 
-                    if state.sounds[sound] == nil then
-                        state.sounds[sound] = sound.Volume
+                    if muteState.sounds[sound] == nil then
+                        muteState.sounds[sound] = sound.Volume
                     end
 
-                    if not state.connections[sound] then
+                    if not muteState.connections[sound] then
                         local volumeConnection = sound:GetPropertyChangedSignal("Volume"):Connect(function()
-                            if state.enabled and sound.Parent and not isAllowedSound(sound) and sound.Volume ~= 0 then
+                            if muteState.enabled and sound.Parent and not isAllowedSound(sound) and sound.Volume ~= 0 then
                                 sound.Volume = 0
                             end
                         end)
-                        state.connections[sound] = { volume = volumeConnection }
+                        muteState.connections[sound] = { volume = volumeConnection }
                     end
                     sound.Volume = 0
                 end
 
-                if state.addedConnection then
-                    state.addedConnection:Disconnect()
-                    state.addedConnection = nil
+                if muteState.addedConnection then
+                    muteState.addedConnection:Disconnect()
+                    muteState.addedConnection = nil
                 end
 
                 for _, descendant in ipairs(game:GetDescendants()) do
                     if descendant:IsA("Sound") then muteSound(descendant) end
                 end
 
-                state.addedConnection = game.DescendantAdded:Connect(function(descendant)
+                muteState.addedConnection = game.DescendantAdded:Connect(function(descendant)
                     if descendant:IsA("Sound") then
                         task.defer(function()
-                            if state.enabled and descendant.Parent then muteSound(descendant) end
+                            if muteState.enabled and descendant.Parent then muteSound(descendant) end
                         end)
                     end
                 end)
@@ -184,28 +189,28 @@ local Plugin = {
             ["Description"] = "Restores sounds muted by mutesound to their original volumes.",
             ["Aliases"] = {"munmute", "unmute", "unmutesound"},
             ["Function"] = function(args, speaker)
-                local state = _G.__VoiceSpyMuteState
-                if not state then return end
-                state.enabled = false
+                local muteState = _G.__VoiceSpyMuteState
+                if not muteState then return end
+                muteState.enabled = false
 
-                if state.addedConnection then
-                    state.addedConnection:Disconnect()
-                    state.addedConnection = nil
+                if muteState.addedConnection then
+                    muteState.addedConnection:Disconnect()
+                    muteState.addedConnection = nil
                 end
 
-                for sound, originalVolume in pairs(state.sounds) do
+                for sound, originalVolume in pairs(muteState.sounds) do
                     if sound and sound.Parent and sound:IsA("Sound") and originalVolume ~= nil then
                         sound.Volume = originalVolume
                     end
-                    local conns = state.connections[sound]
+                    local conns = muteState.connections[sound]
                     if conns then
                         for _, conn in pairs(conns) do if conn then conn:Disconnect() end end
-                        state.connections[sound] = nil
+                        muteState.connections[sound] = nil
                     end
                 end
 
-                state.sounds = setmetatable({}, {__mode = "k"})
-                state.connections = setmetatable({}, {__mode = "k"})
+                muteState.sounds = setmetatable({}, {__mode = "k"})
+                muteState.connections = setmetatable({}, {__mode = "k"})
             end
         }
     }
