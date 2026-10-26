@@ -293,22 +293,20 @@ return function(speaker)
             ExecSub.MouseButton1Click:Connect(function()
                 local function runCommand(customArgs)
                     pcall(function()
-                        -- PERBAIKAN DI SINI: Cari RawUrl ke atas kalau baris ini kosong
+                        -- Fitur Cari RawUrl ke atas (Inheritance) yang aman & mulus
                         local targetRaw = subFeat.RawUrl
                         if not targetRaw or targetRaw == "" then
-                            -- Cari ke atas dari sub-fitur sebelumnya di dalam menu yang sama
-                            for i = _, sf in ipairs(subFeatures) do
+                            for _, sf in ipairs(subFeatures) do
                                 if sf == subFeat then break end
                                 if sf.RawUrl and sf.RawUrl ~= "" then
                                     targetRaw = sf.RawUrl
                                 end
                             end
                         end
-                        -- Kalau tetap gak ketemu, fallback ke raw utama menu induk
                         if not targetRaw or targetRaw == "" then
                             targetRaw = rawUrl
                         end
-                        
+
                         if not loadedModules[targetRaw] then
                             loadedModules[targetRaw] = loadstring(game:HttpGet(targetRaw))()
                         end
