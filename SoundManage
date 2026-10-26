@@ -1,0 +1,214 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local SoundService = game:GetService("SoundService")
+local LocalPlayer = Players.LocalPlayer
+
+local isSpying = false
+local spyTarget = nil
+local spyConnection = nil
+
+local Plugin = {
+    ["PluginName"] = "VoiceSpy & MuteManager",
+    ["PluginDescription"] = "Menguping Voice Chat jarak jauh dan mengelola suara map",
+    ["Commands"] = {
+        ["voicespy"] = {
+            ["ListName"] = "voicespy [nama_player]",
+            ["Description"] = "Mengarahkan pendengaran suara ke player target dari jauh",
+            ["Aliases"] = {"vspy"},
+            ["Function"] = function(args, speaker)
+                local targetName = args[1]
+                if not targetName or targetName == "" then
+                    print("[VoiceSpy] Masukkan nama player target!")
+                    return
+                end
+
+                local foundTarget = nil
+                for _, p in ipairs(Players:GetPlayers()) do
+                    if p ~= LocalPlayer and (string.find(string.lower(p.Name), string.lower(targetName)) or string.find(string.lower(p.DisplayName or ""), string.lower(targetName))) then
+                        foundTarget = p
+                        break
+                    end
+                end
+
+                if not foundTarget then
+                    print("[VoiceSpy] Player '" .. tostring(targetName) .. "' tidak ditemukan!")
+                    return
+                end
+
+                spyTarget = foundTarget
+                isSpying = true
+
+                if spyConnection then spyConnection:Disconnect() end
+
+                spyConnection = RunService.RenderStepped:Connect(function()
+                    if isSpying and spyTarget and spyTarget.Character and spyTarget.Character:FindFirstChild("Head") then
+                        local headCFrame = spyTarget.Character.Head.CFrame
+                        
+                        pcall(function()
+                            SoundService:SetListener(Enum.ListenerType.CFrame, headCFrame)
+                        end)
+
+                        pcall(function()
+                            local cam = workspace.CurrentCamera
+                            if cam then
+                                local audioListener = cam:FindFirstChildOfClass("AudioListener") or game:GetService("CoreGui"):FindFirstChildOfClass("AudioListener")
+                                if audioListener then
+                                    audioListener.CFrame = headCFrame
+                                end
+                            end
+                        end)
+                    end
+                end)
+
+                print("[VoiceSpy] Berhasil menguping suara: " .. foundTarget.Name)
+            end
+        },
+        ["unvoicespy"] = {
+            ["ListName"] = "unvoicespy",
+            ["Description"] = "Mengembalikan pendengaran suara ke kamera sendiri",
+            ["Aliases"] = {"unvspy"},
+            ["Function"] = function(args, speaker)
+                isSpying = false
+                spyTarget = nil
+                
+                if spyConnection then
+                    spyConnection:Disconnect()
+                    spyConnection = nil
+                end
+                
+                pcall(function()
+                    SoundService:SetListener(Enum.ListenerType.Camera, workspace.CurrentCamera)
+                end)
+                
+                pcall(function()
+                    local cam = workspace.CurrentCamera
+                    if cam then
+                        local audioListener = cam:FindFirstChildOfClass("AudioListener")
+                        if audioListener then
+                            audioListener.CFrame = cam.CFrame
+                        end
+                    end
+                end)
+
+                print("[VoiceSpy] Pendengaran dikembalikan ke kamera normal.")
+            end
+        },
+        ["mutesound"] = {
+            ["ListName"] = "mutesound",
+            ["Description"] = "Mutes map sounds while preserving whitelisted sounds.",
+            ["Aliases"] = {"mshutupm", "mutesound"},
+            ["Function"] = function(args, speaker)
+                _G.__VoiceSpyMuteState = _G.__VoiceSpyMuteState or {
+                    enabled = false,
+                    sounds = setmetatable({}, {__mode = "k"}),
+                    connections = setmetatable({}, {__mode = "k"}),
+                    addedConnection = nil
+                }
+
+                local state = _G.__VoiceSpyMuteState
+                state.enabled = true
+
+                local allowedSoundNames = {
+                    "checkpoint", "respawn", "cp", "pos", "pos pemeriksaan", "pospemeriksaan", "uuhh", "oof", "OOF", "Oof",
+                    "gettingup", "getting up",
+                    "music", "radio", "boombox", "jukebox", "playlist",
+                    "song", "songs", "soundtrack", "bgm", "backgroundmusic",
+                    "background music", "musicplayer", "music player",
+                    "audioplayer", "audio player"
+                }
+
+                local allowedSoundIds = {
+                    "3060494212", "17685142849", "90647372", "18138578833",
+                }
+
+                local function normalizeSoundId(soundId)
+                    local id = tostring(soundId or "")
+                    return string.match(id, "(%d+)") or ""
+                end
+
+                local function isAllowedSound(sound)
+                    if not sound or not sound:IsA("Sound") then return false end
+                    local name = string.lower(sound.Name or "")
+                    for _, keyword in ipairs(allowedSoundNames) do
+                        keyword = string.lower(tostring(keyword))
+                        if string.find(name, keyword, 1, true) then return true end
+                    end
+                    local soundId = normalizeSoundId(sound.SoundId)
+                    if soundId ~= "" then
+                        for _, allowedId in ipairs(allowedSoundIds) do
+                            if soundId == normalizeSoundId(allowedId) then return true end
+                        end
+                    end
+                    return false
+                end
+
+                local function muteSound(sound)
+                    if not state.enabled or not sound or not sound:IsA("Sound") or not sound.Parent then return end
+                    if isAllowedSound(sound) then return end
+
+                    if state.sounds[sound] == nil then
+                        state.sounds[sound] = sound.Volume
+                    end
+
+                    if not state.connections[sound] then
+                        local volumeConnection = sound:GetPropertyChangedSignal("Volume"):Connect(function()
+                            if state.enabled and sound.Parent and not isAllowedSound(sound) and sound.Volume ~= 0 then
+                                sound.Volume = 0
+                            end
+                        end)
+                        state.connections[sound] = { volume = volumeConnection }
+                    end
+                    sound.Volume = 0
+                end
+
+                if state.addedConnection then
+                    state.addedConnection:Disconnect()
+                    state.addedConnection = nil
+                end
+
+                for _, descendant in ipairs(game:GetDescendants()) do
+                    if descendant:IsA("Sound") then muteSound(descendant) end
+                end
+
+                state.addedConnection = game.DescendantAdded:Connect(function(descendant)
+                    if descendant:IsA("Sound") then
+                        task.defer(function()
+                            if state.enabled and descendant.Parent then muteSound(descendant) end
+                        end)
+                    end
+                end)
+            end
+        },
+        ["unmutesound"] = {
+            ["ListName"] = "unmutesound",
+            ["Description"] = "Restores sounds muted by mutesound to their original volumes.",
+            ["Aliases"] = {"munmute", "unmute", "unmutesound"},
+            ["Function"] = function(args, speaker)
+                local state = _G.__VoiceSpyMuteState
+                if not state then return end
+                state.enabled = false
+
+                if state.addedConnection then
+                    state.addedConnection:Disconnect()
+                    state.addedConnection = nil
+                end
+
+                for sound, originalVolume in pairs(state.sounds) do
+                    if sound and sound.Parent and sound:IsA("Sound") and originalVolume ~= nil then
+                        sound.Volume = originalVolume
+                    end
+                    local conns = state.connections[sound]
+                    if conns then
+                        for _, conn in pairs(conns) do if conn then conn:Disconnect() end end
+                        state.connections[sound] = nil
+                    end
+                end
+
+                state.sounds = setmetatable({}, {__mode = "k"})
+                state.connections = setmetatable({}, {__mode = "k"})
+            end
+        }
+    }
+}
+
+return Plugin
