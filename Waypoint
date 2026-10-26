@@ -28,6 +28,7 @@ local HEIGHT_OFFSET = 1.0
 local MASTER_FILE_NAME = "TeleportCP_MasterSaves.json"
 
 local function getMapKey()
+    -- Murni menggunakan angka PlaceId agar konsisten dan tidak berubah-ubah antar sesi/room
     return tostring(PlaceId)
 end
 
@@ -186,9 +187,11 @@ local function getValidCheckpointPart(obj)
     if not obj or not (obj:IsA("BasePart") or obj:IsA("MeshPart") or obj:IsA("UnionOperation") or obj:IsA("Model")) then return nil end
     if isBlacklisted(obj.Name) then return nil end
 
+    -- Cek 1: Memiliki TouchInterest langsung
     local hasTouch = obj:FindFirstChild("TouchInterest") or obj:FindFirstChildOfClass("TouchTransmitter")
     if hasTouch then return obj end
 
+    -- Cek 2: Memiliki ProximityPrompt langsung
     local hasPrompt = obj:FindFirstChildOfClass("ProximityPrompt") or obj:FindFirstChildWhichIsA("ProximityPrompt", true)
     if hasPrompt then
         if obj:IsA("Model") then
@@ -197,6 +200,7 @@ local function getValidCheckpointPart(obj)
         return obj
     end
 
+    -- Cek 3: Cek anak-anak objek (Hanya terima jika ada TouchInterest atau ProximityPrompt)
     for _, desc in ipairs(obj:GetDescendants()) do
         if (desc:IsA("BasePart") or desc:IsA("MeshPart") or desc:IsA("UnionOperation")) and not isBlacklisted(desc.Name) then
             if desc:FindFirstChild("TouchInterest") or desc:FindFirstChildOfClass("TouchTransmitter") or desc:FindFirstChildOfClass("ProximityPrompt") then
@@ -205,8 +209,10 @@ local function getValidCheckpointPart(obj)
         end
     end
 
+    -- DIBUANG: Fallback BillboardGui/SurfaceGui tanpa Touch/Prompt ditiadakan agar papan dekorasi palsu tidak ter-scan!
     return nil
 end
+
 
 local function parseCPIdentity(obj)
     local validPart = getValidCheckpointPart(obj)
@@ -217,9 +223,13 @@ local function parseCPIdentity(obj)
     local parentName = obj.Parent and obj.Parent.Name or ""
     local lowerParent = string.lower(parentName)
 
+    -- Filter awal
     if lowerName == "text" or lowerParent == "text" or isBlacklisted(lowerName) or isBlacklisted(lowerParent) then return nil, nil, nil end
     if string.find(lowerName, "teleport", 1, true) or string.find(lowerName, "tp", 1, true) or string.find(lowerName, "tele", 1, true) then return nil, nil, nil end
 
+    -- ==================================================
+    -- 1. DETEKSI SUMMIT STRICT (SUPER STERIL)
+    -- ==================================================
     local summitKeywords = {"summit", "peak", "finish", "puncak", "winpad"}
     local summitBlacklist = {
         "board", "papan", "donat", "donation", "detik", "time", "sec", "sign", 
@@ -238,6 +248,7 @@ local function parseCPIdentity(obj)
     local isSummit = false
     local summitName = name
 
+    -- Cek dari Nama Objek atau Parent
     if not isSummitBlacklisted(lowerName) and not isSummitBlacklisted(lowerParent) then
         for _, kw in ipairs(summitKeywords) do
             if string.find(lowerName, kw, 1, true) or string.find(lowerParent, kw, 1, true) then
@@ -247,6 +258,7 @@ local function parseCPIdentity(obj)
         end
     end
 
+    -- Cek dari BillboardGui / SurfaceGui jika belum ketemu
     if not isSummit then
         local hasGui = validPart:FindFirstChildOfClass("BillboardGui") or validPart:FindFirstChildOfClass("SurfaceGui")
         if not hasGui and validPart.Parent and validPart.Parent:IsA("Model") then
@@ -274,6 +286,9 @@ local function parseCPIdentity(obj)
         return "SUMMIT", summitName, validPart
     end
 
+    -- ==================================================
+    -- 2. DOKTRIN STRICT: CEK ATAU KATA KUNCI CHECKPOINT WAJIB ADA
+    -- ==================================================
     local combined = lowerParent .. " " .. lowerName
     local hasCPKeyword = string.find(combined, "checkpoint") or 
                          string.find(combined, "cekpoin") or 
@@ -283,6 +298,7 @@ local function parseCPIdentity(obj)
                          string.find(combined, "stage") or 
                          string.find(combined, "pos")
 
+    -- Ambil teks dari BillboardGui jika ada
     local guiText = ""
     local hasGui = validPart:FindFirstChildOfClass("BillboardGui") or validPart:FindFirstChildOfClass("SurfaceGui")
     if not hasGui and validPart.Parent and validPart.Parent:IsA("Model") then
@@ -299,10 +315,12 @@ local function parseCPIdentity(obj)
         end
     end
 
+    -- JIKA TIDAK MEMILIKI KATA KUNCI CHECKPOINT SAH = BUANG / TOLAK MUTLAK!
     if not hasCPKeyword then
         return nil, nil, nil
     end
 
+    -- 3. PARSING NOMOR CHECKPOINT (Hanya jika lolos verifikasi Kata Kunci di atas)
     local num = string.match(combined, "checkpoints?%s*(%d+)") or
                 string.match(combined, "checkpoint%s*(%d+)") or
                 string.match(combined, "cekpoin%s*[%s_]*(%d+)") or 
@@ -329,6 +347,7 @@ local function parseCPIdentity(obj)
         end
     end
 
+    -- Fallback Label String jika valid CP tanpa angka
     return "CP", name, validPart
 end
 
@@ -370,12 +389,9 @@ local function addOrUpdateSavedCP(key, desc, cf)
 end
 
 --==================================================
--- HOOKING & DOUBLE EXECUTABLE PROTECTION
+-- PERBAIKAN 3: PURE EVENT-DRIVEN & ANTI-STUTTER (NO BACKGROUND LOOP)
 --==================================================
-if not _G.TeleportCP_HookedParts then
-    _G.TeleportCP_HookedParts = {}
-end
-local hookedParts = _G.TeleportCP_HookedParts
+local hookedParts = {}
 
 local function processAndHookPart(obj)
     if not obj or not (obj:IsA("BasePart") or obj:IsA("MeshPart") or obj:IsA("UnionOperation") or obj:IsA("Model")) then return end
@@ -398,19 +414,13 @@ local function processAndHookPart(obj)
 
         if updateRadarGuiContent then updateRadarGuiContent() end
 
-        -- ==========================================================
-        -- TARUH / TIMPA BAGIAN INI DI SINI (BAGIAN TRIGGER AUTOSAVE)
-        -- ==========================================================
         local function triggerAutoSave()
-            -- Pengaman: Jika key/desc kosong tapi kesentuh, paksa simpan pakai nama part asli
-            local finalKey = cpKey or "CP"
-            local finalDesc = partDesc or realPart.Name
-            
-            local uniqueVisitKey = tostring(finalKey) .. "_" .. tostring(finalDesc)
+            local uniqueVisitKey = tostring(cpKey) .. "_" .. tostring(partDesc)
             if not visitedKeys[uniqueVisitKey] then
-                addOrUpdateSavedCP(finalKey, finalDesc, targetCFrame)
+                addOrUpdateSavedCP(cpKey, partDesc, targetCFrame)
                 
-                if finalKey == "SUMMIT" or string.find(string.lower(tostring(finalDesc)), "summit") then
+                -- LOGIKA SUMMIT DENGAN FILTER JARAK (DISTANCE CHECK)
+                if cpKey == "SUMMIT" or string.find(string.lower(tostring(partDesc)), "summit") then
                     for cacheKey, cacheData in pairs(streamingCache) do
                         if cacheData.key == "SUMMIT" or string.find(string.lower(tostring(cacheData.desc)), "summit") then
                             if cacheData.part and cacheData.part.Parent and realPart and realPart.Parent then
@@ -424,8 +434,9 @@ local function processAndHookPart(obj)
                     end
                     if updateRadarGuiContent then updateRadarGuiContent() end
                 else
+                    -- LOGIKA CP BIASA: Hilangkan duplikat key yang sama jika jaraknya dekat/satu tempat
                     for cacheKey, cacheData in pairs(streamingCache) do
-                        if tostring(cacheData.key) == tostring(finalKey) then
+                        if tostring(cacheData.key) == tostring(cpKey) then
                             if cacheData.part and cacheData.part.Parent and realPart and realPart.Parent then
                                 local dist = (cacheData.part.Position - realPart.Position).Magnitude
                                 if dist <= 25 then
@@ -439,13 +450,13 @@ local function processAndHookPart(obj)
                 end
             end
         end
-        -- ==========================================================
 
         local touch = realPart:FindFirstChild("TouchInterest") or realPart:FindFirstChildOfClass("TouchTransmitter")
         if touch then
             realPart.Touched:Connect(function(hit)
                 local char = LocalPlayer.Character
                 if char and hit:IsDescendantOf(char) then
+                    -- Pastikan bagian HumanoidRootPart atau tubuh player yang menyentuh
                     local humanoid = char:FindFirstChildOfClass("Humanoid")
                     if humanoid and humanoid.Health > 0 then
                         triggerAutoSave()
@@ -539,16 +550,18 @@ updateRadarGuiContent = function()
         btnCorner.CornerRadius = UDim.new(0, 4)
         btnCorner.Parent = teleBtn
 
-        teleBtn.MouseButton1Click:Connect(function()
+                                teleBtn.MouseButton1Click:Connect(function()
             if data.part and data.part.Parent then
                 safeTeleport(data.part.CFrame)
                 addOrUpdateSavedCP(data.key, data.desc, data.part.CFrame)
                 
+                -- LOGIKA SUMMIT TELEPORT DENGAN FILTER JARAK
                 if data.key == "SUMMIT" or string.find(string.lower(tostring(data.desc)), "summit") then
                     for cacheKey, cacheData in pairs(streamingCache) do
                         if cacheData.key == "SUMMIT" or string.find(string.lower(tostring(cacheData.desc)), "summit") then
                             if cacheData.part and cacheData.part.Parent and data.part and data.part.Parent then
                                 local dist = (cacheData.part.Position - data.part.Position).Magnitude
+                                -- Sembunyikan hanya jika posisinya berdekatan (satu tempat/duplikat)
                                 if dist <= 25 then
                                     local uniqueVisitKey = tostring(cacheData.key) .. "_" .. tostring(cacheData.desc)
                                     visitedKeys[uniqueVisitKey] = true
@@ -688,7 +701,8 @@ local function createSCPWindow()
         end
     end)
 
-   refBtn.MouseButton1Click:Connect(function()
+refBtn.MouseButton1Click:Connect(function()
+        -- TAMBAHKAN SCAN ULANG SAAT TOMBOL R DIKLIK
         for _, obj in ipairs(Workspace:GetDescendants()) do
             processAndHookPart(obj)
         end
@@ -887,10 +901,14 @@ updateCpnGuiContent = function()
         dBtnCorner.CornerRadius = UDim.new(0, 4)
         dBtnCorner.Parent = delBtn
 
-        delBtn.MouseButton1Click:Connect(function()
+                delBtn.MouseButton1Click:Connect(function()
             local removed = table.remove(savedCheckpointsList, index)
             if removed and removed.key then
                 local removedKey = tostring(removed.key)
+                
+                -- HAPUS SEMUA ENTRY DENGAN KEY / NOMOR CP YANG SAMA DARI VISITEDKEYS
+                -- Agar kalau di map awal ada 2 CP dengan nomor sama (misal CP 10 pakai spasi & tanpa spasi),
+                -- KEDUANYA BALIK LAGI SECARA NORMAL KE SCP RADAR!
                 for visitedKey, _ in pairs(visitedKeys) do
                     local prefix = string.match(visitedKey, "^([^_]+)_")
                     if prefix and prefix == removedKey then
@@ -901,7 +919,7 @@ updateCpnGuiContent = function()
             saveCheckpointsToFile()
             updateCpnGuiContent()
             if updateRadarGuiContent then updateRadarGuiContent() end
-            notify("CPN Manager", "Saved CP dihapus & dimunculkan kembali di SCP!", 1.5)
+            notify("CPN Manager", "Saved CP dihapus & semua duplikatnya dimunculkan kembali di SCP!", 1.5)
         end)
 
         yOffset = yOffset + 32
@@ -1092,6 +1110,8 @@ gotonext.Commands["cpn"] = {
 --==================================================
 -- OPTIMIZED EVENT-DRIVEN & ANTI-STUTTER SCANNER
 --==================================================
+
+-- 1. Scan Instan untuk Objek Baru yang Dimuat (Anti-Stutter & Anti-Lag)
 Workspace.DescendantAdded:Connect(function(obj)
     task.delay(0.2, function()
         pcall(function()
@@ -1100,13 +1120,15 @@ Workspace.DescendantAdded:Connect(function(obj)
     end)
 end)
 
+-- 2. Smooth Background Batching Scanner (Mencegah Lag Setiap Detik)
 task.spawn(function()
     while true do
-        task.wait(5.0)
+        task.wait(5.0) -- Interval diperlonggar jadi 5 detik
         pcall(function()
             local allDescendants = Workspace:GetDescendants()
             for i, obj in ipairs(allDescendants) do
                 processAndHookPart(obj)
+                -- Tiap 50 objek, beri jeda 1 frame agar CPU tidak stutter/lag!
                 if i % 50 == 0 then
                     task.wait()
                 end
@@ -1114,5 +1136,6 @@ task.spawn(function()
         end)
     end
 end)
+
 
 return gotonext
