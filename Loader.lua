@@ -38,14 +38,14 @@ return {
             { Name = "CPN", Desc = "Menampilkan Checkpoint atau Waypoint yang sudah di simpan", Cmd = "cpn", UnCmd = "cpn_close" }
         }
     },
-    {
+  --  {
         Name = "Player Teleport ( Kaming Sun )",
         Desc = "Menteleport ke Player lain dengan 1 klik",
         RawUrl = "",
         SubFeatures = {
             { Name = "Teleport to Player", Desc = "Menampilkan List Player yang ingin di Teleport", Cmd = "tp", UnCmd = "" }
         }
-    },
+ --   }, 
     {
         Name = "Code Finder",
         Desc = "Menemukan Code angka dan Huruf",
