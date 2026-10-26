@@ -436,7 +436,7 @@ return function(speaker)
             NameLabel.TextXAlignment = Enum.TextXAlignment.Left
             NameLabel.Parent = ItemFrame
 
-.           local DescLabel = Instance.new("TextLabel")
+            local DescLabel = Instance.new("TextLabel")
             DescLabel.Size = UDim2.new(1, -90, 0, 26)
             DescLabel.Position = UDim2.new(0, 8, 0, 22)
             DescLabel.BackgroundTransparency = 1
