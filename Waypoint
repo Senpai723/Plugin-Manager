@@ -14,7 +14,6 @@ local Workspace = game:GetService("Workspace")
 local CoreGui = game:GetService("CoreGui")
 local UserInputService = game:GetService("UserInputService")
 local StarterGui = game:GetService("StarterGui")
-local MarketplaceService = game:GetService("MarketplaceService")
 
 local LocalPlayer = Players.LocalPlayer
 local PlaceId = game.PlaceId
@@ -341,7 +340,8 @@ local function addOrUpdateSavedCP(key, desc, cf)
     saveCheckpointsToFile()
     if updateCpnGuiContent then updateCpnGuiContent() end
     if updateRadarGuiContent then updateRadarGuiContent() end
-    notify("Auto-Save CP", "Checkpoint tersimpan: " + tostring(key) + " (" + tostring(desc) + ")", 2)
+    -- PERBAIKAN TYPO: Menggunakan string concatenation (..) bukan (+)
+    notify("Auto-Save CP", "Checkpoint tersimpan: " .. tostring(key) .. " (" .. tostring(desc) .. ")", 2)
 end
 
 if not _G.TeleportCP_HookedParts then
@@ -398,7 +398,6 @@ local function processAndHookPart(obj)
     end
 end
 
--- LOGIKA PENGGABUNGAN: SCP RADAR HANYA MENAMPILKAN CP YANG BELUM ADA DI CPN MASTER (YANG BELUM KESAVE)
 updateRadarGuiContent = function()
     if not radarScrollContainer then return end
 
@@ -406,16 +405,14 @@ updateRadarGuiContent = function()
         if child:IsA("Frame") then child:Destroy() end
     end
 
-    -- Sinkronisasi data terbaru dari CPN
     loadSavedCheckpoints()
 
     local list = {}
     local seenKeys = {}
     
     for _, data in pairs(streamingCache) do
-        local uniqueKey = tostring(data.key) + "_" + tostring(data.desc)
+        local uniqueKey = tostring(data.key) .. "_" .. tostring(data.desc)
         
-        -- Cek apakah checkpoint ini sudah tersimpan di CPN (savedCheckpointsList)
         local isAlreadySaved = false
         for _, saved in ipairs(savedCheckpointsList) do
             if tostring(saved.key) == tostring(data.key) and tostring(saved.desc) == tostring(data.desc) then
@@ -424,7 +421,6 @@ updateRadarGuiContent = function()
             end
         end
 
-        -- Masukkan ke radar SCP HANYA JIKA BELUM TER-SAVE DI CPN
         if not isAlreadySaved and not seenKeys[uniqueKey] then
             seenKeys[uniqueKey] = true
             table.insert(list, data)
@@ -620,7 +616,7 @@ local function createSCPWindow()
         end
     end)
 
-    refBtn.MouseButton1Click:Connect(function()
+   refBtn.MouseButton1Click:Connect(function()
         for _, obj in ipairs(Workspace:GetDescendants()) do
             processAndHookPart(obj)
         end
@@ -637,7 +633,8 @@ local function createSCPWindow()
     closeBtn.MouseButton1Click:Connect(function()
         radarGui.Enabled = false
     end)
-updateRadarGuiContent()
+
+    updateRadarGuiContent()
 end
 
 local function showCustomNamePrompt(callback)
@@ -916,7 +913,7 @@ local function createCPNWindow()
 
     local closeCorner = Instance.new("UICorner")
     closeCorner.CornerRadius = UDim.new(0, 4)
-    closeCorner.Parent = closeBtn
+    closeCorner.Parent = cpnMainFrame -- Diperbaiki agar rapi
 
     cpnScrollContainer = Instance.new("ScrollingFrame")
     cpnScrollContainer.Size = UDim2.new(1, 0, 1, -32)
@@ -976,7 +973,6 @@ plusBtn.MouseButton1Click:Connect(function()
         end
     end)
 
-    minBtn.MouseButton1_Click = nil
     minBtn.MouseButton1Click:Connect(function()
         isCpnMinimized = not isCpnMinimized
         cpnMainFrame.Size = isCpnMinimized and UDim2.new(0, 280, 0, 32) or UDim2.new(0, 280, 0, 240)
