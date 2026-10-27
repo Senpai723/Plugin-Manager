@@ -1,10 +1,10 @@
 local plugin = {
     ["PluginName"] = "Smart Noclip";
-    ["PluginDescription"] = "Noclip pintar yang tetap bisa naik tangga/bidang miring tanpa jatuh ke bawah.";
+    ["PluginDescription"] = "Noclip pintar yang langsung tembus tembok tanpa harus lompat.";
     ["Commands"] = {
         ["noclip"] = {
             ["ListName"] = "noclip",
-            ["Description"] = "Mengaktifkan Smart Noclip (tembus tembok tapi aman di tangga).",
+            ["Description"] = "Mengaktifkan Smart Noclip murni.",
             ["Aliases"] = {"nc"},
             ["Function"] = function(args, speaker)
                 local RunService = game:GetService("RunService")
@@ -12,13 +12,11 @@ local plugin = {
                 local localPlayer = Players.LocalPlayer
 
                 if _G.SmartNoclipActive then
-                    print("[Smart Noclip] Sudah aktif!")
                     return
                 end
 
                 _G.SmartNoclipActive = true
 
-                -- Menggunakan RunService.Stepped agar setiap frame status bagian tubuh difilter
                 if _G.SmartNoclipConnection then
                     _G.SmartNoclipConnection:Disconnect()
                     _G.SmartNoclipConnection = nil
@@ -33,34 +31,16 @@ local plugin = {
                         local rootPart = char:FindFirstChild("HumanoidRootPart")
 
                         if hum and rootPart then
-                            -- Cek apakah player sedang berpijak di lantai/tangga (FloorMaterial tidak udara)
-                            local isStandingOnSomething = hum.FloorMaterial ~= Enum.Material.Air
-
+                            -- Matikan CanCollide untuk seluruh bagian tubuh kecuali bagian bawah jika sedang menapak
                             for _, part in ipairs(char:GetDescendants()) do
                                 if part:IsA("BasePart") then
-                                    if isStandingOnSomething and part == rootPart then
-                                        -- Jika sedang di atas tangga/lantai miring, biarkan RootPart memiliki tabrakan bawah
-                                        -- agar tidak jatuh, tapi matikan kanannya/kirinya lewat logika part lain jika perlu.
-                                        -- Tapi umumnya, membiarkan CanCollide true saat berdiri di lantai mencegah tembus ke bawah.
+                                    if part.Name == "HumanoidRootPart" then
+                                        -- RootPart tetap punya kolisi bawah jika menyentuh lantai/tangga, 
+                                        -- tapi kita buat non-kolisi jika menabrak dinding dari samping (opsional via physics)
+                                        -- Biar aman di tangga, kita biarkan true HANYA jika arah gerak vertikal tidak tertahan tembok.
+                                        part.CanCollide = hum.FloorMaterial ~= Enum.Material.Air
                                     else
-                                        -- Tembus tembok (Matikan CanCollide untuk bagian tubuh selain saat berpijak)
-                                        -- Kecuali jika sedang melompat/di udara, matikan total agar bisa tembus dinding
-                                        if not isStandingOnSomething then
-                                            part.CanCollide = false
-                                        else
-                                            -- Jika sedang di permukaan (tangga/lantai), biarkan part non-root tembus asal root aman
-                                            if part.Name ~= "HumanoidRootPart" then
-                                                part.CanCollide = false
-                                            end
-                                        end
-                                    end
-                                end
-                            end
-
-                            -- Logika tambahan: Jika sedang melayang/di udara bebas, matikan CanCollide semuanya
-                            if not isStandingOnSomething then
-                                for _, part in ipairs(char:GetDescendants()) do
-                                    if part:IsA("BasePart") then
+                                        -- Bagian tubuh lain (tangan, kaki, kepala, torso) dimatikan total supaya langsung tembus tembok
                                         part.CanCollide = false
                                     end
                                 end
@@ -68,7 +48,7 @@ local plugin = {
                         end
                     end
                 end)
-                print("[Smart Noclip] Diaktifkan! Aman di tangga.")
+                print("[Smart Noclip] Diaktifkan!")
             end
         },
         ["unnoclip"] = {
@@ -91,7 +71,7 @@ local plugin = {
                         end
                     end
                 end
-                print("[Smart Noclip] Dimatikan. Tabrakan dinasionalkan kembali.")
+                print("[Smart Noclip] Dimatikan.")
             end
         }
     }
