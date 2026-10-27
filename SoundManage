@@ -14,7 +14,7 @@ local state = _G.__VoiceSpyState
 
 local Plugin = {
     ["PluginName"] = "VoiceSpy & MuteManager",
-    ["PluginDescription"] = "Menguping Voice Chat jarak jauh dan mengelola suara map",
+    ["PluginDescription"] = "Menguping Voice Chat jarak jauh dan mengelola suara map secara total",
     ["Commands"] = {
         ["voicespy"] = {
             ["ListName"] = "voicespy [nama_player]",
@@ -100,7 +100,7 @@ local Plugin = {
         },
         ["mutesound"] = {
             ["ListName"] = "mutesound",
-            ["Description"] = "Mutes map sounds while preserving whitelisted sounds.",
+            ["Description"] = "Mutes map sounds while preserving whitelisted sounds and blocking new jumpscares.",
             ["Aliases"] = {"mshutupm", "mutesound"},
             ["Function"] = function(args, speaker)
                 _G.__VoiceSpyMuteState = _G.__VoiceSpyMuteState or {
@@ -171,10 +171,12 @@ local Plugin = {
                     muteState.addedConnection = nil
                 end
 
+                -- Matikan semua suara yang ada saat ini
                 for _, descendant in ipairs(game:GetDescendants()) do
                     if descendant:IsA("Sound") then muteSound(descendant) end
                 end
 
+                -- Pantau suara BARU yang muncul belakangan (termasuk jumpscare/efek map)
                 muteState.addedConnection = game.DescendantAdded:Connect(function(descendant)
                     if descendant:IsA("Sound") then
                         task.defer(function()
