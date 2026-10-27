@@ -289,7 +289,13 @@ local function instantAttempt(prompt)
         return false
     end
 
-    -- 1. UTAMAKAN INSTAN DULU UNTUK SEMUA PROMPT (Termasuk game cleaning dengan prompt asli Roblox)
+    -- 1. JIKA TERDETEKSI PROMPT BERSIH-BERSIH: Langsung ke auto-hold 3.1 detik (1 klik beres tanpa 2x klik)
+    if isCleaningPrompt(prompt) then
+        finish(prompt)
+        return fullCleaningHold(prompt)
+    end
+
+    -- 2. UNTUK PROMPT BIASA / AMBIL ALAT: 100% Instan Murni (Durasi 0)
     local fired = firePrompt(prompt, 0, false)
     if fired then
         task.wait(RETRY_GAP)
@@ -306,14 +312,6 @@ local function instantAttempt(prompt)
         end
     end
 
-    -- 2. JIKA INSTAN GAGAL & TERDETEKSI PROMPT BERSIH-BERSIH CUSTOM:
-    -- Baru gunakan sistem auto-hold 3.1 detik supaya progress bar di game custom tidak macet!
-    if isCleaningPrompt(prompt) then
-        finish(prompt)
-        return fullCleaningHold(prompt)
-    end
-
-    -- Fallback terakhir untuk prompt biasa
     if isValid(prompt) then
         fired = firePrompt(prompt, nil, false)
     end
