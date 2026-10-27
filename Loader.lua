@@ -109,6 +109,13 @@ return {
             Cmd = "infjump",
             UnCmd = "uninfjump",
             RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/InfiniteJump"
+        },
+        {
+            Name = "Noclip",
+            Desc = "Menembus Objek yang ada di depan, tapi agak lebih pinter dikit",
+            Cmd = "noclip",
+            UnCmd = "unnoclip",
+            RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Noclip"
         }
     }
 }
