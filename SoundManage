@@ -28,10 +28,17 @@ local Plugin = {
                 end
 
                 local foundTarget = nil
+                local targetLower = string.lower(targetName)
+
+                -- PENCARIAN FLEKSIBEL (Bisa nama lengkap, display name, atau min 3 huruf awal)
                 for _, p in ipairs(Players:GetPlayers()) do
-                    if p ~= LocalPlayer and (string.find(string.lower(p.Name), string.lower(targetName)) or string.find(string.lower(p.DisplayName or ""), string.lower(targetName))) then
-                        foundTarget = p
-                        break
+                    if p ~= LocalPlayer then
+                        local pName = string.lower(p.Name)
+                        local pDisp = string.lower(p.DisplayName or "")
+                        if pName == targetLower or pDisp == targetLower or string.find(pName, targetLower, 1, true) or string.find(pDisp, targetLower, 1, true) then
+                            foundTarget = p
+                            break
+                        end
                     end
                 end
 
@@ -45,32 +52,28 @@ local Plugin = {
 
                 if state.spyConnection then state.spyConnection:Disconnect() end
 
+                -- Sinkronisasi pendengaran Spatial Voice ke posisi Kepala Target secara real-time
                 state.spyConnection = RunService.RenderStepped:Connect(function()
-                    if state.isSpying and state.spyTarget and state.spyTarget.Character and state.spyTarget.Character:FindFirstChild("Head") then
-                        local headCFrame = state.spyTarget.Character.Head.CFrame
+                    if state.isSpying and state.spyTarget and state.spyTarget.Character then
+                        local targetHead = state.spyTarget.Character:FindFirstChild("Head") or state.spyTarget.Character:FindFirstChild("HumanoidRootPart")
+                        local localChar = LocalPlayer.Character
                         
-                        pcall(function()
-                            SoundService:SetListener(Enum.ListenerType.CFrame, headCFrame)
-                        end)
-
-                        pcall(function()
-                            local cam = workspace.CurrentCamera
-                            if cam then
-                                local audioListener = cam:FindFirstChildOfClass("AudioListener") or game:GetService("CoreGui"):FindFirstChildOfClass("AudioListener")
-                                if audioListener then
-                                    audioListener.CFrame = headCFrame
-                                end
+                        if targetHead and localChar then
+                            local localHead = localChar:FindFirstChild("Head") or localChar:FindFirstChild("HumanoidRootPart")
+                            if localHead then
+                                -- Pindahkan posisi listener lokal ke posisi kepala target agar suara chat mereka terdengar jelas
+                                localHead.CFrame = targetHead.CFrame
                             end
-                        end)
+                        end
                     end
                 end)
 
-                print("[VoiceSpy] Berhasil menguping suara: " .. foundTarget.Name)
+                print("[VoiceSpy] Berhasil menguping suara: " .. foundTarget.Name .. " (" .. foundTarget.DisplayName .. ")")
             end
         },
         ["unvoicespy"] = {
             ["ListName"] = "unvoicespy",
-            ["Description"] = "Mengembalikan pendengaran suara ke kamera sendiri",
+            ["Description"] = "Mengembalikan pendengaran suara ke karakter sendiri",
             ["Aliases"] = {"unvspy"},
             ["Function"] = function(args, speaker)
                 state.isSpying = false
@@ -81,21 +84,19 @@ local Plugin = {
                     state.spyConnection = nil
                 end
                 
+                -- Reset posisi listener kembali ke karakter lokal (respawn/reset posisi kepala player sendiri)
                 pcall(function()
-                    SoundService:SetListener(Enum.ListenerType.Camera, workspace.CurrentCamera)
-                end)
-                
-                pcall(function()
-                    local cam = workspace.CurrentCamera
-                    if cam then
-                        local audioListener = cam:FindFirstChildOfClass("AudioListener")
-                        if audioListener then
-                            audioListener.CFrame = cam.CFrame
+                    local char = LocalPlayer.Character
+                    if char then
+                        local hum = char:FindFirstChildOfClass("Humanoid")
+                        if hum then
+                            -- Sedikit trigger pemulihan posisi atau biarkan game merefresh
+                            workspace.CurrentCamera.CameraSubject = hum
                         end
                     end
                 end)
 
-                print("[VoiceSpy] Pendengaran dikembalikan ke kamera normal.")
+                print("[VoiceSpy] Pendengaran dikembalikan normal.")
             end
         },
         ["mutesound"] = {
@@ -171,12 +172,10 @@ local Plugin = {
                     muteState.addedConnection = nil
                 end
 
-                -- Matikan semua suara yang ada saat ini
                 for _, descendant in ipairs(game:GetDescendants()) do
                     if descendant:IsA("Sound") then muteSound(descendant) end
                 end
 
-                -- Pantau suara BARU yang muncul belakangan (termasuk jumpscare/efek map)
                 muteState.addedConnection = game.DescendantAdded:Connect(function(descendant)
                     if descendant:IsA("Sound") then
                         task.defer(function()
@@ -204,7 +203,7 @@ local Plugin = {
                     if sound and sound.Parent and sound:IsA("Sound") and originalVolume ~= nil then
                         sound.Volume = originalVolume
                     end
-                    local conns = muteState.connections[sound]
+                    let conns = muteState.connections[sound]
                     if conns then
                         for _, conn in pairs(conns) do if conn then conn:Disconnect() end end
                         muteState.connections[sound] = nil
