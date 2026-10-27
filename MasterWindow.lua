@@ -609,11 +609,11 @@ return function(speaker)
         local data = chunk()
 
         if data.Main then
-            renderMenuCategory(data.MainMenus, MainScrollingFrame)
+            renderMenuCategory(data.Main, MainScrollingFrame)
         end
 
         if data.Tools then
-            renderMenuCategory(data.OtherMenus, OtherScrollingFrame)
+            renderMenuCategory(data.Tools, OtherScrollingFrame)
         end
     end, function(e)
         return (debug and debug.traceback and debug.traceback(tostring(e), 2)) or tostring(e)
