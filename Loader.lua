@@ -148,14 +148,6 @@ return {
             RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Fullbright"
         },
         {
-            Name = "Walk Speed",
-            Desc = "Masukan angka speed yang kami mau, misal 20 ( tergantung map )",
-            Cmd = "ws",
-            UnCmd = "unws",
-            NeedInput = true,
-            RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/WalkSpeed"
-        },
-        {
             Name = "Instant Prompts",
             Desc = "Always instant interaction",
             Cmd = "instantprompts",
@@ -168,6 +160,14 @@ return {
             Cmd = "mutesound",
             UnCmd = "unmutesound",
             RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/SoundManage"
+        },
+        {
+            Name = "Walk Speed",
+            Desc = "Masukan angka speed yang kami mau, misal 20 ( tergantung map )",
+            Cmd = "ws",
+            UnCmd = "unws",
+            NeedInput = true,
+            RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/WalkSpeed"
         },
         {
             Name = "Noclip",
