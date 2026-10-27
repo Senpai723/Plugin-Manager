@@ -239,34 +239,8 @@ local function isCleaningPrompt(prompt)
 end
 
 local function fastCleaningHold(prompt)
-    if not Enabled or not isValid(prompt) then
-        return false
-    end
-
-    local state = getState(prompt)
-    if state == nil or state.holding then
-        return false
-    end
-
-    state.holding = true
-
-    -- TRICK INSTANT CLEANING: 
-    -- Kita panggil InputHoldBegin (agar game mendeteksi role/progress mulai) 
-    -- lalu langsung dipotong/diselesaikan dengan InputHoldEnd dalam sekejap mata (instant click).
-    pcall(function()
-        prompt:InputHoldBegin()
-    end)
-
-    -- Jeda sangat singkat (0.05 detik) supaya kalkulasi speed role di game sempat masuk tapi tidak bikin player pegel menahan tombol
-    task.wait(0.05)
-
-    pcall(function()
-        prompt:InputHoldEnd()
-    end)
-
-    state.holding = false
-    state.lastAttempt = os.clock()
-    return true
+    -- Kita hapus fungsi hold manual, ganti dengan pemicu instan murni (durasi 0)
+    return firePrompt(prompt, 0, false)
 end
 
 local function instantAttempt(prompt)
@@ -278,19 +252,7 @@ local function instantAttempt(prompt)
         return false
     end
 
-    -- Cek apakah ini prompt cleaning (bersih-bersih/nyapu)
-    if isCleaningPrompt(prompt) then
-        local actionText = string.lower(tostring(prompt.ActionText or ""))
-        local isDropAction = string.find(actionText, "taruh", 1, true) or string.find(actionText, "put", 1, true) or string.find(actionText, "drop", 1, true) or string.find(actionText, "return", 1, true)
-        
-        if not isDropAction then
-            finish(prompt)
-            -- Eksekusi trik instant-hold untuk cleaning
-            return fastCleaningHold(prompt)
-        end
-    end
-
-    -- Prompt biasa (Ambil item / interaksi lain)
+    -- Coba tembak langsung dengan durasi 0 (instan) untuk semua jenis prompt termasuk cleaning
     local fired = firePrompt(prompt, 0, false)
     if fired then
         task.wait(RETRY_GAP)
@@ -315,6 +277,7 @@ local function instantAttempt(prompt)
     finish(prompt)
     return fired
 end
+
 
 local function activateNearest()
     if not Enabled then
