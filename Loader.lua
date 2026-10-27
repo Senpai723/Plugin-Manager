@@ -96,11 +96,12 @@ return {
             RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Fullbright"
         },
         {
-            Name = "Anti-Cheat Bypass",
-            Desc = "Bypass anticheat Walkspeed & Jumppower",
-            Cmd = "bypassac",
-            UnCmd = "", -- Kosongkan kalau tidak ada perintah unexecute-nya
-            RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Anticheatspeedandjump"
+            Name = "Walk Speed",
+            Desc = "Mempercepat Jalan",
+            Cmd = "ws",
+            UnCmd = "unws",
+            NeedInput = true,
+            RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/WalkSpeed"
         }
     }
 }
