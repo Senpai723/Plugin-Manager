@@ -243,12 +243,6 @@ local function fastCleaningHold(prompt)
         return false
     end
 
-    local begin = prompt.InputHoldBegin
-    local finishHold = prompt.InputHoldEnd
-    if type(begin) ~= "function" or type(finishHold) ~= "function" then
-        return false
-    end
-
     local state = getState(prompt)
     if state == nil or state.holding then
         return false
@@ -256,19 +250,19 @@ local function fastCleaningHold(prompt)
 
     state.holding = true
 
-    -- Panggil InputHoldBegin agar progress bar game mulai jalan secara normal sesuai speed role lu
-    local okBegin = pcall(function()
+    -- TRICK INSTANT CLEANING: 
+    -- Kita panggil InputHoldBegin (agar game mendeteksi role/progress mulai) 
+    -- lalu langsung dipotong/diselesaikan dengan InputHoldEnd dalam sekejap mata (instant click).
+    pcall(function()
         prompt:InputHoldBegin()
     end)
 
-    if not okBegin then
-        state.holding = false
-        return false
-    end
+    -- Jeda sangat singkat (0.05 detik) supaya kalkulasi speed role di game sempat masuk tapi tidak bikin player pegel menahan tombol
+    task.wait(0.05)
 
-    -- Biarkan game menyelesaikan hold-nya secara natural (atau sedikit dipercepat jika durasi terlalu panjang)
-    -- Karena ada efek speed role, kita beri jeda singkat agar game sempat merekam progress
-    task.wait(0.1) 
+    pcall(function()
+        prompt:InputHoldEnd()
+    end)
 
     state.holding = false
     state.lastAttempt = os.clock()
@@ -284,19 +278,19 @@ local function instantAttempt(prompt)
         return false
     end
 
-    -- KHUSUS PROMPT CLEANING (BERSIH-BERSIH / NYAPU DI VIDEO 1):
-    -- Jangan dipaksa instan 0 agar progress bar dan sistem role level lu tidak macet.
+    -- Cek apakah ini prompt cleaning (bersih-bersih/nyapu)
     if isCleaningPrompt(prompt) then
         local actionText = string.lower(tostring(prompt.ActionText or ""))
         local isDropAction = string.find(actionText, "taruh", 1, true) or string.find(actionText, "put", 1, true) or string.find(actionText, "drop", 1, true) or string.find(actionText, "return", 1, true)
         
         if not isDropAction then
             finish(prompt)
+            -- Eksekusi trik instant-hold untuk cleaning
             return fastCleaningHold(prompt)
         end
     end
 
-    -- PROMPT BIASA (AMBIL ITEM / INTERAKSI LAINNYA DI VIDEO 2): Tetap instan murni
+    -- Prompt biasa (Ambil item / interaksi lain)
     local fired = firePrompt(prompt, 0, false)
     if fired then
         task.wait(RETRY_GAP)
