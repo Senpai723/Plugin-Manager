@@ -1,5 +1,4 @@
 return {
-    -- BAGIAN 1: TAB UTAMA (Berisi menu induk yang punya SubFeatures / Tombol OPEN)
     Main = {
         {
             Name = "Interactable / ITP",
@@ -86,13 +85,12 @@ return {
         }
     },
 
-    -- BAGIAN 2: TAB OTHER (Berisi fitur mandiri yang langsung tombol EXECUTE / UNEXECUTE)
-   Tools = {
+    Tools = {
         {
             Name = "Full Bright",
             Desc = "Membuat game menjadi terang, sudah termasuk anti kabut dan shadow",
             Cmd = "fullbright",
-            UnCmd = "fullbright", -- Bersifat toggle, jadi uncmd memanggil command yang sama
+            UnCmd = "fullbright",
             RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Fullbright"
         },
         {
@@ -117,10 +115,10 @@ return {
             UnCmd = "unnoclip",
             RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Noclip"
         }
-   },
-   
-   Horor = {
-         {
+    },
+    
+    Horor = {
+        {
             Name = "Interactable / ITP",
             Desc = "Proximity, Door, Click, Touch & ITP",
             RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Interactable",
@@ -146,7 +144,7 @@ return {
             Name = "Full Bright",
             Desc = "Membuat game menjadi terang, sudah termasuk anti kabut dan shadow",
             Cmd = "fullbright",
-            UnCmd = "fullbright", -- Bersifat toggle, jadi uncmd memanggil command yang sama
+            UnCmd = "fullbright",
             RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Fullbright"
         },
         {
@@ -160,16 +158,16 @@ return {
         {
             Name = "Instant Prompts",
             Desc = "Always instant interaction",
-            Cmd = "instanprompts",
-            UnCmd = "uninstanprompts",
-            RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/InstanPrompt",
+            Cmd = "instantprompts",
+            UnCmd = "uninstantprompts",
+            RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/InstanPrompt"
         },
         {
             Name = "Mute Sound",
             Desc = "Mematikan Suara latar belakang Map",
             Cmd = "mutesound",
             UnCmd = "unmutesound",
-            RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/SoundManage",
+            RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/SoundManage"
         },
         {
             Name = "Noclip",
