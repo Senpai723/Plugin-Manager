@@ -117,8 +117,7 @@ return {
             UnCmd = "unnoclip",
             RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Noclip"
         }
-    }
-},
+   },
    
    Horor = {
          {
