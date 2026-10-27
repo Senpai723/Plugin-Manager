@@ -93,14 +93,14 @@ return {
             Desc = "Membuat game jadi terang benderang",
             Cmd = "fullbright",
             UnCmd = "fullbright", -- Bersifat toggle, jadi uncmd memanggil command yang sama
-            RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/fullbright"
+            RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Fullbright"
         },
         {
             Name = "Anti-Cheat Bypass",
             Desc = "Bypass anticheat Walkspeed & Jumppower",
             Cmd = "bypassac",
             UnCmd = "", -- Kosongkan kalau tidak ada perintah unexecute-nya
-            RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/anticheatspeedandjump"
+            RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Anticheatspeedandjump"
         }
     }
 }
