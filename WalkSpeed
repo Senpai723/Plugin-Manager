@@ -1,10 +1,10 @@
 local plugin = {
-    ["PluginName"] = "walkspeed_persistent";
-    ["PluginDescription"] = "Custom WalkSpeed berbasis Velocity (Tembus Anti-Cheat & Map Reset).";
+    ["PluginName"] = "walkspeed_aggressive";
+    ["PluginDescription"] = "WalkSpeed agresif yang mempertahankan animasi lari natural.";
     ["Commands"] = {
         ["ws"] = {
             ["ListName"] = "ws [number]",
-            ["Description"] = "Memaksa kecepatan gerak player menggunakan CFrame velocity.",
+            ["Description"] = "Mengubah WalkSpeed asli dengan animasi normal.",
             ["Aliases"] = {"speed", "walkspeed"},
             ["Function"] = function(args, speaker)
                 local speedValue = tonumber(args[1])
@@ -13,50 +13,41 @@ local plugin = {
                     return
                 end
 
-                _G.CustomSpeedMultiplier = speedValue / 16 -- Normal Roblox speed adalah 16
-                _G.ActiveSpeedBoost = true
+                _G.TargetWalkSpeed = speedValue
+                _G.ActiveAggressiveWS = true
 
                 local RunService = game:GetService("RunService")
                 local Players = game:GetService("Players")
                 local localPlayer = Players.LocalPlayer
 
-                if _G.SpeedConnection then
-                    _G.SpeedConnection:Disconnect()
-                    _G.SpeedConnection = nil
+                if _G.AggressiveWSConnection then
+                    _G.AggressiveWSConnection:Disconnect()
+                    _G.AggressiveWSConnection = nil
                 end
 
-                _G.SpeedConnection = RunService.RenderStepped:Connect(function(dt)
-                    if not _G.ActiveSpeedBoost then return end
+                _G.AggressiveWSConnection = RunService.RenderStepped:Connect(function()
+                    if not _G.ActiveAggressiveWS then return end
 
                     local char = localPlayer.Character
                     if char then
                         local hum = char:FindFirstChildOfClass("Humanoid")
-                        local rootPart = char:FindFirstChild("HumanoidRootPart")
-
-                        if hum and rootPart then
-                            -- Pastikan humanoid walkspeed tetap diset tinggi juga
-                            hum.WalkSpeed = 16 -- Biar animasi jalan normal tidak glitch
-                            
-                            local moveDir = hum.MoveDirection
-                            if moveDir.Magnitude > 0 then
-                                -- Dorong posisi rootPart secara manual sesuai arah jalan dan multiplier speed
-                                rootPart.CFrame = rootPart.CFrame + (moveDir * (_G.CustomSpeedMultiplier * 16 - 16) * dt)
-                            end
+                        if hum and hum.WalkSpeed ~= _G.TargetWalkSpeed then
+                            hum.WalkSpeed = _G.TargetWalkSpeed
                         end
                     end
                 end)
-                print("[WalkSpeed] Mode CFrame Velocity diaktifkan dengan speed multiplier:", speedValue)
+                print("[WalkSpeed] Mode agresif diaktifkan dengan speed:", speedValue)
             end
         },
         ["unws"] = {
             ["ListName"] = "unws",
-            ["Description"] = "Mematikan custom speed.",
+            ["Description"] = "Mematikan walkspeed agresif.",
             ["Aliases"] = {"unwalkspeed", "resetws"},
             ["Function"] = function(args, speaker)
-                _G.ActiveSpeedBoost = false
-                if _G.SpeedConnection then
-                    _G.SpeedConnection:Disconnect()
-                    _G.SpeedConnection = nil
+                _G.ActiveAggressiveWS = false
+                if _G.AggressiveWSConnection then
+                    _G.AggressiveWSConnection:Disconnect()
+                    _G.AggressiveWSConnection = nil
                 end
                 
                 local char = speaker.Character
