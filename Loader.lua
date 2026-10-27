@@ -113,7 +113,7 @@ return {
             RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/CodeFinder"
         }
     },
-    
+
     Horor = {
         {
             Name = "Interactable / ITP",
