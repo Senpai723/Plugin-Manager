@@ -149,14 +149,14 @@ return {
         },
         {
             Name = "Instant Prompts",
-            Desc = "Always instant interaction",
+            Desc = "Instan klik pada objek yang di interact",
             Cmd = "instantprompts",
             UnCmd = "uninstantprompts",
             RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/InstanPrompt"
         },
         {
             Name = "Mute Sound",
-            Desc = "Mematikan Suara latar belakang Map",
+            Desc = "Mematikan suara latar belakang Map",
             Cmd = "mutesound",
             UnCmd = "unmutesound",
             RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/SoundManage"
