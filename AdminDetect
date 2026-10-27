@@ -416,9 +416,10 @@ function scanServerAdmins(isManual, isStateChange)
         local listChanged = (currentHash ~= _G.AdminDetector_LastHash)
         _G.AdminDetector_LastHash = currentHash
 
-        if #activeAdminsList > 0 then
+                if #activeAdminsList > 0 then
             _G.AdminDetector_HadAdminsBefore = true
             _G.AdminDetector_NoAdminNotified = false
+            -- Jika dipanggil manual (isManual), paksa tampilkan UI tanpa menunggu cooldown / perubahan list!
             if listChanged or isManual or (currentTime - _G.AdminDetector_LastNotifyTime) >= 300 then
                 _G.AdminDetector_LastNotifyTime = currentTime
                 playBeep()
@@ -427,6 +428,12 @@ function scanServerAdmins(isManual, isStateChange)
         else
             local isStillLoading = (currentTime - _G.AdminDetector_StartupTime) < 8
             if isStillLoading then isScanning = false return end
+
+            -- Jika dipanggil manual DAN tidak ada admin, berikan feedback teks/notif jelas bahwa kondisi bersih
+            if isManual then
+                playBeep()
+                notify("🛡️ AMAN | Pengecekan Manual: Tidak ada Admin terdeteksi.")
+            end
 
             if _G.AdminDetector_HadAdminsBefore then
                 _G.AdminDetector_HadAdminsBefore = false
