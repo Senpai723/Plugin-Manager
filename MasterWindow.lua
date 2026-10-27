@@ -127,7 +127,7 @@ return function(speaker)
         { Name = "Main",  DataKey = "Main" },
         { Name = "Tools", DataKey = "Tools" },
         { Name = "Horor", DataKey = "Horor" },
-        { Name = "PVP",   DataKey = "PVP" }   -- Sekarang tab PVP dan seterusnya aman digeser ke samping!
+        { Name = "Coming Soon",   DataKey = "PVP" }   -- Sekarang tab PVP dan seterusnya aman digeser ke samping!
     }
 
     local totalTabs = #tabDefinitions
