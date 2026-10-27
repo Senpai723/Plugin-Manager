@@ -608,11 +608,11 @@ return function(speaker)
         local chunk = loadstring(source)
         local data = chunk()
 
-        if data.MainMenus then
+        if data.Main then
             renderMenuCategory(data.MainMenus, MainScrollingFrame)
         end
 
-        if data.OtherMenus then
+        if data.Tools then
             renderMenuCategory(data.OtherMenus, OtherScrollingFrame)
         end
     end, function(e)
