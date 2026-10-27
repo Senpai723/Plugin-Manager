@@ -1,66 +1,52 @@
 local plugin = {
-    ["PluginName"] = "Smart Noclip";
-    ["PluginDescription"] = "Noclip pintar yang langsung tembus tembok tanpa harus lompat.";
+    ["PluginName"] = "Standard Noclip";
+    ["PluginDescription"] = "Noclip standar yang langsung tembus semua objek tanpa syarat.";
     ["Commands"] = {
         ["noclip"] = {
             ["ListName"] = "noclip",
-            ["Description"] = "Mengaktifkan Smart Noclip murni.",
+            ["Description"] = "Mengaktifkan Noclip standar.",
             ["Aliases"] = {"nc"},
             ["Function"] = function(args, speaker)
                 local RunService = game:GetService("RunService")
                 local Players = game:GetService("Players")
                 local localPlayer = Players.LocalPlayer
 
-                if _G.SmartNoclipActive then
+                if _G.StandardNoclipActive then
                     return
                 end
 
-                _G.SmartNoclipActive = true
+                _G.StandardNoclipActive = true
 
-                if _G.SmartNoclipConnection then
-                    _G.SmartNoclipConnection:Disconnect()
-                    _G.SmartNoclipConnection = nil
+                if _G.StandardNoclipConnection then
+                    _G.StandardNoclipConnection:Disconnect()
+                    _G.StandardNoclipConnection = nil
                 end
 
-                _G.SmartNoclipConnection = RunService.Stepped:Connect(function()
-                    if not _G.SmartNoclipActive then return end
+                _G.StandardNoclipConnection = RunService.Stepped:Connect(function()
+                    if not _G.StandardNoclipActive then return end
 
                     local char = localPlayer.Character
                     if char then
-                        local hum = char:FindFirstChildOfClass("Humanoid")
-                        local rootPart = char:FindFirstChild("HumanoidRootPart")
-
-                        if hum and rootPart then
-                            -- Matikan CanCollide untuk seluruh bagian tubuh kecuali bagian bawah jika sedang menapak
-                            for _, part in ipairs(char:GetDescendants()) do
-                                if part:IsA("BasePart") then
-                                    if part.Name == "HumanoidRootPart" then
-                                        -- RootPart tetap punya kolisi bawah jika menyentuh lantai/tangga, 
-                                        -- tapi kita buat non-kolisi jika menabrak dinding dari samping (opsional via physics)
-                                        -- Biar aman di tangga, kita biarkan true HANYA jika arah gerak vertikal tidak tertahan tembok.
-                                        part.CanCollide = hum.FloorMaterial ~= Enum.Material.Air
-                                    else
-                                        -- Bagian tubuh lain (tangan, kaki, kepala, torso) dimatikan total supaya langsung tembus tembok
-                                        part.CanCollide = false
-                                    end
-                                end
+                        for _, part in ipairs(char:GetDescendants()) do
+                            if part:IsA("BasePart") then
+                                part.CanCollide = false
                             end
                         end
                     end
                 end)
-                print("[Smart Noclip] Diaktifkan!")
+                print("[Noclip] Diaktifkan!")
             end
         },
         ["unnoclip"] = {
             ["ListName"] = "unnoclip",
-            ["Description"] = "Menonaktifkan Smart Noclip.",
+            ["Description"] = "Menonaktifkan Noclip.",
             ["Aliases"] = {"unnc"},
             ["Function"] = function(args, speaker)
-                _G.SmartNoclipActive = false
+                _G.StandardNoclipActive = false
 
-                if _G.SmartNoclipConnection then
-                    _G.SmartNoclipConnection:Disconnect()
-                    _G.SmartNoclipConnection = nil
+                if _G.StandardNoclipConnection then
+                    _G.StandardNoclipConnection:Disconnect()
+                    _G.StandardNoclipConnection = nil
                 end
 
                 local char = speaker.Character
@@ -71,7 +57,7 @@ local plugin = {
                         end
                     end
                 end
-                print("[Smart Noclip] Dimatikan.")
+                print("[Noclip] Dimatikan.")
             end
         }
     }
