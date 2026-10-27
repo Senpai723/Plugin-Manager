@@ -106,57 +106,12 @@ return function(speaker)
     MinBtn.Parent = TopBar
     Instance.new("UICorner", MinBtn).CornerRadius = UDim.new(0, 4)
 
-    -- Tab Bar (UTAMA & OTHER)
-    local TabBar = Instance.new("Frame")
-    TabBar.Size = UDim2.new(1, -12, 0, 26)
-    TabBar.Position = UDim2.new(0, 6, 0, 36)
-    TabBar.BackgroundTransparency = 1
-    TabBar.Parent = Frame
-
-    local TabMainBtn = Instance.new("TextButton")
-    TabMainBtn.Size = UDim2.new(0.5, -3, 1, 0)
-    TabMainBtn.Position = UDim2.new(0, 0, 0, 0)
-    TabMainBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 90)
-    TabMainBtn.BorderSizePixel = 0
-    TabMainBtn.Font = Enum.Font.GothamBold
-    TabMainBtn.Text = "Main"
-    TabMainBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    TabMainBtn.TextSize = 10
-    TabMainBtn.Parent = TabBar
-    Instance.new("UICorner", TabMainBtn).CornerRadius = UDim.new(0, 4)
-
-    local TabOtherBtn = Instance.new("TextButton")
-    TabOtherBtn.Size = UDim2.new(0.5, -3, 1, 0)
-    TabOtherBtn.Position = UDim2.new(0.5, 3, 0, 0)
-    TabOtherBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 55)
-    TabOtherBtn.BorderSizePixel = 0
-    TabOtherBtn.Font = Enum.Font.GothamBold
-    TabOtherBtn.Text = "Tools"
-    TabOtherBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
-    TabOtherBtn.TextSize = 10
-    TabOtherBtn.Parent = TabBar
-    Instance.new("UICorner", TabOtherBtn).CornerRadius = UDim.new(0, 4)
-
     local ContentArea = Instance.new("Frame")
     ContentArea.Size = UDim2.new(1, -12, 1, -70)
     ContentArea.Position = UDim2.new(0, 6, 0, 66)
     ContentArea.BackgroundTransparency = 1
     ContentArea.BorderSizePixel = 0
     ContentArea.Parent = Frame
-
-    -- Scroll Area Tab Utama
-    local MainScrollingFrame = Instance.new("ScrollingFrame")
-    MainScrollingFrame.Size = UDim2.new(1, 0, 1, 0)
-    MainScrollingFrame.BackgroundTransparency = 1
-    MainScrollingFrame.BorderSizePixel = 0
-    MainScrollingFrame.ScrollBarThickness = 4
-    MainScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
-    MainScrollingFrame.Parent = ContentArea
-
-    local MainLayout = Instance.new("UIListLayout")
-    MainLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    MainLayout.Padding = UDim.new(0, 5)
-    MainLayout.Parent = MainScrollingFrame
 
     local SubMenuContainer = Instance.new("Frame")
     SubMenuContainer.Size = UDim2.new(1, 0, 1, 0)
@@ -165,52 +120,88 @@ return function(speaker)
     SubMenuContainer.Visible = false
     SubMenuContainer.Parent = ContentArea
 
-    -- Scroll Area Tab Other
-    local OtherScrollingFrame = Instance.new("ScrollingFrame")
-    OtherScrollingFrame.Size = UDim2.new(1, 0, 1, 0)
-    OtherScrollingFrame.BackgroundTransparency = 1
-    OtherScrollingFrame.BorderSizePixel = 0
-    OtherScrollingFrame.ScrollBarThickness = 4
-    OtherScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
-    OtherScrollingFrame.Visible = false
-    OtherScrollingFrame.Parent = ContentArea
+    -- ==========================================
+    -- SISTEM TAB DINAMIS (Cukup Atur di Sini Saja!)
+    -- Kalau mau tambah tab baru, tinggal tambah baris baru di bawah sini:
+    -- { Name = "NamaTab", DataKey = "KeyDiLoader" }
+    -- ==========================================
+    local tabDefinitions = {
+        { Name = "Main",  DataKey = "Main" },
+        { Name = "Tools", DataKey = "Tools" },
+        { Name = "Horor", DataKey = "Horor" }
+    }
 
-    local OtherLayout = Instance.new("UIListLayout")
-    OtherLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    OtherLayout.Padding = UDim.new(0, 5)
-    OtherLayout.Parent = OtherScrollingFrame
-
+    local totalTabs = #tabDefinitions
+    local tabButtons = {}
+    local tabScrolls = {}
+    local currentActiveScroll = nil
     local isCurrentlyInSubMenu = false
-    local currentActiveScroll = MainScrollingFrame
 
-    TabMainBtn.MouseButton1Click:Connect(function()
-        TabMainBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 90)
-        TabMainBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-        TabOtherBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 55)
-        TabOtherBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+    -- Tab Bar (Wadah Utama Tombol Tab)
+    local TabBar = Instance.new("Frame")
+    TabBar.Size = UDim2.new(1, -12, 0, 26)
+    TabBar.Position = UDim2.new(0, 6, 0, 36)
+    TabBar.BackgroundTransparency = 1
+    TabBar.Parent = Frame
 
-        OtherScrollingFrame.Visible = false
-        if isCurrentlyInSubMenu then
-            SubMenuContainer.Visible = true
-            MainScrollingFrame.Visible = false
-        else
-            SubMenuContainer.Visible = false
-            MainScrollingFrame.Visible = true
+    -- Looping otomatis untuk membuat Tombol Tab dan Area Scroll
+    for i, tabInfo in ipairs(tabDefinitions) do
+        local index = i - 1
+        local sizeWidth = 1 / totalTabs
+
+        -- 1. Buat Tombol Tab secara Otomatis
+        local Btn = Instance.new("TextButton")
+        Btn.Size = UDim2.new(sizeWidth, -2, 1, 0)
+        Btn.Position = UDim2.new(sizeWidth * index, (index * 2), 0, 0)
+        Btn.BackgroundColor3 = (i == 1) and Color3.fromRGB(0, 150, 90) or Color3.fromRGB(50, 50, 55)
+        Btn.BorderSizePixel = 0
+        Btn.Font = Enum.Font.GothamBold
+        Btn.Text = tabInfo.Name
+        Btn.TextColor3 = (i == 1) and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(200, 200, 200)
+        Btn.TextSize = 10
+        Btn.Parent = TabBar
+        Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 4)
+        tabButtons[tabInfo.Name] = Btn
+
+        -- 2. Buat Area ScrollingFrame secara Otomatis
+        local Scroll = Instance.new("ScrollingFrame")
+        Scroll.Size = UDim2.new(1, 0, 1, 0)
+        Scroll.BackgroundTransparency = 1
+        Scroll.BorderSizePixel = 0
+        Scroll.ScrollBarThickness = 4
+        Scroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+        Scroll.Visible = (i == 1)
+        Scroll.Parent = ContentArea
+        tabScrolls[tabInfo.Name] = Scroll
+
+        local Layout = Instance.new("UIListLayout")
+        Layout.SortOrder = Enum.SortOrder.LayoutOrder
+        Layout.Padding = UDim.new(0, 5)
+        Layout.Parent = Scroll
+
+        if i == 1 then
+            currentActiveScroll = Scroll
         end
-        currentActiveScroll = MainScrollingFrame
-    end)
 
-    TabOtherBtn.MouseButton1Click:Connect(function()
-        TabOtherBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 90)
-        TabOtherBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-        TabMainBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 55)
-        TabMainBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+        -- 3. Logika Interaksi Klik Tombol Tab
+        Btn.MouseButton1Click:Connect(function()
+            for _, otherBtn in pairs(tabButtons) do
+                otherBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 55)
+                otherBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+            end
+            for _, otherScroll in pairs(tabScrolls) do
+                otherScroll.Visible = false
+            end
 
-        MainScrollingFrame.Visible = false
-        SubMenuContainer.Visible = false
-        OtherScrollingFrame.Visible = true
-        currentActiveScroll = OtherScrollingFrame
-    end)
+            Btn.BackgroundColor3 = Color3.fromRGB(0, 150, 90)
+            Btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+            
+            SubMenuContainer.Visible = false
+            Scroll.Visible = true
+            currentActiveScroll = Scroll
+            isCurrentlyInSubMenu = false
+        end)
+    end
 
     local minimized = false
     MinBtn.MouseButton1Click:Connect(function()
@@ -310,8 +301,9 @@ return function(speaker)
             child:Destroy()
         end
         SubMenuContainer.Visible = true
-        MainScrollingFrame.Visible = false
-        OtherScrollingFrame.Visible = false
+        for _, scroll in pairs(tabScrolls) do
+            scroll.Visible = false
+        end
 
         local BackBtn = Instance.new("TextButton")
         BackBtn.Size = UDim2.new(1, 0, 0, 26)
@@ -462,7 +454,6 @@ return function(speaker)
         SubScroll.CanvasSize = UDim2.new(0, 0, 0, #subFeatures * 57)
     end
 
-    -- FUNGSI UNIVERSAL UNTUK RENDER MENU (BISA PAKAI SUB / LANGSUNG EXECUTE)
     local function renderMenuCategory(menuList, targetParentScroll)
         if not menuList then return end
 
@@ -499,7 +490,6 @@ return function(speaker)
             DescLabel.TextWrapped = true
             DescLabel.Parent = ItemFrame
 
-            -- JIKA PUNYA SUB-FEATURES (MUNCULKAN TOMBOL OPEN)
             if item.SubFeatures and #item.SubFeatures > 0 then
                 local OpenBtn = Instance.new("TextButton")
                 OpenBtn.Size = UDim2.new(0, 75, 0, 24)
@@ -517,7 +507,6 @@ return function(speaker)
                     showSubMenu(item.Name, item.RawUrl, item.SubFeatures)
                 end)
             else
-                -- JIKA TIDAK PUNYA SUB-FEATURES (LANGSUNG MUNCULKAN EXECUTE / UNEXECUTE)
                 if featureStates[item.Name] == nil then featureStates[item.Name] = false end
 
                 local ExecBtn = Instance.new("TextButton")
@@ -601,19 +590,20 @@ return function(speaker)
         targetParentScroll.CanvasSize = UDim2.new(0, 0, 0, #menuList * 57)
     end
 
-    -- EKSEKUSI FETCH LOADER.LUA
+    -- ==========================================
+    -- FETCH LOADER.LUA SECARA OTOMATIS
+    -- ==========================================
     local configOk, configErr = xpcall(function()
         local configUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Loader.lua"
         local source = game:HttpGet(configUrl)
         local chunk = loadstring(source)
         local data = chunk()
 
-        if data.Main then
-            renderMenuCategory(data.Main, MainScrollingFrame)
-        end
-
-        if data.Tools then
-            renderMenuCategory(data.Tools, OtherScrollingFrame)
+        -- Looping otomatis membaca data berdasarkan tabDefinitions di atas
+        for _, tabInfo in ipairs(tabDefinitions) do
+            if data[tabInfo.DataKey] and tabScrolls[tabInfo.Name] then
+                renderMenuCategory(data[tabInfo.DataKey], tabScrolls[tabInfo.Name])
+            end
         end
     end, function(e)
         return (debug and debug.traceback and debug.traceback(tostring(e), 2)) or tostring(e)
