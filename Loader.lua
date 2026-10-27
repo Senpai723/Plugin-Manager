@@ -90,18 +90,25 @@ return {
     Tools = {
         {
             Name = "Full Bright",
-            Desc = "Membuat game jadi terang benderang",
+            Desc = "Membuat game menjadi terang, sudah termasuk anti kabut dan shadow",
             Cmd = "fullbright",
             UnCmd = "fullbright", -- Bersifat toggle, jadi uncmd memanggil command yang sama
             RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Fullbright"
         },
         {
             Name = "Walk Speed",
-            Desc = "Mempercepat Jalan",
+            Desc = "Masukan angka speed yang kami mau, misal 20 ( tergantung map )",
             Cmd = "ws",
             UnCmd = "unws",
             NeedInput = true,
             RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/WalkSpeed"
+        },
+        {
+            Name = "Infinite Jump",
+            Desc = "Melompat tanpa batas dan Melampauinyaaaa...",
+            Cmd = "infjump",
+            UnCmd = "uninfjump",
+            RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/InfiniteJump"
         }
     }
 }
