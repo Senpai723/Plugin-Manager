@@ -238,7 +238,8 @@ local function isCleaningPrompt(prompt)
         or string.find(text, "sweep", 1, true) ~= nil
 end
 
-local function fastCleaningHold(prompt)
+-- KHUSUS CUSTOM PROMPT BERSIH-BERSIH (3 DETIK): 1 Klik otomatis ditahan skrip 3.1 detik sampai penuh
+local function fullCleaningHold(prompt)
     if not Enabled or not isValid(prompt) then
         return false
     end
@@ -246,7 +247,6 @@ local function fastCleaningHold(prompt)
     local begin = prompt.InputHoldBegin
     local finishHold = prompt.InputHoldEnd
     if type(begin) ~= "function" or type(finishHold) ~= "function" then
-        -- Fallback jika game pakai sistem kustom murni
         return firePrompt(prompt, 0, false)
     end
 
@@ -257,18 +257,23 @@ local function fastCleaningHold(prompt)
 
     state.holding = true
 
-    -- Trigger mulai hold secara instan
     pcall(function()
         prompt:InputHoldBegin()
     end)
 
-    -- Berikan waktu tunggu yang sangat singkat (misal 0.1 detik) agar progress bar game langsung penuh otomatis 
-    -- tanpa lu harus nahan tombol lama-lama, lalu langsung selesaikan.
-    task.wait(0.1)
+    -- Ambil durasi asli prompt game (biasanya 3 detik), lalu dilebihkan sedikit jadi 3.1 detik agar bar penuh sempurna
+    local duration = tonumber(prompt.HoldDuration)
+    if duration == nil or duration <= 0 then
+        duration = 3.0
+    end
 
-    pcall(function()
-        prompt:InputHoldEnd()
-    end)
+    task.wait(duration + 0.1)
+
+    if isValid(prompt) then
+        pcall(function()
+            prompt:InputHoldEnd()
+        end)
+    end
 
     state.holding = false
     state.lastAttempt = os.clock()
@@ -284,18 +289,7 @@ local function instantAttempt(prompt)
         return false
     end
 
-    -- Khusus prompt bersih-bersih (cleaning/nyapu/ngepel) arahkan ke fastCleaningHold yang sudah di-tuning
-    if isCleaningPrompt(prompt) then
-        local actionText = string.lower(tostring(prompt.ActionText or ""))
-        local isDropAction = string.find(actionText, "taruh", 1, true) or string.find(actionText, "put", 1, true) or string.find(actionText, "drop", 1, true) or string.find(actionText, "return", 1, true)
-        
-        if not isDropAction then
-            finish(prompt)
-            return fastCleaningHold(prompt)
-        end
-    end
-
-    -- Prompt biasa (Ambil / Taruh alat) tetap instan murni 1 klik
+    -- 1. UTAMAKAN INSTAN DULU UNTUK SEMUA PROMPT (Termasuk game cleaning dengan prompt asli Roblox)
     local fired = firePrompt(prompt, 0, false)
     if fired then
         task.wait(RETRY_GAP)
@@ -312,6 +306,14 @@ local function instantAttempt(prompt)
         end
     end
 
+    -- 2. JIKA INSTAN GAGAL & TERDETEKSI PROMPT BERSIH-BERSIH CUSTOM:
+    -- Baru gunakan sistem auto-hold 3.1 detik supaya progress bar di game custom tidak macet!
+    if isCleaningPrompt(prompt) then
+        finish(prompt)
+        return fullCleaningHold(prompt)
+    end
+
+    -- Fallback terakhir untuk prompt biasa
     if isValid(prompt) then
         fired = firePrompt(prompt, nil, false)
     end
