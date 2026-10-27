@@ -14,7 +14,7 @@ return {
             }
         },
         {
-            Name = "Color ESP",
+            Name = "ESP Player",
             Desc = "Player & Enemy ESP",
             RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/colorESP",
             SubFeatures = {
@@ -23,29 +23,13 @@ return {
             }
         },
         {
-            Name = "Instant Prompts",
-            Desc = "Always instant interaction",
-            RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/InstanPrompt",
-            SubFeatures = {
-                { Name = "INSTANTPROMPTS", Desc = "Selalu Instan saat mengklik Prompt", Cmd = "instantprompts", UnCmd = "uninstantprompts" }
-            }
-        },
-        {
-            Name = "Fitur Player",
+            Name = "Teleport",
             Desc = "Waypoint & Teleport",
             RawUrl = "",
             SubFeatures = {
                 { Name = "Radar Checkpoint", Desc = "Menampilkan Checkpoint yang belum di sentuh", Cmd = "scp", UnCmd = "scp_close", RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Waypoint" },
                 { Name = "CP & Waypoint", Desc = "Menampilkan Checkpoint atau Waypoint", Cmd = "cpn", UnCmd = "cpn_close", RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Waypoint" },
                 { Name = "Teleport to Player", Desc = "Teleport ke player dengan 1 klik", Cmd = "tp", UnCmd = "", RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/PlayerTeleport" }
-            }
-        },
-        {
-            Name = "Code Finder",
-            Desc = "Menemukan Code angka dan Huruf",
-            RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/CodeFinder",
-            SubFeatures = {
-                { Name = "Code Finder", Desc = "Menemukan CODE yang sudah masuk ke Client Side", Cmd = "CODE", UnCmd = "" }
             }
         },
         {
@@ -86,6 +70,13 @@ return {
             RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Fullbright"
         },
         {
+            Name = "Instant Prompts",
+            Desc = "Always instant interaction",
+            Cmd = "instanprompts",
+            UnCmd = "uninstanprompts",
+            RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/InstanPrompt"
+        },
+        {
             Name = "Walk Speed",
             Desc = "Masukan angka speed yang kami mau, misal 20 ( tergantung map )",
             Cmd = "ws",
@@ -102,7 +93,7 @@ return {
         },
         {
             Name = "Admin Detect",
-            Desc = "Mendeteksi Owner dan Admin",
+            Desc = "Mendeteksi Owner dan Admin, tunggu beberapa detik setelah Execute",
             Cmd = "cad",
             UnCmd = "",
             RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/AdminDetect"
@@ -113,6 +104,13 @@ return {
             Cmd = "noclip",
             UnCmd = "unnoclip",
             RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Noclip"
+        }
+        {
+            Name = "Code Finder",
+            Desc = "Menemukan Code angka dan Huruf",
+            Cmd = "code",
+            UnCmd = "",
+            RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/CodeFinder"
         }
     },
     
@@ -174,6 +172,13 @@ return {
             Cmd = "noclip",
             UnCmd = "unnoclip",
             RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Noclip"
+        },
+        {
+            Name = "Code Finder",
+            Desc = "Menemukan Code angka dan Huruf",
+            Cmd = "code",
+            UnCmd = "",
+            RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/CodeFinder"
         }
     }
 }
