@@ -119,7 +119,7 @@ return function(speaker)
     TabMainBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 90)
     TabMainBtn.BorderSizePixel = 0
     TabMainBtn.Font = Enum.Font.GothamBold
-    TabMainBtn.Text = "UTAMA"
+    TabMainBtn.Text = "Main"
     TabMainBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
     TabMainBtn.TextSize = 10
     TabMainBtn.Parent = TabBar
@@ -131,7 +131,7 @@ return function(speaker)
     TabOtherBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 55)
     TabOtherBtn.BorderSizePixel = 0
     TabOtherBtn.Font = Enum.Font.GothamBold
-    TabOtherBtn.Text = "OTHER"
+    TabOtherBtn.Text = "Tools"
     TabOtherBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
     TabOtherBtn.TextSize = 10
     TabOtherBtn.Parent = TabBar
