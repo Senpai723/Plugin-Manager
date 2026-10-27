@@ -46,7 +46,7 @@ local IGNORE_KEYWORDS = {
     "sky", "skypart", "skybox", "cloud", "atmosphere", "barrier", "invisible", "boundary",
     -- Filter Dekorasi & Alam
     "tree", "pohon", "branch", "trunk", "foliage", "leaf", "leaves", "mushroom", "axe", "ice",
-    "fence", "pagar", "bridge", "jembatan", "ladder", "stair", "tangga", "fog", "hat",
+    "fence", "pagar", "bridge", "jembatan", "ladder", "stair", "tangga", "fog", "hat", "skip", "skipboard",
     "wood", "stone", "rock", "batu", "bambu", "raft", "platform", "floor", "step", "pijakan",
     "lamp", "lantern", "light", "street lamp", "speaker", "audio", "music", "sound", "fx", "effect",
     "head", "torso", "humanoid", "character", "arm", "leg", "face", "hair", "holder", "neon",
@@ -289,6 +289,7 @@ local function parseCPIdentity(obj)
     -- ==================================================
     -- 2. DOKTRIN STRICT: CEK ATAU KATA KUNCI CHECKPOINT WAJIB ADA
     -- ==================================================
+        -- Pastikan bagian pengecekan kata kunci di parseCPIdentity tidak terlalu kaku
     local combined = lowerParent .. " " .. lowerName
     local hasCPKeyword = string.find(combined, "checkpoint") or 
                          string.find(combined, "cekpoin") or 
@@ -296,7 +297,8 @@ local function parseCPIdentity(obj)
                          string.find(combined, "waypoint") or 
                          string.find(combined, "wp") or 
                          string.find(combined, "stage") or 
-                         string.find(combined, "pos")
+                         string.find(combined, "pos") or
+                         validPart:FindFirstChild("TouchInterest") -- TAMBAHKAN INI: Asalkan punya TouchInterest checkpoint, anggap sah!
 
     -- Ambil teks dari BillboardGui jika ada
     local guiText = ""
