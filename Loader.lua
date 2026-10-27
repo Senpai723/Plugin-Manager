@@ -104,7 +104,7 @@ return {
             Cmd = "noclip",
             UnCmd = "unnoclip",
             RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Noclip"
-        }
+        },
         {
             Name = "Code Finder",
             Desc = "Menemukan Code angka dan Huruf",
