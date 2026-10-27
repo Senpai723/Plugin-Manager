@@ -49,14 +49,6 @@ return {
             }
         },
         {
-            Name = "Admin Detect",
-            Desc = "Mendeteksi Owner dan Admin",
-            RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/AdminDetect",
-            SubFeatures = {
-                { Name = "Admin Detect", Desc = "Tunggu beberapa detik sampai muncul Notif", Cmd = "cad", UnCmd = "" }
-            }
-        },
-        {
             Name = "Sound Manage",
             Desc = "Mengatur suara di map dan memutar Lagu",
             RawUrl = "",
@@ -107,6 +99,13 @@ return {
             Cmd = "infjump",
             UnCmd = "uninfjump",
             RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/InfiniteJump"
+        },
+        {
+            Name = "Admin Detect",
+            Desc = "Mendeteksi Owner dan Admin",
+            Cmd = "cad",
+            UnCmd = "",
+            RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/AdminDetect"
         },
         {
             Name = "Noclip",
