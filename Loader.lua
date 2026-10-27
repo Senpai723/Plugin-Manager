@@ -87,7 +87,7 @@ return {
     },
 
     -- BAGIAN 2: TAB OTHER (Berisi fitur mandiri yang langsung tombol EXECUTE / UNEXECUTE)
-    Tools = {
+   Tools = {
         {
             Name = "Full Bright",
             Desc = "Membuat game menjadi terang, sudah termasuk anti kabut dan shadow",
@@ -109,6 +109,68 @@ return {
             Cmd = "infjump",
             UnCmd = "uninfjump",
             RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/InfiniteJump"
+        },
+        {
+            Name = "Noclip",
+            Desc = "Menembus Objek yang ada di depan, tapi agak lebih pinter dikit",
+            Cmd = "noclip",
+            UnCmd = "unnoclip",
+            RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Noclip"
+        }
+    }
+},
+   
+   Horor = {
+         {
+            Name = "Interactable / ITP",
+            Desc = "Proximity, Door, Click, Touch & ITP",
+            RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Interactable",
+            SubFeatures = {
+                { Name = "ITP", Desc = "Memunculkan window berisikan list objek yang bisa diteleport", Cmd = "itp", UnCmd = "itp" },
+                { Name = "PPESP", Desc = "Memunculkan Box dan Nama ESP Objek yang di Pencet/Tekan", Cmd = "proximityesp", UnCmd = "unproximityesp" },
+                { Name = "CDESP", Desc = "Memunculkan Box dan Nama ESP Objek yang di Klik", Cmd = "clickdetectoresp", UnCmd = "unclickdetectoresp" },
+                { Name = "DESP", Desc = "Memuncukkan ESP sebuah Pintu", Cmd = "dooresp", UnCmd = "undooresp" },
+                { Name = "ITESP", Desc = "Memunculkan Box dan Nama ESP yang di sentuh", Cmd = "itemtouchesp", UnCmd = "untouchinterestesp" },
+                { Name = "TESP", Desc = "Memunculkan ESP Trigger / Scene Event", Cmd = "touchinterestesp", UnCmd = "untouchinterestesp" }
+            }
+        },
+        {
+            Name = "Color ESP",
+            Desc = "Player & Enemy ESP",
+            RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/colorESP",
+            SubFeatures = {
+                { Name = "PESP", Desc = "Menampilkan ESP Body dan mama Player", Cmd = "pesp", UnCmd = "unloadColorESP" },
+                { Name = "EESP", Desc = "Menampilkan ESP Musuh dan NPC", Cmd = "eesp", UnCmd = "unloadColorESP" }
+            }
+        },
+        {
+            Name = "Full Bright",
+            Desc = "Membuat game menjadi terang, sudah termasuk anti kabut dan shadow",
+            Cmd = "fullbright",
+            UnCmd = "fullbright", -- Bersifat toggle, jadi uncmd memanggil command yang sama
+            RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Fullbright"
+        },
+        {
+            Name = "Walk Speed",
+            Desc = "Masukan angka speed yang kami mau, misal 20 ( tergantung map )",
+            Cmd = "ws",
+            UnCmd = "unws",
+            NeedInput = true,
+            RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/WalkSpeed"
+        },
+        {
+            Name = "Instant Prompts",
+            Desc = "Always instant interaction",
+            Cmd = "instanprompts",
+            UnCmd = "uninstanprompts",
+            RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/InstanPrompt",
+        },
+        {
+            Name = "Mute Sound",
+            Desc = "Mematikan Suara latar belakang Map",
+            Cmd = "mutesound",
+            UnCmd = "unmutesound",
+            RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/SoundManage",
         },
         {
             Name = "Noclip",
