@@ -239,8 +239,40 @@ local function isCleaningPrompt(prompt)
 end
 
 local function fastCleaningHold(prompt)
-    -- Kita hapus fungsi hold manual, ganti dengan pemicu instan murni (durasi 0)
-    return firePrompt(prompt, 0, false)
+    if not Enabled or not isValid(prompt) then
+        return false
+    end
+
+    local begin = prompt.InputHoldBegin
+    local finishHold = prompt.InputHoldEnd
+    if type(begin) ~= "function" or type(finishHold) ~= "function" then
+        -- Fallback jika game pakai sistem kustom murni
+        return firePrompt(prompt, 0, false)
+    end
+
+    local state = getState(prompt)
+    if state == nil or state.holding then
+        return false
+    end
+
+    state.holding = true
+
+    -- Trigger mulai hold secara instan
+    pcall(function()
+        prompt:InputHoldBegin()
+    end)
+
+    -- Berikan waktu tunggu yang sangat singkat (misal 0.1 detik) agar progress bar game langsung penuh otomatis 
+    -- tanpa lu harus nahan tombol lama-lama, lalu langsung selesaikan.
+    task.wait(0.1)
+
+    pcall(function()
+        prompt:InputHoldEnd()
+    end)
+
+    state.holding = false
+    state.lastAttempt = os.clock()
+    return true
 end
 
 local function instantAttempt(prompt)
@@ -252,7 +284,18 @@ local function instantAttempt(prompt)
         return false
     end
 
-    -- Coba tembak langsung dengan durasi 0 (instan) untuk semua jenis prompt termasuk cleaning
+    -- Khusus prompt bersih-bersih (cleaning/nyapu/ngepel) arahkan ke fastCleaningHold yang sudah di-tuning
+    if isCleaningPrompt(prompt) then
+        local actionText = string.lower(tostring(prompt.ActionText or ""))
+        local isDropAction = string.find(actionText, "taruh", 1, true) or string.find(actionText, "put", 1, true) or string.find(actionText, "drop", 1, true) or string.find(actionText, "return", 1, true)
+        
+        if not isDropAction then
+            finish(prompt)
+            return fastCleaningHold(prompt)
+        end
+    end
+
+    -- Prompt biasa (Ambil / Taruh alat) tetap instan murni 1 klik
     local fired = firePrompt(prompt, 0, false)
     if fired then
         task.wait(RETRY_GAP)
@@ -277,7 +320,6 @@ local function instantAttempt(prompt)
     finish(prompt)
     return fired
 end
-
 
 local function activateNearest()
     if not Enabled then
