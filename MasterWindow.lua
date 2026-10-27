@@ -24,7 +24,7 @@ return function(speaker)
         if oldPlayer then oldPlayer:Destroy() end
     end
 
-    warn("[MasterWindow] Memulai pembuatan window...")
+    warn("[MasterWindow] Memulai pembuatan window dengan Tab...")
 
     local ScreenGui = Instance.new("ScreenGui")
     ScreenGui.Name = "MasterPluginHub"
@@ -46,8 +46,8 @@ return function(speaker)
     warn("[MasterWindow] ScreenGui berhasil dipasang ke " .. ScreenGui.Parent.Name)
 
     local Frame = Instance.new("Frame")
-    Frame.Size = UDim2.new(0, 280, 0, 310)
-    Frame.Position = UDim2.new(0.5, -140, 0.5, -155)
+    Frame.Size = UDim2.new(0, 280, 0, 340) -- Diperbesar sedikit tingginya untuk menampung Tab Bar
+    Frame.Position = UDim2.new(0.5, -140, 0.5, -170)
     Frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     Frame.BorderSizePixel = 0
     Frame.Active = true
@@ -107,14 +107,53 @@ return function(speaker)
     MinBtn.Parent = TopBar
     Instance.new("UICorner", MinBtn).CornerRadius = UDim.new(0, 4)
 
+    -- Tab Bar (UTAMA & OTHER) di bawah TopBar
+    local TabBar = Instance.new("Frame")
+    TabBar.Size = UDim2.new(1, -12, 0, 26)
+    TabBar.Position = UDim2.new(0, 6, 0, 36)
+    TabBar.BackgroundTransparency = 1
+    TabBar.Parent = Frame
+
+    local TabMainBtn = Instance.new("TextButton")
+    TabMainBtn.Size = UDim2.new(0.5, -3, 1, 0)
+    TabMainBtn.Position = UDim2.new(0, 0, 0, 0)
+    TabMainBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 90) -- Aktif awal
+    TabMainBtn.BorderSizePixel = 0
+    TabMainBtn.Font = Enum.Font.GothamBold
+    TabMainBtn.Text = "UTAMA"
+    TabMainBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    TabMainBtn.TextSize = 10
+    TabMainBtn.Parent = TabBar
+    Instance.new("UICorner", TabMainBtn).CornerRadius = UDim.new(0, 4)
+
+    local TabOtherBtn = Instance.new("TextButton")
+    TabOtherBtn.Size = UDim2.new(0.5, -3, 1, 0)
+    TabOtherBtn.Position = UDim2.new(0.5, 3, 0, 0)
+    TabOtherBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 55) -- Non-aktif awal
+    TabOtherBtn.BorderSizePixel = 0
+    TabOtherBtn.Font = Enum.Font.GothamBold
+    TabOtherBtn.Text = "OTHER"
+    TabOtherBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+    TabOtherBtn.TextSize = 10
+    TabOtherBtn.Parent = TabBar
+    Instance.new("UICorner", TabOtherBtn).CornerRadius = UDim.new(0, 4)
+
+    -- Content Area untuk membungkus frame utama & other
+    local ContentArea = Instance.new("Frame")
+    ContentArea.Size = UDim2.new(1, -12, 1, -70)
+    ContentArea.Position = UDim2.new(0, 6, 0, 66)
+    ContentArea.BackgroundTransparency = 1
+    ContentArea.BorderSizePixel = 0
+    ContentArea.Parent = Frame
+
+    -- 1. ScrollingFrame Utama (Asli)
     local ScrollingFrame = Instance.new("ScrollingFrame")
-    ScrollingFrame.Size = UDim2.new(1, -12, 1, -40)
-    ScrollingFrame.Position = UDim2.new(0, 6, 0, 36)
+    ScrollingFrame.Size = UDim2.new(1, 0, 1, 0)
     ScrollingFrame.BackgroundTransparency = 1
     ScrollingFrame.BorderSizePixel = 0
     ScrollingFrame.ScrollBarThickness = 4
     ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
-    ScrollingFrame.Parent = Frame
+    ScrollingFrame.Parent = ContentArea
 
     local UIListLayout = Instance.new("UIListLayout")
     UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
@@ -122,14 +161,56 @@ return function(speaker)
     UIListLayout.Parent = ScrollingFrame
 
     local SubMenuContainer = Instance.new("Frame")
-    SubMenuContainer.Size = UDim2.new(1, -12, 1, -40)
-    SubMenuContainer.Position = UDim2.new(0, 6, 0, 36)
+    SubMenuContainer.Size = UDim2.new(1, 0, 1, 0)
     SubMenuContainer.BackgroundTransparency = 1
     SubMenuContainer.BorderSizePixel = 0
     SubMenuContainer.Visible = false
-    SubMenuContainer.Parent = Frame
+    SubMenuContainer.Parent = ContentArea
+
+    -- 2. ScrollingFrame Other (Tab Tambahan untuk Direct Execute)
+    local OtherScrollingFrame = Instance.new("ScrollingFrame")
+    OtherScrollingFrame.Size = UDim2.new(1, 0, 1, 0)
+    OtherScrollingFrame.BackgroundTransparency = 1
+    OtherScrollingFrame.BorderSizePixel = 0
+    OtherScrollingFrame.ScrollBarThickness = 4
+    OtherScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+    OtherScrollingFrame.Visible = false
+    OtherScrollingFrame.Parent = ContentArea
+
+    local OtherUIListLayout = Instance.new("UIListLayout")
+    OtherUIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    OtherUIListLayout.Padding = UDim.new(0, 5)
+    OtherUIListLayout.Parent = OtherScrollingFrame
 
     local isCurrentlyInSubMenu = false
+
+    -- Logika Tombol Tab Switcher
+    TabMainBtn.MouseButton1Click:Connect(function()
+        TabMainBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 90)
+        TabMainBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        TabOtherBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 55)
+        TabOtherBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+
+        OtherScrollingFrame.Visible = false
+        if isCurrentlyInSubMenu then
+            SubMenuContainer.Visible = true
+            ScrollingFrame.Visible = false
+        else
+            SubMenuContainer.Visible = false
+            ScrollingFrame.Visible = true
+        end
+    end)
+
+    TabOtherBtn.MouseButton1Click:Connect(function()
+        TabOtherBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 90)
+        TabOtherBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        TabMainBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 55)
+        TabMainBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+
+        ScrollingFrame.Visible = false
+        SubMenuContainer.Visible = false
+        OtherScrollingFrame.Visible = true
+    end)
 
     local minimized = false
     MinBtn.MouseButton1Click:Connect(function()
@@ -137,18 +218,13 @@ return function(speaker)
         if minimized then
             Frame.Size = UDim2.new(0, 280, 0, 30)
             MinBtn.Text = "+"
-            ScrollingFrame.Visible = false
-            SubMenuContainer.Visible = false
+            TabBar.Visible = false
+            ContentArea.Visible = false
         else
-            Frame.Size = UDim2.new(0, 280, 0, 310)
+            Frame.Size = UDim2.new(0, 280, 0, 340)
             MinBtn.Text = "-"
-            if isCurrentlyInSubMenu then
-                SubMenuContainer.Visible = true
-                ScrollingFrame.Visible = false
-            else
-                SubMenuContainer.Visible = false
-                ScrollingFrame.Visible = true
-            end
+            TabBar.Visible = true
+            ContentArea.Visible = true
         end
     end)
 
@@ -228,7 +304,7 @@ return function(speaker)
         end)
     end
 
-        local function showSubMenu(menuTitle, rawUrl, subFeatures)
+    local function showSubMenu(menuTitle, rawUrl, subFeatures)
         isCurrentlyInSubMenu = true
         for _, child in ipairs(SubMenuContainer:GetChildren()) do
             child:Destroy()
@@ -388,6 +464,7 @@ return function(speaker)
         SubScroll.CanvasSize = UDim2.new(0, 0, 0, #subFeatures * 57)
     end
 
+    -- Loader Utama (Tab Utama - Asli)
     local configOk, configErr = xpcall(function()
         local menuConfigUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Loader.lua"
         local downloadOk, menuSource = pcall(function()
@@ -476,6 +553,129 @@ return function(speaker)
     if not configOk then
         warn("[MasterWindow] GAGAL memuat daftar menu: " .. tostring(configErr))
     end
+
+    -- Loader Tab Other (Untuk fitur mandiri langsung Execute / Tanpa Submenu)
+    task.spawn(function()
+        pcall(function()
+            local otherConfigUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/LoaderOther.lua"
+            local downloadOk, otherSource = pcall(function()
+                return game:HttpGet(otherConfigUrl)
+            end)
+            if not downloadOk or type(otherSource) ~= "string" or otherSource == "" then return end
+
+            local compileOk, otherChunk = pcall(function()
+                return loadstring(otherSource)
+            end)
+            if not compileOk or type(otherChunk) ~= "function" then return end
+
+            local runOk, otherList = pcall(otherChunk)
+            if not runOk or type(otherList) ~= "table" then return end
+
+            for _, item in ipairs(otherList) do
+                if featureStates[item.Name] == nil then featureStates[item.Name] = false end
+
+                local ItemFrame = Instance.new("Frame")
+                ItemFrame.Size = UDim2.new(1, 0, 0, 52)
+                ItemFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+                ItemFrame.BorderSizePixel = 0
+                ItemFrame.Parent = OtherScrollingFrame
+
+                Instance.new("UICorner", ItemFrame).CornerRadius = UDim.new(0, 4)
+
+                local NameLabel = Instance.new("TextLabel")
+                NameLabel.Size = UDim2.new(1, -90, 0, 18)
+                NameLabel.Position = UDim2.new(0, 8, 0, 4)
+                NameLabel.BackgroundTransparency = 1
+                NameLabel.Text = item.Name
+                NameLabel.TextColor3 = Color3.fromRGB(0, 220, 255)
+                NameLabel.Font = Enum.Font.GothamBold
+                NameLabel.TextSize = 11
+                NameLabel.TextXAlignment = Enum.TextXAlignment.Left
+                NameLabel.Parent = ItemFrame
+
+                local DescLabel = Instance.new("TextLabel")
+                DescLabel.Size = UDim2.new(1, -90, 0, 26)
+                DescLabel.Position = UDim2.new(0, 8, 0, 22)
+                DescLabel.BackgroundTransparency = 1
+                DescLabel.Text = item.Desc
+                DescLabel.TextColor3 = Color3.fromRGB(160, 160, 165)
+                DescLabel.Font = Enum.Font.Gotham
+                DescLabel.TextSize = 10
+                DescLabel.TextXAlignment = Enum.TextXAlignment.Left
+                DescLabel.TextYAlignment = Enum.TextYAlignment.Top
+                DescLabel.TextWrapped = true
+                DescLabel.Parent = ItemFrame
+
+                local ExecBtn = Instance.new("TextButton")
+                ExecBtn.Size = UDim2.new(0, 75, 0, 24)
+                ExecBtn.Position = UDim2.new(1, -80, 0, 14)
+                ExecBtn.BackgroundColor3 = featureStates[item.Name] and Color3.fromRGB(200, 50, 50) or Color3.fromRGB(0, 150, 90)
+                ExecBtn.BorderSizePixel = 0
+                ExecBtn.Text = featureStates[item.Name] and "UNEXECUTE" or "EXECUTE"
+                ExecBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+                ExecBtn.Font = Enum.Font.GothamBold
+                ExecBtn.TextSize = 10
+                ExecBtn.Parent = ItemFrame
+
+                Instance.new("UICorner", ExecBtn).CornerRadius = UDim.new(0, 4)
+
+                local hasUnCmd = item.UnCmd and item.UnCmd ~= ""
+                if not hasUnCmd then
+                    ExecBtn.Text = "EXECUTE"
+                    ExecBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 90)
+                end
+
+                ExecBtn.MouseButton1Click:Connect(function()
+                    local function runOtherCommand(isUnexec)
+                        pcall(function()
+                            if not loadedModules[item.RawUrl] then
+                                loadedModules[item.RawUrl] = loadstring(game:HttpGet(item.RawUrl))()
+                            end
+                            local pluginMod = loadedModules[item.RawUrl]
+                            if pluginMod and pluginMod.Commands then
+                                local targetCmd = isUnexec and item.UnCmd or item.Cmd
+                                local foundFunc = nil
+                                for cmdName, cmdData in pairs(pluginMod.Commands) do
+                                    if string.lower(cmdName) == string.lower(tostring(targetCmd)) then
+                                        if type(cmdData.Function) == "function" then
+                                            foundFunc = cmdData.Function
+                                            break
+                                        end
+                                    end
+                                end
+
+                                if foundFunc then
+                                    task.spawn(function() foundFunc({}, speaker) end)
+                                end
+                            end
+                        end)
+
+                        if hasUnCmd then
+                            featureStates[item.Name] = not featureStates[item.Name]
+                            if featureStates[item.Name] then
+                                ExecBtn.Text = "UNEXECUTE"
+                                ExecBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+                            else
+                                ExecBtn.Text = "EXECUTE"
+                                ExecBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 90)
+                            end
+                        else
+                            ExecBtn.Text = "EXECUTE"
+                            ExecBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 90)
+                        end
+                    end
+
+                    local isCurrentlyActive = featureStates[item.Name]
+                    if isCurrentlyActive then
+                        runOtherCommand(true)
+                    else
+                        runOtherCommand(false)
+                    end
+                end)
+            end
+            OtherScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, #otherList * 57)
+        end)
+    end)
 
     warn("[MasterWindow] Proses pembuatan window selesai.")
 end
