@@ -136,28 +136,28 @@ return function(speaker)
     local currentActiveScroll = nil
     local isCurrentlyInSubMenu = false
 
-    -- Tab Bar (Dibuat ScrollingFrame horizontal yang bisa digeser-geser)
+    -- Tab Bar (Dibuat ScrollingFrame horizontal murni yang leluasa digeser)
     local TabBar = Instance.new("ScrollingFrame")
     TabBar.Size = UDim2.new(1, -12, 0, 26)
     TabBar.Position = UDim2.new(0, 6, 0, 36)
     TabBar.BackgroundTransparency = 1
     TabBar.BorderSizePixel = 0
     TabBar.ScrollBarThickness = 0 
-    -- Lebar canvas dihitung otomatis berdasarkan jumlah tab (tiap tab lebar 80 pixel + jarak)
-    TabBar.CanvasSize = UDim2.new(0, totalTabs * 84, 0, 0)
+    -- Lebar canvas total diperlebar (tiap tab dikali 90 pixel supaya ada sisa buat digeser)
+    TabBar.CanvasSize = UDim2.new(0, totalTabs * 90, 0, 0)
     TabBar.Parent = Frame
 
     local TabBarLayout = Instance.new("UIListLayout")
     TabBarLayout.FillDirection = Enum.FillDirection.Horizontal
     TabBarLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    TabBarLayout.Padding = UDim.new(0, 4) -- Jarak antar tombol tab
+    TabBarLayout.Padding = UDim.new(0, 4)
     TabBarLayout.Parent = TabBar
 
     -- Looping otomatis untuk membuat Tombol Tab dan Area Scroll
     for i, tabInfo in ipairs(tabDefinitions) do
-        -- 1. Buat Tombol Tab dengan ukuran pas (lebar tetap 80px supaya bisa di-scroll ke samping)
+        -- 1. Buat Tombol Tab dengan lebar tetap (misal 85 pixel per tombol)
         local Btn = Instance.new("TextButton")
-        Btn.Size = UDim2.new(0, 80, 1, 0) 
+        Btn.Size = UDim2.new(0, 85, 1, 0) 
         Btn.BackgroundColor3 = (i == 1) and Color3.fromRGB(0, 150, 90) or Color3.fromRGB(50, 50, 55)
         Btn.BorderSizePixel = 0
         Btn.Font = Enum.Font.GothamBold
