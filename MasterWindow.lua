@@ -24,7 +24,7 @@ return function(speaker)
         if oldPlayer then oldPlayer:Destroy() end
     end
 
-    warn("[MasterWindow] Memulai pembuatan window dengan Tab (Single Loader)...")
+    warn("[MasterWindow] Memulai pembuatan window Universal & Fleksibel...")
 
     local ScreenGui = Instance.new("ScreenGui")
     ScreenGui.Name = "MasterPluginHub"
@@ -144,19 +144,19 @@ return function(speaker)
     ContentArea.BorderSizePixel = 0
     ContentArea.Parent = Frame
 
-    -- Frame Utama
-    local ScrollingFrame = Instance.new("ScrollingFrame")
-    ScrollingFrame.Size = UDim2.new(1, 0, 1, 0)
-    ScrollingFrame.BackgroundTransparency = 1
-    ScrollingFrame.BorderSizePixel = 0
-    ScrollingFrame.ScrollBarThickness = 4
-    ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
-    ScrollingFrame.Parent = ContentArea
+    -- Scroll Area Tab Utama
+    local MainScrollingFrame = Instance.new("ScrollingFrame")
+    MainScrollingFrame.Size = UDim2.new(1, 0, 1, 0)
+    MainScrollingFrame.BackgroundTransparency = 1
+    MainScrollingFrame.BorderSizePixel = 0
+    MainScrollingFrame.ScrollBarThickness = 4
+    MainScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+    MainScrollingFrame.Parent = ContentArea
 
-    local UIListLayout = Instance.new("UIListLayout")
-    UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    UIListLayout.Padding = UDim.new(0, 5)
-    UIListLayout.Parent = ScrollingFrame
+    local MainLayout = Instance.new("UIListLayout")
+    MainLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    MainLayout.Padding = UDim.new(0, 5)
+    MainLayout.Parent = MainScrollingFrame
 
     local SubMenuContainer = Instance.new("Frame")
     SubMenuContainer.Size = UDim2.new(1, 0, 1, 0)
@@ -165,7 +165,7 @@ return function(speaker)
     SubMenuContainer.Visible = false
     SubMenuContainer.Parent = ContentArea
 
-    -- Frame Other
+    -- Scroll Area Tab Other
     local OtherScrollingFrame = Instance.new("ScrollingFrame")
     OtherScrollingFrame.Size = UDim2.new(1, 0, 1, 0)
     OtherScrollingFrame.BackgroundTransparency = 1
@@ -175,12 +175,13 @@ return function(speaker)
     OtherScrollingFrame.Visible = false
     OtherScrollingFrame.Parent = ContentArea
 
-    local OtherUIListLayout = Instance.new("UIListLayout")
-    OtherUIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    OtherUIListLayout.Padding = UDim.new(0, 5)
-    OtherUIListLayout.Parent = OtherScrollingFrame
+    local OtherLayout = Instance.new("UIListLayout")
+    OtherLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    OtherLayout.Padding = UDim.new(0, 5)
+    OtherLayout.Parent = OtherScrollingFrame
 
     local isCurrentlyInSubMenu = false
+    local currentActiveScroll = MainScrollingFrame
 
     TabMainBtn.MouseButton1Click:Connect(function()
         TabMainBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 90)
@@ -191,11 +192,12 @@ return function(speaker)
         OtherScrollingFrame.Visible = false
         if isCurrentlyInSubMenu then
             SubMenuContainer.Visible = true
-            ScrollingFrame.Visible = false
+            MainScrollingFrame.Visible = false
         else
             SubMenuContainer.Visible = false
-            ScrollingFrame.Visible = true
+            MainScrollingFrame.Visible = true
         end
+        currentActiveScroll = MainScrollingFrame
     end)
 
     TabOtherBtn.MouseButton1Click:Connect(function()
@@ -204,9 +206,10 @@ return function(speaker)
         TabMainBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 55)
         TabMainBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
 
-        ScrollingFrame.Visible = false
+        MainScrollingFrame.Visible = false
         SubMenuContainer.Visible = false
         OtherScrollingFrame.Visible = true
+        currentActiveScroll = OtherScrollingFrame
     end)
 
     local minimized = false
@@ -307,7 +310,8 @@ return function(speaker)
             child:Destroy()
         end
         SubMenuContainer.Visible = true
-        ScrollingFrame.Visible = false
+        MainScrollingFrame.Visible = false
+        OtherScrollingFrame.Visible = false
 
         local BackBtn = Instance.new("TextButton")
         BackBtn.Size = UDim2.new(1, 0, 0, 26)
@@ -336,7 +340,7 @@ return function(speaker)
         BackBtn.MouseButton1Click:Connect(function()
             isCurrentlyInSubMenu = false
             SubMenuContainer.Visible = false
-            ScrollingFrame.Visible = true
+            currentActiveScroll.Visible = true
         end)
 
         for _, subFeat in ipairs(subFeatures) do
@@ -458,176 +462,166 @@ return function(speaker)
         SubScroll.CanvasSize = UDim2.new(0, 0, 0, #subFeatures * 57)
     end
 
-    -- FETCH SATU LOADER.LUAGABUNGAN (Memuat Tab Utama & Tab Other Sekaligus)
-    task.spawn(function()
-        pcall(function()
-            local configUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Loader.lua"
-            local source = game:HttpGet(configUrl)
-            local chunk = loadstring(source)
-            local data = chunk()
+    -- FUNGSI UNIVERSAL UNTUK RENDER MENU (BISA PAKAI SUB / LANGSUNG EXECUTE)
+    local function renderMenuCategory(menuList, targetParentScroll)
+        if not menuList then return end
 
-            -- 1. PROSES TAB UTAMA (Isinya menu dengan SubFeatures)
-            if data.MainMenus then
-                for _, menu in ipairs(data.MainMenus) do
-                    local ItemFrame = Instance.new("Frame")
-                    ItemFrame.Size = UDim2.new(1, 0, 0, 52)
-                    ItemFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-                    ItemFrame.BorderSizePixel = 0
-                    ItemFrame.Parent = ScrollingFrame
+        for _, item in ipairs(menuList) do
+            local ItemFrame = Instance.new("Frame")
+            ItemFrame.Size = UDim2.new(1, 0, 0, 52)
+            ItemFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+            ItemFrame.BorderSizePixel = 0
+            ItemFrame.Parent = targetParentScroll
 
-                    Instance.new("UICorner", ItemFrame).CornerRadius = UDim.new(0, 4)
+            Instance.new("UICorner", ItemFrame).CornerRadius = UDim.new(0, 4)
 
-                    local NameLabel = Instance.new("TextLabel")
-                    NameLabel.Size = UDim2.new(1, -90, 0, 18)
-                    NameLabel.Position = UDim2.new(0, 8, 0, 4)
-                    NameLabel.BackgroundTransparency = 1
-                    NameLabel.Text = menu.Name
-                    NameLabel.TextColor3 = Color3.fromRGB(0, 220, 255)
-                    NameLabel.Font = Enum.Font.GothamBold
-                    NameLabel.TextSize = 11
-                    NameLabel.TextXAlignment = Enum.TextXAlignment.Left
-                    NameLabel.Parent = ItemFrame
+            local NameLabel = Instance.new("TextLabel")
+            NameLabel.Size = UDim2.new(1, -90, 0, 18)
+            NameLabel.Position = UDim2.new(0, 8, 0, 4)
+            NameLabel.BackgroundTransparency = 1
+            NameLabel.Text = item.Name
+            NameLabel.TextColor3 = Color3.fromRGB(0, 220, 255)
+            NameLabel.Font = Enum.Font.GothamBold
+            NameLabel.TextSize = 11
+            NameLabel.TextXAlignment = Enum.TextXAlignment.Left
+            NameLabel.Parent = ItemFrame
 
-                    local DescLabel = Instance.new("TextLabel")
-                    DescLabel.Size = UDim2.new(1, -90, 0, 26)
-                    DescLabel.Position = UDim2.new(0, 8, 0, 22)
-                    DescLabel.BackgroundTransparency = 1
-                    DescLabel.Text = menu.Desc
-                    DescLabel.TextColor3 = Color3.fromRGB(160, 160, 165)
-                    DescLabel.Font = Enum.Font.Gotham
-                    DescLabel.TextSize = 10
-                    DescLabel.TextXAlignment = Enum.TextXAlignment.Left
-                    DescLabel.TextYAlignment = Enum.TextYAlignment.Top
-                    DescLabel.TextWrapped = true
-                    DescLabel.Parent = ItemFrame
+            local DescLabel = Instance.new("TextLabel")
+            DescLabel.Size = UDim2.new(1, -90, 0, 26)
+            DescLabel.Position = UDim2.new(0, 8, 0, 22)
+            DescLabel.BackgroundTransparency = 1
+            DescLabel.Text = item.Desc
+            DescLabel.TextColor3 = Color3.fromRGB(160, 160, 165)
+            DescLabel.Font = Enum.Font.Gotham
+            DescLabel.TextSize = 10
+            DescLabel.TextXAlignment = Enum.TextXAlignment.Left
+            DescLabel.TextYAlignment = Enum.TextYAlignment.Top
+            DescLabel.TextWrapped = true
+            DescLabel.Parent = ItemFrame
 
-                    local OpenBtn = Instance.new("TextButton")
-                    OpenBtn.Size = UDim2.new(0, 75, 0, 24)
-                    OpenBtn.Position = UDim2.new(1, -80, 0, 14)
-                    OpenBtn.BackgroundColor3 = Color3.fromRGB(50, 120, 220)
-                    OpenBtn.BorderSizePixel = 0
-                    OpenBtn.Text = "OPEN"
-                    OpenBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-                    OpenBtn.Font = Enum.Font.GothamBold
-                    OpenBtn.TextSize = 10
-                    OpenBtn.Parent = ItemFrame
-                    Instance.new("UICorner", OpenBtn).CornerRadius = UDim.new(0, 4)
+            -- JIKA PUNYA SUB-FEATURES (MUNCULKAN TOMBOL OPEN)
+            if item.SubFeatures and #item.SubFeatures > 0 then
+                local OpenBtn = Instance.new("TextButton")
+                OpenBtn.Size = UDim2.new(0, 75, 0, 24)
+                OpenBtn.Position = UDim2.new(1, -80, 0, 14)
+                OpenBtn.BackgroundColor3 = Color3.fromRGB(50, 120, 220)
+                OpenBtn.BorderSizePixel = 0
+                OpenBtn.Text = "OPEN"
+                OpenBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+                OpenBtn.Font = Enum.Font.GothamBold
+                OpenBtn.TextSize = 10
+                OpenBtn.Parent = ItemFrame
+                Instance.new("UICorner", OpenBtn).CornerRadius = UDim.new(0, 4)
 
-                    OpenBtn.MouseButton1Click:Connect(function()
-                        if menu.SubFeatures then
-                            showSubMenu(menu.Name, menu.RawUrl, menu.SubFeatures)
-                        end
-                    end)
+                OpenBtn.MouseButton1Click:Connect(function()
+                    showSubMenu(item.Name, item.RawUrl, item.SubFeatures)
+                end)
+            else
+                -- JIKA TIDAK PUNYA SUB-FEATURES (LANGSUNG MUNCULKAN EXECUTE / UNEXECUTE)
+                if featureStates[item.Name] == nil then featureStates[item.Name] = false end
+
+                local ExecBtn = Instance.new("TextButton")
+                ExecBtn.Size = UDim2.new(0, 75, 0, 24)
+                ExecBtn.Position = UDim2.new(1, -80, 0, 14)
+                ExecBtn.BackgroundColor3 = featureStates[item.Name] and Color3.fromRGB(200, 50, 50) or Color3.fromRGB(0, 150, 90)
+                ExecBtn.BorderSizePixel = 0
+                ExecBtn.Text = featureStates[item.Name] and "UNEXECUTE" or "EXECUTE"
+                ExecBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+                ExecBtn.Font = Enum.Font.GothamBold
+                ExecBtn.TextSize = 10
+                ExecBtn.Parent = ItemFrame
+                Instance.new("UICorner", ExecBtn).CornerRadius = UDim.new(0, 4)
+
+                local hasUnCmd = item.UnCmd and item.UnCmd ~= ""
+                if not hasUnCmd then
+                    ExecBtn.Text = "EXECUTE"
+                    ExecBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 90)
                 end
-                ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, #data.MainMenus * 57)
-            end
 
-            -- 2. PROSES TAB OTHER (Isinya fitur langsung Execute tanpa sub-menu)
-            if data.OtherMenus then
-                for _, item in ipairs(data.OtherMenus) do
-                    if featureStates[item.Name] == nil then featureStates[item.Name] = false end
-
-                    local ItemFrame = Instance.new("Frame")
-                    ItemFrame.Size = UDim2.new(1, 0, 0, 52)
-                    ItemFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-                    ItemFrame.BorderSizePixel = 0
-                    ItemFrame.Parent = OtherScrollingFrame
-
-                    Instance.new("UICorner", ItemFrame).CornerRadius = UDim.new(0, 4)
-
-                    local NameLabel = Instance.new("TextLabel")
-                    NameLabel.Size = UDim2.new(1, -90, 0, 18)
-                    NameLabel.Position = UDim2.new(0, 8, 0, 4)
-                    NameLabel.BackgroundTransparency = 1
-                    NameLabel.Text = item.Name
-                    NameLabel.TextColor3 = Color3.fromRGB(0, 220, 255)
-                    NameLabel.Font = Enum.Font.GothamBold
-                    NameLabel.TextSize = 11
-                    NameLabel.TextXAlignment = Enum.TextXAlignment.Left
-                    NameLabel.Parent = ItemFrame
-
-                    local DescLabel = Instance.new("TextLabel")
-                    DescLabel.Size = UDim2.new(1, -90, 0, 26)
-                    DescLabel.Position = UDim2.new(0, 8, 0, 22)
-                    DescLabel.BackgroundTransparency = 1
-                    DescLabel.Text = item.Desc
-                    DescLabel.TextColor3 = Color3.fromRGB(160, 160, 165)
-                    DescLabel.Font = Enum.Font.Gotham
-                    DescLabel.TextSize = 10
-                    DescLabel.TextXAlignment = Enum.TextXAlignment.Left
-                    DescLabel.TextYAlignment = Enum.TextYAlignment.Top
-                    DescLabel.TextWrapped = true
-                    DescLabel.Parent = ItemFrame
-
-                    local ExecBtn = Instance.new("TextButton")
-                    ExecBtn.Size = UDim2.new(0, 75, 0, 24)
-                    ExecBtn.Position = UDim2.new(1, -80, 0, 14)
-                    ExecBtn.BackgroundColor3 = featureStates[item.Name] and Color3.fromRGB(200, 50, 50) or Color3.fromRGB(0, 150, 90)
-                    ExecBtn.BorderSizePixel = 0
-                    ExecBtn.Text = featureStates[item.Name] and "UNEXECUTE" or "EXECUTE"
-                    ExecBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-                    ExecBtn.Font = Enum.Font.GothamBold
-                    ExecBtn.TextSize = 10
-                    ExecBtn.Parent = ItemFrame
-                    Instance.new("UICorner", ExecBtn).CornerRadius = UDim.new(0, 4)
-
-                    local hasUnCmd = item.UnCmd and item.UnCmd ~= ""
-                    if not hasUnCmd then
-                        ExecBtn.Text = "EXECUTE"
-                        ExecBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 90)
-                    end
-
-                    ExecBtn.MouseButton1Click:Connect(function()
-                        local function runOtherCommand(isUnexec)
-                            pcall(function()
-                                if not loadedModules[item.RawUrl] then
-                                    loadedModules[item.RawUrl] = loadstring(game:HttpGet(item.RawUrl))()
-                                end
-                                local pluginMod = loadedModules[item.RawUrl]
-                                if pluginMod and pluginMod.Commands then
-                                    local targetCmd = isUnexec and item.UnCmd or item.Cmd
-                                    local foundFunc = nil
-                                    for cmdName, cmdData in pairs(pluginMod.Commands) do
-                                        if string.lower(cmdName) == string.lower(tostring(targetCmd)) then
-                                            if type(cmdData.Function) == "function" then
-                                                foundFunc = cmdData.Function
-                                                break
-                                            end
+                ExecBtn.MouseButton1Click:Connect(function()
+                    local function runDirectCommand(customArgs, isUnexec)
+                        pcall(function()
+                            if not loadedModules[item.RawUrl] then
+                                loadedModules[item.RawUrl] = loadstring(game:HttpGet(item.RawUrl))()
+                            end
+                            local pluginMod = loadedModules[item.RawUrl]
+                            if pluginMod and pluginMod.Commands then
+                                local targetCmd = isUnexec and item.UnCmd or item.Cmd
+                                local foundFunc = nil
+                                for cmdName, cmdData in pairs(pluginMod.Commands) do
+                                    if string.lower(cmdName) == string.lower(tostring(targetCmd)) then
+                                        if type(cmdData.Function) == "function" then
+                                            foundFunc = cmdData.Function
+                                            break
                                         end
                                     end
-
-                                    if foundFunc then
-                                        task.spawn(function() foundFunc({}, speaker) end)
-                                    end
                                 end
-                            end)
 
-                            if hasUnCmd then
-                                featureStates[item.Name] = not featureStates[item.Name]
-                                if featureStates[item.Name] then
-                                    ExecBtn.Text = "UNEXECUTE"
-                                    ExecBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-                                else
-                                    ExecBtn.Text = "EXECUTE"
-                                    ExecBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 90)
+                                if foundFunc then
+                                    local finalArgs = customArgs or {}
+                                    task.spawn(function() foundFunc(finalArgs, speaker) end)
                                 end
+                            end
+                        end)
+
+                        if hasUnCmd then
+                            featureStates[item.Name] = not featureStates[item.Name]
+                            if featureStates[item.Name] then
+                                ExecBtn.Text = "UNEXECUTE"
+                                ExecBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
                             else
                                 ExecBtn.Text = "EXECUTE"
                                 ExecBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 90)
                             end
-                        end
-
-                        if featureStates[item.Name] then
-                            runOtherCommand(true)
                         else
-                            runOtherCommand(false)
+                            ExecBtn.Text = "EXECUTE"
+                            ExecBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 90)
                         end
-                    end)
-                end
-                OtherScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, #data.OtherMenus * 57)
+                    end
+
+                    local isCurrentlyActive = featureStates[item.Name]
+                    if isCurrentlyActive then
+                        runDirectCommand({}, true)
+                    else
+                        if item.NeedInput then
+                            showInputDialog(item.Name, function(typedText)
+                                local argsTable = {}
+                                for word in string.gmatch(typedText, "%S+") do
+                                    table.insert(argsTable, word)
+                                end
+                                runDirectCommand(argsTable, false)
+                            end)
+                        else
+                            runDirectCommand({}, false)
+                        end
+                    end
+                end)
             end
-        end)
+        end
+        targetParentScroll.CanvasSize = UDim2.new(0, 0, 0, #menuList * 57)
+    end
+
+    -- EKSEKUSI FETCH LOADER.LUA
+    local configOk, configErr = xpcall(function()
+        local configUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Loader.lua"
+        local source = game:HttpGet(configUrl)
+        local chunk = loadstring(source)
+        local data = chunk()
+
+        if data.MainMenus then
+            renderMenuCategory(data.MainMenus, MainScrollingFrame)
+        end
+
+        if data.OtherMenus then
+            renderMenuCategory(data.OtherMenus, OtherScrollingFrame)
+        end
+    end, function(e)
+        return (debug and debug.traceback and debug.traceback(tostring(e), 2)) or tostring(e)
     end)
+
+    if not configOk then
+        warn("[MasterWindow] GAGAL memuat Loader.lua: " .. tostring(configErr))
+    end
 
     warn("[MasterWindow] Proses pembuatan window selesai.")
 end
