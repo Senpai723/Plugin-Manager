@@ -121,14 +121,13 @@ return function(speaker)
     SubMenuContainer.Parent = ContentArea
 
     -- ==========================================
-    -- SISTEM TAB DINAMIS (Maksimal terlihat 3 tab, sisanya bisa di-scroll!)
+    -- SISTEM TAB DINAMIS (Bisa digeser horizontal ala ITP)
     -- ==========================================
     local tabDefinitions = {
         { Name = "Main",  DataKey = "Main" },
         { Name = "Tools", DataKey = "Tools" },
         { Name = "Horor", DataKey = "Horor" },
-        { Name = "PVP",   DataKey = "PVP" },   -- Kalau nanti tambah tab ke-4,
-        -- { Name = "Fun",   DataKey = "Fun" }    -- tab ke-5, dst., otomatis bisa digeser!
+        { Name = "PVP",   DataKey = "PVP" }   -- Sekarang tab PVP dan seterusnya aman digeser ke samping!
     }
 
     local totalTabs = #tabDefinitions
@@ -137,28 +136,28 @@ return function(speaker)
     local currentActiveScroll = nil
     local isCurrentlyInSubMenu = false
 
-    -- Tab Bar (Dibuat ScrollingFrame horizontal agar pas memuat 3 tab di muka)
+    -- Tab Bar (Dibuat ScrollingFrame horizontal yang bisa digeser-geser)
     local TabBar = Instance.new("ScrollingFrame")
     TabBar.Size = UDim2.new(1, -12, 0, 26)
     TabBar.Position = UDim2.new(0, 6, 0, 36)
     TabBar.BackgroundTransparency = 1
     TabBar.BorderSizePixel = 0
-    TabBar.ScrollBarThickness = 0 -- Sembunyikan garis scrollbar bawah biar bersih
-    -- Lebar total canvas dihitung otomatis: tiap tab mendapat bagian sepertiga dari lebar container
-    TabBar.CanvasSize = UDim2.new(0, totalTabs * (268 / 3), 0, 0)
+    TabBar.ScrollBarThickness = 0 
+    -- Lebar canvas dihitung otomatis berdasarkan jumlah tab (tiap tab lebar 80 pixel + jarak)
+    TabBar.CanvasSize = UDim2.new(0, totalTabs * 84, 0, 0)
     TabBar.Parent = Frame
 
     local TabBarLayout = Instance.new("UIListLayout")
     TabBarLayout.FillDirection = Enum.FillDirection.Horizontal
     TabBarLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    TabBarLayout.Padding = UDim.new(0, 3) -- Jarak antar tombol tab yang rapat dan rapi
+    TabBarLayout.Padding = UDim.new(0, 4) -- Jarak antar tombol tab
     TabBarLayout.Parent = TabBar
 
     -- Looping otomatis untuk membuat Tombol Tab dan Area Scroll
     for i, tabInfo in ipairs(tabDefinitions) do
-        -- 1. Buat Tombol Tab (Ukuran pas terbagi jadi 3 bagian di layar utama)
+        -- 1. Buat Tombol Tab dengan ukuran pas (lebar tetap 80px supaya bisa di-scroll ke samping)
         local Btn = Instance.new("TextButton")
-        Btn.Size = UDim2.new(0.33, -2, 1, 0) -- Lebar di-set 33% (pas 3 buah dalam satu layar window)
+        Btn.Size = UDim2.new(0, 80, 1, 0) 
         Btn.BackgroundColor3 = (i == 1) and Color3.fromRGB(0, 150, 90) or Color3.fromRGB(50, 50, 55)
         Btn.BorderSizePixel = 0
         Btn.Font = Enum.Font.GothamBold
