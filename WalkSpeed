@@ -1,10 +1,10 @@
 local plugin = {
     ["PluginName"] = "walkspeed_persistent";
-    ["PluginDescription"] = "Mengubah WalkSpeed player dan menjaga nilainya agar tidak terreset saat respawn.";
+    ["PluginDescription"] = "Mengubah WalkSpeed player secara kontinu (Anti-Reset Map).";
     ["Commands"] = {
         ["ws"] = {
             ["ListName"] = "ws [number]",
-            ["Description"] = "Mengubah kecepatan jalan player (misal: ws 50). Nilai tetap bertahan setelah respawn.",
+            ["Description"] = "Mengunci WalkSpeed player agar tidak bisa direset oleh map.",
             ["Aliases"] = {"speed", "walkspeed"},
             ["Function"] = function(args, speaker)
                 local speedValue = tonumber(args[1])
@@ -13,42 +13,45 @@ local plugin = {
                     return
                 end
 
-                -- Simpan nilai speed di variabel global/player
+                -- Simpan nilai target speed
                 _G.CustomWalkSpeed = speedValue
+                _G.ActiveWalkSpeedLoop = true
 
-                -- Set speed karakter saat ini
-                local char = speaker.Character or speaker.CharacterAdded:Wait()
-                local hum = char:FindFirstChildOfClass("Humanoid")
-                if hum then
-                    hum.WalkSpeed = _G.CustomWalkSpeed
+                -- Hentikan loop lama jika sempat menyala
+                if _G.WSConnection then
+                    _G.WSConnection:Disconnect()
+                    _G.WSConnection = nil
                 end
 
-                -- Buat event connection agar otomatis terset ulang tiap kali respawn
-                if not _G.WalkSpeedRespawnConnection then
-                    _G.WalkSpeedRespawnConnection = speaker.CharacterAdded:Connect(function(newChar)
-                        local newHum = newChar:WaitForChild("Humanoid", 10)
-                        if newHum and _G.CustomWalkSpeed then
-                            task.wait(0.2) -- Delay singkat agar statistik bawaan game selesai dimuat
-                            newHum.WalkSpeed = _G.CustomWalkSpeed
+                -- Jalankan loop menggunakan Heartbeat agar terus memaksa nilai speed setiap frame/detik
+                local RunService = game:GetService("RunService")
+                _G.WSConnection = RunService.Heartbeat:Connect(function()
+                    if not _G.ActiveWalkSpeedLoop then return end
+                    
+                    local char = speaker.Character
+                    if char then
+                        local hum = char:FindFirstChildOfClass("Humanoid")
+                        if hum and hum.WalkSpeed ~= _G.CustomWalkSpeed then
+                            hum.WalkSpeed = _G.CustomWalkSpeed
                         end
-                    end)
-                end
+                    end
+                end)
             end
         },
         ["unws"] = {
             ["ListName"] = "unws",
-            ["Description"] = "Mengembalikan WalkSpeed ke default (16) dan mematikan auto-respawn speed.",
+            ["Description"] = "Mematikan pengunci WalkSpeed dan mengembalikan ke default (16).",
             ["Aliases"] = {"unwalkspeed", "resetws"},
             ["Function"] = function(args, speaker)
+                _G.ActiveWalkSpeedLoop = false
                 _G.CustomWalkSpeed = nil
-                
-                -- Putus koneksi respawn
-                if _G.WalkSpeedRespawnConnection then
-                    _G.WalkSpeedRespawnConnection:Disconnect()
-                    _G.WalkSpeedRespawnConnection = nil
+
+                if _G.WSConnection then
+                    _G.WSConnection:Disconnect()
+                    _G.WSConnection = nil
                 end
 
-                -- Reset speed ke default (16)
+                -- Kembalikan ke default (16)
                 local char = speaker.Character
                 if char then
                     local hum = char:FindFirstChildOfClass("Humanoid")
