@@ -72,8 +72,8 @@ return {
         {
             Name = "Instant Prompts",
             Desc = "Always instant interaction",
-            Cmd = "instanprompts",
-            UnCmd = "uninstanprompts",
+            Cmd = "instantprompts",
+            UnCmd = "uninstantprompts",
             RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/InstanPrompt"
         },
         {
