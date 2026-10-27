@@ -239,6 +239,12 @@ local function isCleaningPrompt(prompt)
 end
 
 local function fastCleaningHold(prompt)
+    -- TAMBAHAN: Jangan jalankan auto-hold jika player sedang tidak memegang alat atau prompt sudah berubah fungsi jadi menaruh
+    local actionText = string.lower(tostring(prompt.ActionText or ""))
+    if string.find(actionText, "taruh") or string.find(actionText, "put") or string.find(actionText, "drop") or string.find(actionText, "return") then
+        return false
+    end
+
     if not Enabled or not isValid(prompt) or not isCleaningPrompt(prompt) then
         return false
     end
@@ -250,12 +256,7 @@ local function fastCleaningHold(prompt)
     end
 
     local state = getState(prompt)
-    if state == nil then
-        return false
-    end
-
-    local now = os.clock()
-    if state.holding then
+    if state == nil or state.holding then
         return false
     end
 
@@ -270,20 +271,13 @@ local function fastCleaningHold(prompt)
         return false
     end
 
-    -- Keep the hold alive for the full normal work duration. The user only taps once;
-    -- this automated hold lets the game advance the same progress continuously.
     local duration = tonumber(prompt.HoldDuration)
     if duration == nil or duration <= 0 then
         duration = CLEAN_HOLD_FALLBACK
     end
 
-    -- Keep ONE continuous hold for the prompt's own duration.
     task.wait(duration)
 
-    -- Give the game a small completion window before releasing. Some custom
-    -- work bars visually reach 100% slightly before the server records the
-    -- task as complete; ending exactly at HoldDuration can leave the last
-    -- fraction unfinished. This remains one continuous hold.
     if isValid(prompt) then
         task.wait(CLEAN_COMPLETE_BUFFER)
     end
@@ -295,7 +289,7 @@ local function fastCleaningHold(prompt)
     end
 
     state.holding = false
-    state.lastAttempt = now
+    state.lastAttempt = os.clock()
     return true
 end
 
@@ -398,7 +392,6 @@ local function enableInstant()
         end
     end))
 
-    -- Mobile/native prompt path. busy lock prevents recursive self-triggering.
     table.insert(Connections, PPS.PromptButtonHoldBegan:Connect(function(prompt)
         if not Enabled or not isPrompt(prompt) then
             return
@@ -411,19 +404,18 @@ local function enableInstant()
                 return
             end
 
-            -- Keep the proven instant path for ordinary prompts.
             instantAttempt(prompt)
 
-            -- Some maps use a custom progress bar for broom/mop work.
-            -- For those prompts only, hold the prompt for ~1 second so the
-            -- game's existing role/level progress logic can advance it.
-            if Enabled and isValid(prompt) and isCleaningPrompt(prompt) then
+            -- REVISI: Pastikan pemanggilan fastCleaningHold tidak mengeksekusi aksi 'taruh'
+            local actionText = string.lower(tostring(prompt.ActionText or ""))
+            local isDropAction = string.find(actionText, "taruh", 1, true) or string.find(actionText, "put", 1, true) or string.find(actionText, "drop", 1, true) or string.find(actionText, "return", 1, true)
+
+            if Enabled and isValid(prompt) and isCleaningPrompt(prompt) and not isDropAction then
                 fastCleaningHold(prompt)
             end
         end)
     end))
 
-    -- Keyboard support.
     table.insert(Connections, UIS.InputBegan:Connect(function(input, processed)
         if not Enabled or processed then
             return
@@ -449,7 +441,6 @@ local function enableInstant()
         end
     end))
 
-    -- One registration pass; no polling loop.
     for _, obj in ipairs(workspace:GetDescendants()) do
         if isPrompt(obj) then
             remember(obj)
