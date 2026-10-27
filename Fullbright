@@ -1,66 +1,71 @@
-local Plugin = {
-	["PluginName"] = "Full Bright",
-	["PluginDescription"] = "Makes the game bright",
-	["Commands"] = {
-		["fullbright"] = {
-			["Description"] = "Makes the game bright",
-			["Aliases"] = {'fb', 'fullb'},
-			["Function"] = function(args, speaker)
-				local Lighting = game:GetService("Lighting")
-				
-				-- Inisialisasi status global jika belum ada
-				if _G.FullBrightEnabled == nil then
-					_G.FullBrightEnabled = false
-				end
+local plugin = {
+    ["PluginName"] = "FullBright & NoFog";
+    ["PluginDescription"] = "Membuat game terang benderang dan menghapus semua kabut.";
+    ["Commands"] = {
+        ["fullbright"] = {
+            ["ListName"] = "fullbright",
+            ["Description"] = "Menerangkan pencahayaan game dan menghapus kabut.",
+            ["Aliases"] = {"fb", "nofog"},
+            ["Function"] = function(args, speaker)
+                local Lighting = game:GetService("Lighting")
+                local RunService = game:GetService("RunService")
 
-				-- Balikkan status (Toggle ON/OFF)
-				_G.FullBrightEnabled = not _G.FullBrightEnabled
+                -- Inisialisasi status global jika belum ada
+                if _G.FBNoFogEnabled == nil then
+                    _G.FBNoFogEnabled = false
+                end
 
-				if _G.FullBrightEnabled then
-					-- Simpan settingan normal jika belum pernah disimpan
-					if not _G.NormalLightingSettings then
-						_G.NormalLightingSettings = {
-							Brightness = Lighting.Brightness,
-							ClockTime = Lighting.ClockTime,
-							FogEnd = Lighting.FogEnd,
-							GlobalShadows = Lighting.GlobalShadows,
-							Ambient = Lighting.Ambient
-						}
-					end
+                -- Balikkan status (Toggle ON/OFF)
+                _G.FBNoFogEnabled = not _G.FBNoFogEnabled
 
-					-- Nyalakan loop penjaga pencahayaan agar map tidak bisa meresetnya
-					if not _G.FullBrightConnection then
-						_G.FullBrightConnection = game:GetService("RunService").RenderStepped:Connect(function()
-							if _G.FullBrightEnabled then
-								Lighting.Brightness = 1
-								Lighting.ClockTime = 12
-								Lighting.FogEnd = 786543
-								Lighting.GlobalShadows = false
-								Lighting.Ambient = Color3.fromRGB(178, 178, 178)
-							end
-						end)
-					end
-					print("[FullBright] Diaktifkan!")
-				else
-					-- Matikan penjaga (Loop)
-					if _G.FullBrightConnection then
-						_G.FullBrightConnection:Disconnect()
-						_G.FullBrightConnection = nil
-					end
+                if _G.FBNoFogEnabled then
+                    -- Simpan settingan normal awal jika belum pernah disimpan
+                    if not _G.NormalLightingSettings then
+                        _G.NormalLightingSettings = {
+                            Brightness = Lighting.Brightness,
+                            ClockTime = Lighting.ClockTime,
+                            FogEnd = Lighting.FogEnd,
+                            FogStart = Lighting.FogStart,
+                            GlobalShadows = Lighting.GlobalShadows,
+                            Ambient = Lighting.Ambient
+                        }
+                    end
 
-					-- Kembalikan ke settingan normal awal game
-					if _G.NormalLightingSettings then
-						Lighting.Brightness = _G.NormalLightingSettings.Brightness
-						Lighting.ClockTime = _G.NormalLightingSettings.ClockTime
-						Lighting.FogEnd = _G.NormalLightingSettings.FogEnd
-						Lighting.GlobalShadows = _G.NormalLightingSettings.GlobalShadows
-						Lighting.Ambient = _G.NormalLightingSettings.Ambient
-					end
-					print("[FullBright] Dimatikan!")
-				end
-			end,
-		},
-	},
+                    -- Jalankan loop penjaga agar settingan tidak bisa di-reset oleh map
+                    if not _G.FBNoFogConnection then
+                        _G.FBNoFogConnection = RunService.RenderStepped:Connect(function()
+                            if _G.FBNoFogEnabled then
+                                Lighting.Brightness = 2
+                                Lighting.ClockTime = 14
+                                Lighting.FogEnd = 999999 -- Membuat jarak kabut jadi sangat jauh (hilang)
+                                Lighting.FogStart = 0
+                                Lighting.GlobalShadows = false
+                                Lighting.Ambient = Color3.fromRGB(200, 200, 200)
+                            end
+                        end)
+                    end
+                    print("[FullBright & NoFog] Diaktifkan!")
+                else
+                    -- Matikan loop penjaga
+                    if _G.FBNoFogConnection then
+                        _G.FBNoFogConnection:Disconnect()
+                        _G.FBNoFogConnection = nil
+                    end
+
+                    -- Kembalikan ke settingan normal awal game
+                    if _G.NormalLightingSettings then
+                        Lighting.Brightness = _G.NormalLightingSettings.Brightness
+                        Lighting.ClockTime = _G.NormalLightingSettings.ClockTime
+                        Lighting.FogEnd = _G.NormalLightingSettings.FogEnd
+                        Lighting.FogStart = _G.NormalLightingSettings.FogStart
+                        Lighting.GlobalShadows = _G.NormalLightingSettings.GlobalShadows
+                        Lighting.Ambient = _G.NormalLightingSettings.Ambient
+                    end
+                    print("[FullBright & NoFog] Dimatikan, kembali ke normal.")
+                end
+            end,
+        },
+    }
 }
 
-return Plugin
+return plugin
