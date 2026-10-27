@@ -1,0 +1,64 @@
+local plugin = {
+    ["PluginName"] = "walkspeed_persistent";
+    ["PluginDescription"] = "Mengubah WalkSpeed player dan menjaga nilainya agar tidak terreset saat respawn.";
+    ["Commands"] = {
+        ["ws"] = {
+            ["ListName"] = "ws [number]",
+            ["Description"] = "Mengubah kecepatan jalan player (misal: ws 50). Nilai tetap bertahan setelah respawn.",
+            ["Aliases"] = {"speed", "walkspeed"},
+            ["Function"] = function(args, speaker)
+                local speedValue = tonumber(args[1])
+                if not speedValue then
+                    warn("[WalkSpeed] Masukkan angka kecepatan yang valid! Contoh: ws 50")
+                    return
+                end
+
+                -- Simpan nilai speed di variabel global/player
+                _G.CustomWalkSpeed = speedValue
+
+                -- Set speed karakter saat ini
+                local char = speaker.Character or speaker.CharacterAdded:Wait()
+                local hum = char:FindFirstChildOfClass("Humanoid")
+                if hum then
+                    hum.WalkSpeed = _G.CustomWalkSpeed
+                end
+
+                -- Buat event connection agar otomatis terset ulang tiap kali respawn
+                if not _G.WalkSpeedRespawnConnection then
+                    _G.WalkSpeedRespawnConnection = speaker.CharacterAdded:Connect(function(newChar)
+                        local newHum = newChar:WaitForChild("Humanoid", 10)
+                        if newHum and _G.CustomWalkSpeed then
+                            task.wait(0.2) -- Delay singkat agar statistik bawaan game selesai dimuat
+                            newHum.WalkSpeed = _G.CustomWalkSpeed
+                        end
+                    end)
+                end
+            end
+        },
+        ["unws"] = {
+            ["ListName"] = "unws",
+            ["Description"] = "Mengembalikan WalkSpeed ke default (16) dan mematikan auto-respawn speed.",
+            ["Aliases"] = {"unwalkspeed", "resetws"},
+            ["Function"] = function(args, speaker)
+                _G.CustomWalkSpeed = nil
+                
+                -- Putus koneksi respawn
+                if _G.WalkSpeedRespawnConnection then
+                    _G.WalkSpeedRespawnConnection:Disconnect()
+                    _G.WalkSpeedRespawnConnection = nil
+                end
+
+                -- Reset speed ke default (16)
+                local char = speaker.Character
+                if char then
+                    local hum = char:FindFirstChildOfClass("Humanoid")
+                    if hum then
+                        hum.WalkSpeed = 16
+                    end
+                end
+            end
+        }
+    }
+}
+
+return plugin
