@@ -1,10 +1,10 @@
 local plugin = {
     ["PluginName"] = "walkspeed_persistent";
-    ["PluginDescription"] = "Mengubah WalkSpeed player secara kontinu (Anti-Reset Map).";
+    ["PluginDescription"] = "Custom WalkSpeed berbasis Velocity (Tembus Anti-Cheat & Map Reset).";
     ["Commands"] = {
         ["ws"] = {
             ["ListName"] = "ws [number]",
-            ["Description"] = "Mengunci WalkSpeed player agar tidak bisa direset oleh map.",
+            ["Description"] = "Memaksa kecepatan gerak player menggunakan CFrame velocity.",
             ["Aliases"] = {"speed", "walkspeed"},
             ["Function"] = function(args, speaker)
                 local speedValue = tonumber(args[1])
@@ -13,45 +13,52 @@ local plugin = {
                     return
                 end
 
-                -- Simpan nilai target speed
-                _G.CustomWalkSpeed = speedValue
-                _G.ActiveWalkSpeedLoop = true
+                _G.CustomSpeedMultiplier = speedValue / 16 -- Normal Roblox speed adalah 16
+                _G.ActiveSpeedBoost = true
 
-                -- Hentikan loop lama jika sempat menyala
-                if _G.WSConnection then
-                    _G.WSConnection:Disconnect()
-                    _G.WSConnection = nil
+                local RunService = game:GetService("RunService")
+                local Players = game:GetService("Players")
+                local localPlayer = Players.LocalPlayer
+
+                if _G.SpeedConnection then
+                    _G.SpeedConnection:Disconnect()
+                    _G.SpeedConnection = nil
                 end
 
-                -- Jalankan loop menggunakan Heartbeat agar terus memaksa nilai speed setiap frame/detik
-                local RunService = game:GetService("RunService")
-                _G.WSConnection = RunService.Heartbeat:Connect(function()
-                    if not _G.ActiveWalkSpeedLoop then return end
-                    
-                    local char = speaker.Character
+                _G.SpeedConnection = RunService.RenderStepped:Connect(function(dt)
+                    if not _G.ActiveSpeedBoost then return end
+
+                    local char = localPlayer.Character
                     if char then
                         local hum = char:FindFirstChildOfClass("Humanoid")
-                        if hum and hum.WalkSpeed ~= _G.CustomWalkSpeed then
-                            hum.WalkSpeed = _G.CustomWalkSpeed
+                        local rootPart = char:FindFirstChild("HumanoidRootPart")
+
+                        if hum and rootPart then
+                            -- Pastikan humanoid walkspeed tetap diset tinggi juga
+                            hum.WalkSpeed = 16 -- Biar animasi jalan normal tidak glitch
+                            
+                            local moveDir = hum.MoveDirection
+                            if moveDir.Magnitude > 0 then
+                                -- Dorong posisi rootPart secara manual sesuai arah jalan dan multiplier speed
+                                rootPart.CFrame = rootPart.CFrame + (moveDir * (_G.CustomSpeedMultiplier * 16 - 16) * dt)
+                            end
                         end
                     end
                 end)
+                print("[WalkSpeed] Mode CFrame Velocity diaktifkan dengan speed multiplier:", speedValue)
             end
         },
         ["unws"] = {
             ["ListName"] = "unws",
-            ["Description"] = "Mematikan pengunci WalkSpeed dan mengembalikan ke default (16).",
+            ["Description"] = "Mematikan custom speed.",
             ["Aliases"] = {"unwalkspeed", "resetws"},
             ["Function"] = function(args, speaker)
-                _G.ActiveWalkSpeedLoop = false
-                _G.CustomWalkSpeed = nil
-
-                if _G.WSConnection then
-                    _G.WSConnection:Disconnect()
-                    _G.WSConnection = nil
+                _G.ActiveSpeedBoost = false
+                if _G.SpeedConnection then
+                    _G.SpeedConnection:Disconnect()
+                    _G.SpeedConnection = nil
                 end
-
-                -- Kembalikan ke default (16)
+                
                 local char = speaker.Character
                 if char then
                     local hum = char:FindFirstChildOfClass("Humanoid")
@@ -59,6 +66,7 @@ local plugin = {
                         hum.WalkSpeed = 16
                     end
                 end
+                print("[WalkSpeed] Dinonaktifkan!")
             end
         }
     }
