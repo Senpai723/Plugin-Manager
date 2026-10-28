@@ -45,11 +45,12 @@ return {
         {
             Name = "REJOIN",
             Desc = "Rejoin Manage",
-            RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/LastRejoin",
+            RawUrl = "",
             SubFeatures = {
-                { Name = "Auto Save", Desc = "Auto save Place ID dan Job ID ketika berpindah tempat", Cmd = "autosaveserver", UnCmd = "" },
-                { Name = "Save Server", Desc = "Menyimpan Place ID dan Job ID secara manual", Cmd = "saveserver", UnCmd = "" },
-                { Name = "Last Rejoin", Desc = "Aktifkan untik Rejoin di server terakhir", Cmd = "rejoinlast", UnCmd = "" }
+                { Name = "Auto Save", Desc = "Auto save Place ID dan Job ID ketika berpindah tempat", Cmd = "autosaveserver", UnCmd = "", RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/LastRejoin" },
+                { Name = "Save Server", Desc = "Menyimpan Place ID dan Job ID secara manual", Cmd = "saveserver", UnCmd = "", RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/LastRejoin" },
+                { Name = "Last Rejoin", Desc = "Aktifkan untik Rejoin di server terakhir", Cmd = "rejoinlast", UnCmd = "", RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/LastRejoin" },
+                { Name = "Smart Rejoin", Desc = "Aktifkan untuk Rejoin ketika diconnect secara Real Time", Cmd = "smartrj", UnCmd = "smartrj", RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/SmartRejoin" }
             }
         },
         {
