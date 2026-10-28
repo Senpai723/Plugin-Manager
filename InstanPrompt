@@ -218,7 +218,6 @@ local function firePrompt(prompt, holdTime, hidden)
     return ok
 end
 
--- Filter pembersihan murni dari file InstanPrompt.txt asli
 local function isCleaningPrompt(prompt)
     if not isPrompt(prompt) then
         return false
@@ -228,7 +227,6 @@ local function isCleaningPrompt(prompt)
     local object = string.lower(tostring(prompt.ObjectText or ""))
     local text = action .. " " .. object
 
-    -- Pastikan teks ambil/taruh alat tidak ikut keseret ke cleaning
     local isToolAction = string.find(text, "ambil", 1, true) ~= nil
         or string.find(text, "taruh", 1, true) ~= nil
         or string.find(text, "kembalikan", 1, true) ~= nil
@@ -250,9 +248,9 @@ local function isCleaningPrompt(prompt)
         or string.find(text, "sweep", 1, true) ~= nil
 end
 
--- Logika auto-hold 3 detik asli dari file InstanPrompt.txt
+-- FUNGSI AUTO-HOLD PAKSA: 1 klik langsung ditahan skrip sampai penuh tanpa user perlu nahan manual
 local function fastCleaningHold(prompt)
-    if not Enabled or not isValid(prompt) or not isCleaningPrompt(prompt) then
+    if not Enabled or not isValid(prompt) then
         return false
     end
 
@@ -274,25 +272,16 @@ local function fastCleaningHold(prompt)
 
     state.holding = true
 
-    local okBegin = pcall(function()
+    pcall(function()
         prompt:InputHoldBegin()
     end)
-
-    if not okBegin then
-        state.holding = false
-        return false
-    end
 
     local duration = tonumber(prompt.HoldDuration)
     if duration == nil or duration <= 0 then
         duration = CLEAN_HOLD_FALLBACK
     end
 
-    task.wait(duration)
-
-    if isValid(prompt) then
-        task.wait(CLEAN_COMPLETE_BUFFER)
-    end
+    task.wait(duration + 0.1)
 
     if isValid(prompt) then
         pcall(function()
@@ -302,6 +291,7 @@ local function fastCleaningHold(prompt)
 
     state.holding = false
     state.lastAttempt = now
+    finish(prompt)
     return true
 end
 
@@ -314,6 +304,12 @@ local function instantAttempt(prompt)
         return false
     end
 
+    -- JIKA INI PROMPT BERSIH-BERSIH: Langsung eksekusi auto-hold 3 detik dari skrip (1 klik beres)
+    if isCleaningPrompt(prompt) then
+        return fastCleaningHold(prompt)
+    end
+
+    -- JIKA INI AMBIL/TARUH ALAT: Jalankan instan murni (1 klik langsung ambil)
     local fired = firePrompt(prompt, 0, false)
     if fired then
         task.wait(RETRY_GAP)
@@ -412,14 +408,7 @@ local function enableInstant()
                 return
             end
 
-            -- AMBIL & TARUH ALAT: Jalankan instant attempt murni (1 klik langsung ambil)[span_6](start_span)[span_6](end_span)
-            if not isCleaningPrompt(prompt) then
-                instantAttempt(prompt)
-                return
-            end
-
-            -- BERSIH-BERSIH: 1 klik, biarkan fungsi asli InstanPrompt.txt menahan otomatis selama 3 detik[span_7](start_span)[span_7](end_span)
-            fastCleaningHold(prompt)
+            instantAttempt(prompt)
         end)
     end))
 
