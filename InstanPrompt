@@ -248,7 +248,6 @@ local function isCleaningPrompt(prompt)
         or string.find(text, "sweep", 1, true) ~= nil
 end
 
--- FUNGSI AUTO-HOLD PAKSA: 1 klik langsung ditahan skrip sampai penuh tanpa user perlu nahan manual
 local function fastCleaningHold(prompt)
     if not Enabled or not isValid(prompt) then
         return false
@@ -272,18 +271,31 @@ local function fastCleaningHold(prompt)
 
     state.holding = true
 
-    pcall(function()
+    -- Mulai hold otomatis
+    local okBegin = pcall(function()
         prompt:InputHoldBegin()
     end)
 
-    local duration = tonumber(prompt.HoldDuration)
-    if duration == nil or duration <= 0 then
-        duration = CLEAN_HOLD_FALLBACK
+    if not okBegin then
+        state.holding = false
+        return false
     end
 
-    task.wait(duration + 0.1)
+    -- Ambil durasi prompt dari game, berikan waktu tahan yang lebih natural (misal 3.2 detik)
+    local duration = tonumber(prompt.HoldDuration)
+    if duration == nil or duration <= 0 then
+        duration = 3.0
+    end
+
+    -- Gunakan perulangan kecil atau waktu tunggu penuh yang stabil agar server game membaca progress-nya masuk
+    local elapsed = 0
+    while elapsed < duration and isValid(prompt) do
+        task.wait(0.1)
+        elapsed = elapsed + 0.1
+    end
 
     if isValid(prompt) then
+        task.wait(CLEAN_COMPLETE_BUFFER)
         pcall(function()
             prompt:InputHoldEnd()
         end)
@@ -294,6 +306,7 @@ local function fastCleaningHold(prompt)
     finish(prompt)
     return true
 end
+
 
 local function instantAttempt(prompt)
     if not Enabled or not isValid(prompt) then
