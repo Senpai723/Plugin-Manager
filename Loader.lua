@@ -43,7 +43,7 @@ return {
             }
         },
         {
-            Name = "REJOIN",
+            Name = "REJOIN ( Public Server )",
             Desc = "Rejoin Manage",
             RawUrl = "",
             SubFeatures = {
