@@ -43,6 +43,16 @@ return {
             }
         },
         {
+            Name = "REJOIN",
+            Desc = "Rejoin Manage",
+            RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/LastRejoin",
+            SubFeatures = {
+                { Name = "Auto Save", Desc = "Auto save Place ID dan Job ID ketika berpindah tempat", Cmd = "autosaveserver", UnCmd = "" },
+                { Name = "Save Server", Desc = "Menyimpan Place ID dan Job ID secara manual", Cmd = "saveserver", UnCmd = "" },
+                { Name = "Last Rejoin", Desc = "Aktifkan untik Rejoin di server terakhir", Cmd = "rejoinlast", UnCmd = "" }
+            }
+        },
+        {
             Name = "Simple Aimbot",
             Desc = "Aimbot Untuk Map yang mempunyai fitur Shooter",
             RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/SimpleAimbot",
