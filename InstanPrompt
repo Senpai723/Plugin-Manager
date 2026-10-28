@@ -1,6 +1,6 @@
 local Plugin = {
     ["PluginName"] = "instantprompts",
-    ["PluginDescription"] = "Always instant ProximityPrompt interaction",
+    ["PluginDescription"] = "Always instant ProximityPrompt interaction with custom cleaning hold support",
     ["Commands"] = {}
 }
 
@@ -18,8 +18,7 @@ local RETRY_GAP = 0.10
 local SESSION_COOLDOWN = 0.15
 local BUSY_TIMEOUT = 0.70
 
--- Custom work prompts (mop/broom/clean) are progress-based rather than
--- one-shot prompts. Keep the change isolated so normal prompts behave as before.
+-- Custom work prompts (progress-based cleaning) menggunakan auto hold.
 local CLEAN_HOLD_FALLBACK = 3.00
 local CLEAN_COMPLETE_BUFFER = 0.20
 
@@ -220,8 +219,8 @@ local function firePrompt(prompt, holdTime, hidden)
     return ok
 end
 
--- Filter pembersihan dengan pengecualian tegas untuk alat (ambil/taruh)
-local function isCleaningPrompt(prompt)
+-- Deteksi apakah cleaning menggunakan custom progress bar (butuh auto hold)
+local function isCustomProgressCleaning(prompt)
     if not isPrompt(prompt) then
         return false
     end
@@ -230,30 +229,22 @@ local function isCleaningPrompt(prompt)
     local object = string.lower(tostring(prompt.ObjectText or ""))
     local text = action .. " " .. object
 
-    -- Jika ini prompt ambil atau taruh alat, JANGAN anggap sebagai cleaning prompt
-    local isToolAction = string.find(text, "ambil", 1, true) ~= nil
-        or string.find(text, "taruh", 1, true) ~= nil
-        or string.find(text, "kembalikan", 1, true) ~= nil
-        or string.find(text, "take", 1, true) ~= nil
-        or string.find(text, "put", 1, true) ~= nil
-        or string.find(text, "return", 1, true) ~= nil
-        or string.find(text, "drop", 1, true) ~= nil
-
-    if isToolAction then
-        return false
-    end
-
-    return string.find(text, "sapu", 1, true) ~= nil
+    -- Sesuaikan kata kunci di bawah ini jika cleaning dengan progress bar kustom memiliki teks khusus
+    local isCleaningText = string.find(text, "sapu", 1, true) ~= nil
         or string.find(text, "pel", 1, true) ~= nil
         or string.find(text, "bersih", 1, true) ~= nil
         or string.find(text, "clean", 1, true) ~= nil
         or string.find(text, "mop", 1, true) ~= nil
         or string.find(text, "broom", 1, true) ~= nil
         or string.find(text, "sweep", 1, true) ~= nil
+
+    -- Jika HoldDuration besar atau ada indikasi sistem progress kustom, jadikan auto hold
+    local holdDuration = tonumber(prompt.HoldDuration) or 0
+    return isCleaningText and holdDuration > 0.5
 end
 
 local function fastCleaningHold(prompt)
-    if not Enabled or not isValid(prompt) or not isCleaningPrompt(prompt) then
+    if not Enabled or not isValid(prompt) or not isCustomProgressCleaning(prompt) then
         return false
     end
 
@@ -315,6 +306,13 @@ local function instantAttempt(prompt)
         return false
     end
 
+    -- Jika ini adalah cleaning dengan custom progress, lempar ke fungsi hold
+    if isCustomProgressCleaning(prompt) then
+        finish(prompt)
+        return fastCleaningHold(prompt)
+    end
+
+    -- Selain itu (termasuk ambil alat sapu/pel/barang lain), jadikan instan
     local fired = firePrompt(prompt, 0, false)
     if fired then
         task.wait(RETRY_GAP)
@@ -413,14 +411,11 @@ local function enableInstant()
                 return
             end
 
-            -- Jika ini prompt bersih-bersih, jalankan logika auto-hold bawaan InstanPrompt_2.txt
-            if isCleaningPrompt(prompt) then
+            if isCustomProgressCleaning(prompt) then
                 fastCleaningHold(prompt)
-                return
+            else
+                instantAttempt(prompt)
             end
-
-            -- Jika ini ambil/taruh alat atau prompt biasa, langsung tembak instan murni!
-            instantAttempt(prompt)
         end)
     end))
 
@@ -458,7 +453,7 @@ end
 
 Plugin["Commands"]["instantprompts"] = {
     ["ListName"] = "instantprompts / ipp",
-    ["Description"] = "Enable always-instant ProximityPrompt interaction",
+    ["Description"] = "Enable always-instant ProximityPrompt interaction with auto-hold for progress cleaning",
     ["Aliases"] = {"ipp"},
     ["Function"] = function(args, speaker)
         enableInstant()
