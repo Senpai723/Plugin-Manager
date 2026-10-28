@@ -1,6 +1,6 @@
 local Plugin = {
     ["PluginName"] = "instantprompts",
-    ["PluginDescription"] = "Always instant ProximityPrompt with smart cleaning hold",
+    ["PluginDescription"] = "Always instant ProximityPrompt interaction",
     ["Commands"] = {}
 }
 
@@ -18,6 +18,8 @@ local RETRY_GAP = 0.10
 local SESSION_COOLDOWN = 0.15
 local BUSY_TIMEOUT = 0.70
 
+-- Custom work prompts (mop/broom/clean) are progress-based rather than
+-- one-shot prompts. Keep the change isolated so normal prompts behave as before.
 local CLEAN_HOLD_FALLBACK = 3.00
 local CLEAN_COMPLETE_BUFFER = 0.20
 
@@ -218,6 +220,7 @@ local function firePrompt(prompt, holdTime, hidden)
     return ok
 end
 
+-- Filter pembersihan dengan pengecualian tegas untuk alat (ambil/taruh)
 local function isCleaningPrompt(prompt)
     if not isPrompt(prompt) then
         return false
@@ -227,7 +230,7 @@ local function isCleaningPrompt(prompt)
     local object = string.lower(tostring(prompt.ObjectText or ""))
     local text = action .. " " .. object
 
-    -- Pastikan teks pengelolaan alat dikecualikan agar ambil alat tetap instan murni
+    -- Jika ini prompt ambil atau taruh alat, JANGAN anggap sebagai cleaning prompt
     local isToolAction = string.find(text, "ambil", 1, true) ~= nil
         or string.find(text, "taruh", 1, true) ~= nil
         or string.find(text, "kembalikan", 1, true) ~= nil
@@ -249,7 +252,6 @@ local function isCleaningPrompt(prompt)
         or string.find(text, "sweep", 1, true) ~= nil
 end
 
--- Fungsionalitas auto-hold asli dari file InstanPrompt.txt lu
 local function fastCleaningHold(prompt)
     if not Enabled or not isValid(prompt) or not isCleaningPrompt(prompt) then
         return false
@@ -399,7 +401,6 @@ local function enableInstant()
         end
     end))
 
-    -- PENGGABUNGAN UTAMA:
     table.insert(Connections, PPS.PromptButtonHoldBegan:Connect(function(prompt)
         if not Enabled or not isPrompt(prompt) then
             return
@@ -412,13 +413,13 @@ local function enableInstant()
                 return
             end
 
-            -- Jika ini prompt cleaning (bersih-bersih), langsung jalankan auto-hold 3 detik persis seperti file InstanPrompt.txt asli
+            -- Jika ini prompt bersih-bersih, jalankan logika auto-hold bawaan InstanPrompt_2.txt
             if isCleaningPrompt(prompt) then
                 fastCleaningHold(prompt)
                 return
             end
 
-            -- Jika prompt biasa / ambil alat, jalankan jalur instan murni (seperti file InstanPrompt (1).txt)[span_3](start_span)[span_3](end_span)
+            -- Jika ini ambil/taruh alat atau prompt biasa, langsung tembak instan murni!
             instantAttempt(prompt)
         end)
     end))
