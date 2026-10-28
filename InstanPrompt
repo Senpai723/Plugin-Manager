@@ -1,6 +1,6 @@
 local Plugin = {
     ["PluginName"] = "instantprompts",
-    ["PluginDescription"] = "Always instant ProximityPrompt interaction with smart fallback",
+    ["PluginDescription"] = "Always instant ProximityPrompt with smart cleaning hold",
     ["Commands"] = {}
 }
 
@@ -17,6 +17,9 @@ local PPS = game:GetService("ProximityPromptService")
 local RETRY_GAP = 0.10
 local SESSION_COOLDOWN = 0.15
 local BUSY_TIMEOUT = 0.70
+
+local CLEAN_HOLD_FALLBACK = 3.00
+local CLEAN_COMPLETE_BUFFER = 0.20
 
 local function isPrompt(obj)
     return obj ~= nil and obj:IsA("ProximityPrompt")
@@ -215,7 +218,7 @@ local function firePrompt(prompt, holdTime, hidden)
     return ok
 end
 
--- DETEKSI HANYA AKSI BERSIH-BERSIH (Eksklusi tegas kata ambil/taruh)
+-- FILTER KETAT: Pastikan prompt pengelolaan alat (ambil/taruh) TIDAK masuk kategori cleaning
 local function isCleaningPrompt(prompt)
     if not isPrompt(prompt) then
         return false
@@ -225,8 +228,8 @@ local function isCleaningPrompt(prompt)
     local object = string.lower(tostring(prompt.ObjectText or ""))
     local text = action .. " " .. object
 
-    -- Pengecekan kata kunci ambil/taruh alat
-    local isToolManagement = string.find(text, "ambil", 1, true) ~= nil
+    -- Jika mengandung kata ambil/taruh/kembalikan, TOLAK sebagai cleaning prompt agar tetap instan murni
+    local isToolAction = string.find(text, "ambil", 1, true) ~= nil
         or string.find(text, "taruh", 1, true) ~= nil
         or string.find(text, "kembalikan", 1, true) ~= nil
         or string.find(text, "take", 1, true) ~= nil
@@ -234,47 +237,63 @@ local function isCleaningPrompt(prompt)
         or string.find(text, "return", 1, true) ~= nil
         or string.find(text, "drop", 1, true) ~= nil
 
-    if isToolManagement then
+    if isToolAction then
         return false
     end
 
-    -- Kata kunci khusus pembersihan progress
-    return string.find(text, "bersih", 1, true) ~= nil
-        or string.find(text, "clean", 1, true) ~= nil
-        or string.find(text, "sweep", 1, true) ~= nil
-        or string.find(text, "mop", 1, true) ~= nil
-        or string.find(text, "sapu", 1, true) ~= nil
+    -- Hanya deteksi aksi murni bersih-bersih/nyapu/ngepel
+    return string.find(text, "sapu", 1, true) ~= nil
         or string.find(text, "pel", 1, true) ~= nil
+        or string.find(text, "bersih", 1, true) ~= nil
+        or string.find(text, "clean", 1, true) ~= nil
+        or string.find(text, "mop", 1, true) ~= nil
+        or string.find(text, "broom", 1, true) ~= nil
+        or string.find(text, "sweep", 1, true) ~= nil
 end
 
-local function fullCleaningHold(prompt)
-    if not Enabled or not isValid(prompt) then
+-- FUNGSI AUTO-HOLD KHUSUS BERSIH-BERSIH: 1 klik langsung ditahan skrip sampai progress penuh
+local function fastCleaningHold(prompt)
+    if not Enabled or not isValid(prompt) or not isCleaningPrompt(prompt) then
         return false
     end
 
     local begin = prompt.InputHoldBegin
     local finishHold = prompt.InputHoldEnd
     if type(begin) ~= "function" or type(finishHold) ~= "function" then
-        return firePrompt(prompt, 0, false)
+        return false
     end
 
     local state = getState(prompt)
-    if state == nil or state.holding then
+    if state == nil then
+        return false
+    end
+
+    local now = os.clock()
+    if state.holding then
         return false
     end
 
     state.holding = true
 
-    pcall(function()
+    local okBegin = pcall(function()
         prompt:InputHoldBegin()
     end)
 
-    local duration = tonumber(prompt.HoldDuration)
-    if duration == nil or duration <= 0 then
-        duration = 3.0
+    if not okBegin then
+        state.holding = false
+        return false
     end
 
-    task.wait(duration + 0.1)
+    local duration = tonumber(prompt.HoldDuration)
+    if duration == nil or duration <= 0 then
+        duration = CLEAN_HOLD_FALLBACK
+    end
+
+    task.wait(duration)
+
+    if isValid(prompt) then
+        task.wait(CLEAN_COMPLETE_BUFFER)
+    end
 
     if isValid(prompt) then
         pcall(function()
@@ -283,7 +302,7 @@ local function fullCleaningHold(prompt)
     end
 
     state.holding = false
-    state.lastAttempt = os.clock()
+    state.lastAttempt = now
     return true
 end
 
@@ -296,34 +315,6 @@ local function instantAttempt(prompt)
         return false
     end
 
-    -- 1. UNTUK PENGELOLAAN ALAT & PROMPT BIASA: Utamakan 100% Instan Murni (Durasi 0)
-    if not isCleaningPrompt(prompt) then
-        local fired = firePrompt(prompt, 0, false)
-        if fired then
-            task.wait(RETRY_GAP)
-            finish(prompt)
-            return true
-        end
-
-        if isValid(prompt) then
-            fired = firePrompt(prompt, 0, true)
-            if fired then
-                task.wait(RETRY_GAP)
-                finish(prompt)
-                return true
-            end
-        end
-
-        if isValid(prompt) then
-            fired = firePrompt(prompt, nil, false)
-        end
-
-        task.wait(RETRY_GAP)
-        finish(prompt)
-        return fired
-    end
-
-    -- 2. KHUSUS AKSI BERSIH-BERSIH PROGRESS: Coba instan dulu, jika gagal jalankan auto-hold 3.1s
     local fired = firePrompt(prompt, 0, false)
     if fired then
         task.wait(RETRY_GAP)
@@ -331,8 +322,22 @@ local function instantAttempt(prompt)
         return true
     end
 
+    if isValid(prompt) then
+        fired = firePrompt(prompt, 0, true)
+        if fired then
+            task.wait(RETRY_GAP)
+            finish(prompt)
+            return true
+        end
+    end
+
+    if isValid(prompt) then
+        fired = firePrompt(prompt, nil, false)
+    end
+
+    task.wait(RETRY_GAP)
     finish(prompt)
-    return fullCleaningHold(prompt)
+    return fired
 end
 
 local function activateNearest()
@@ -408,7 +413,14 @@ local function enableInstant()
                 return
             end
 
-            instantAttempt(prompt)
+            -- 1. UNTUK PROMPT BIASA / AMBIL ALAT: Jalankan instant attempt murni (1 klik langsung ambil)[span_2](start_span)[span_2](end_span)
+            if not isCleaningPrompt(prompt) then
+                instantAttempt(prompt)
+                return
+            end
+
+            -- 2. KHUSUS PROMPT BERSIH-BERSIH CUSTOM: 1 klik, biarkan skrip yang menahan otomatis sampai progress penuh[span_3](start_span)[span_3](end_span)
+            fastCleaningHold(prompt)
         end)
     end))
 
@@ -417,8 +429,8 @@ local function enableInstant()
             return
         end
 
-        local key = input.KeyCode
-        if key == Enum.KeyCode.E or key == Enum.KeyCode.F or key == Enum.KeyCode.G then
+        val = input.KeyCode
+        if val == Enum.KeyCode.E or val == Enum.KeyCode.F or val == Enum.KeyCode.G then
             task.defer(activateNearest)
         end
     end))
