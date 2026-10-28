@@ -1,6 +1,6 @@
 local Plugin = {
     ["PluginName"] = "instantprompts",
-    ["PluginDescription"] = "Always instant ProximityPrompt interaction with smart fallback",
+    ["PluginDescription"] = "Always instant ProximityPrompt interaction",
     ["Commands"] = {}
 }
 
@@ -17,6 +17,11 @@ local PPS = game:GetService("ProximityPromptService")
 local RETRY_GAP = 0.10
 local SESSION_COOLDOWN = 0.15
 local BUSY_TIMEOUT = 0.70
+
+-- Custom work prompts (mop/broom/clean) are progress-based rather than
+-- one-shot prompts. Keep the change isolated so normal prompts behave as before.
+local CLEAN_HOLD_FALLBACK = 3.00
+local CLEAN_COMPLETE_BUFFER = 0.20
 
 local function isPrompt(obj)
     return obj ~= nil and obj:IsA("ProximityPrompt")
@@ -215,7 +220,6 @@ local function firePrompt(prompt, holdTime, hidden)
     return ok
 end
 
--- DETEKSI HANYA AKSI BERSIH-BERSIH (Eksklusi tegas kata ambil/taruh)
 local function isCleaningPrompt(prompt)
     if not isPrompt(prompt) then
         return false
@@ -225,56 +229,64 @@ local function isCleaningPrompt(prompt)
     local object = string.lower(tostring(prompt.ObjectText or ""))
     local text = action .. " " .. object
 
-    -- Pengecekan kata kunci ambil/taruh alat
-    local isToolManagement = string.find(text, "ambil", 1, true) ~= nil
-        or string.find(text, "taruh", 1, true) ~= nil
-        or string.find(text, "kembalikan", 1, true) ~= nil
-        or string.find(text, "take", 1, true) ~= nil
-        or string.find(text, "put", 1, true) ~= nil
-        or string.find(text, "return", 1, true) ~= nil
-        or string.find(text, "drop", 1, true) ~= nil
-
-    if isToolManagement then
-        return false
-    end
-
-    -- Kata kunci khusus pembersihan progress
-    return string.find(text, "bersih", 1, true) ~= nil
-        or string.find(text, "clean", 1, true) ~= nil
-        or string.find(text, "sweep", 1, true) ~= nil
-        or string.find(text, "mop", 1, true) ~= nil
-        or string.find(text, "sapu", 1, true) ~= nil
+    return string.find(text, "sapu", 1, true) ~= nil
         or string.find(text, "pel", 1, true) ~= nil
+        or string.find(text, "bersih", 1, true) ~= nil
+        or string.find(text, "clean", 1, true) ~= nil
+        or string.find(text, "mop", 1, true) ~= nil
+        or string.find(text, "broom", 1, true) ~= nil
+        or string.find(text, "sweep", 1, true) ~= nil
 end
 
-local function fullCleaningHold(prompt)
-    if not Enabled or not isValid(prompt) then
+local function fastCleaningHold(prompt)
+    if not Enabled or not isValid(prompt) or not isCleaningPrompt(prompt) then
         return false
     end
 
     local begin = prompt.InputHoldBegin
     local finishHold = prompt.InputHoldEnd
     if type(begin) ~= "function" or type(finishHold) ~= "function" then
-        return firePrompt(prompt, 0, false)
+        return false
     end
 
     local state = getState(prompt)
-    if state == nil or state.holding then
+    if state == nil then
+        return false
+    end
+
+    local now = os.clock()
+    if state.holding then
         return false
     end
 
     state.holding = true
 
-    pcall(function()
+    local okBegin = pcall(function()
         prompt:InputHoldBegin()
     end)
 
-    local duration = tonumber(prompt.HoldDuration)
-    if duration == nil or duration <= 0 then
-        duration = 3.0
+    if not okBegin then
+        state.holding = false
+        return false
     end
 
-    task.wait(duration + 0.1)
+    -- Keep the hold alive for the full normal work duration. The user only taps once;
+    -- this automated hold lets the game advance the same progress continuously.
+    local duration = tonumber(prompt.HoldDuration)
+    if duration == nil or duration <= 0 then
+        duration = CLEAN_HOLD_FALLBACK
+    end
+
+    -- Keep ONE continuous hold for the prompt's own duration.
+    task.wait(duration)
+
+    -- Give the game a small completion window before releasing. Some custom
+    -- work bars visually reach 100% slightly before the server records the
+    -- task as complete; ending exactly at HoldDuration can leave the last
+    -- fraction unfinished. This remains one continuous hold.
+    if isValid(prompt) then
+        task.wait(CLEAN_COMPLETE_BUFFER)
+    end
 
     if isValid(prompt) then
         pcall(function()
@@ -283,7 +295,7 @@ local function fullCleaningHold(prompt)
     end
 
     state.holding = false
-    state.lastAttempt = os.clock()
+    state.lastAttempt = now
     return true
 end
 
@@ -296,34 +308,8 @@ local function instantAttempt(prompt)
         return false
     end
 
-    -- 1. UNTUK PENGELOLAAN ALAT & PROMPT BIASA: Utamakan 100% Instan Murni (Durasi 0)
-    if not isCleaningPrompt(prompt) then
-        local fired = firePrompt(prompt, 0, false)
-        if fired then
-            task.wait(RETRY_GAP)
-            finish(prompt)
-            return true
-        end
-
-        if isValid(prompt) then
-            fired = firePrompt(prompt, 0, true)
-            if fired then
-                task.wait(RETRY_GAP)
-                finish(prompt)
-                return true
-            end
-        end
-
-        if isValid(prompt) then
-            fired = firePrompt(prompt, nil, false)
-        end
-
-        task.wait(RETRY_GAP)
-        finish(prompt)
-        return fired
-    end
-
-    -- 2. KHUSUS AKSI BERSIH-BERSIH PROGRESS: Coba instan dulu, jika gagal jalankan auto-hold 3.1s
+    -- Three finite attempts. No loop and no PromptTriggered callback.
+    -- The first path is the normal instant fire.
     local fired = firePrompt(prompt, 0, false)
     if fired then
         task.wait(RETRY_GAP)
@@ -331,8 +317,24 @@ local function instantAttempt(prompt)
         return true
     end
 
+    -- Alternate executor signature.
+    if isValid(prompt) then
+        fired = firePrompt(prompt, 0, true)
+        if fired then
+            task.wait(RETRY_GAP)
+            finish(prompt)
+            return true
+        end
+    end
+
+    -- Final fallback uses the executor default signature.
+    if isValid(prompt) then
+        fired = firePrompt(prompt, nil, false)
+    end
+
+    task.wait(RETRY_GAP)
     finish(prompt)
-    return fullCleaningHold(prompt)
+    return fired
 end
 
 local function activateNearest()
@@ -396,6 +398,7 @@ local function enableInstant()
         end
     end))
 
+    -- Mobile/native prompt path. busy lock prevents recursive self-triggering.
     table.insert(Connections, PPS.PromptButtonHoldBegan:Connect(function(prompt)
         if not Enabled or not isPrompt(prompt) then
             return
@@ -408,10 +411,19 @@ local function enableInstant()
                 return
             end
 
+            -- Keep the proven instant path for ordinary prompts.
             instantAttempt(prompt)
+
+            -- Some maps use a custom progress bar for broom/mop work.
+            -- For those prompts only, hold the prompt for ~1 second so the
+            -- game's existing role/level progress logic can advance it.
+            if Enabled and isValid(prompt) and isCleaningPrompt(prompt) then
+                fastCleaningHold(prompt)
+            end
         end)
     end))
 
+    -- Keyboard support.
     table.insert(Connections, UIS.InputBegan:Connect(function(input, processed)
         if not Enabled or processed then
             return
@@ -437,6 +449,7 @@ local function enableInstant()
         end
     end))
 
+    -- One registration pass; no polling loop.
     for _, obj in ipairs(workspace:GetDescendants()) do
         if isPrompt(obj) then
             remember(obj)
