@@ -44,7 +44,7 @@ return {
         },
         {
             Name = "REJOIN ( Public Server )",
-            Desc = "Rejoin Manage",
+            Desc = "Rejoin Manage ( Tidak Support Game CO - OP )",
             RawUrl = "",
             SubFeatures = {
                 { Name = "Auto Save", Desc = "Auto save Place ID dan Job ID ketika berpindah tempat", Cmd = "autosaveserver", UnCmd = "", RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/LastRejoin" },
