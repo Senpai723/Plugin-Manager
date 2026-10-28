@@ -1,6 +1,6 @@
 local Plugin = {
     ["PluginName"] = "instantprompts",
-    ["PluginDescription"] = "Always instant ProximityPrompt interaction with Auto-Hold for cleaning",
+    ["PluginDescription"] = "Instant tool pickup/return, Auto-hold for actual cleaning progress",
     ["Commands"] = {}
 }
 
@@ -218,8 +218,8 @@ local function firePrompt(prompt, holdTime, hidden)
     return ok
 end
 
--- Memeriksa apakah ini prompt aktivitas bersih-bersih
-local function isCleaningPrompt(prompt)
+-- Deteksi apakah ini murni aktivitas membersihkan (progress cleaning)
+local function isActualCleaning(prompt)
     if not isPrompt(prompt) then
         return false
     end
@@ -228,41 +228,25 @@ local function isCleaningPrompt(prompt)
     local object = string.lower(tostring(prompt.ObjectText or ""))
     local text = action .. " " .. object
 
-    return string.find(text, "sapu", 1, true) ~= nil
-        or string.find(text, "pel", 1, true) ~= nil
-        or string.find(text, "bersih", 1, true) ~= nil
+    -- Kata kunci untuk proses membersihkan kotoran/sampah
+    local isCleanWord = string.find(text, "bersih", 1, true) ~= nil
         or string.find(text, "clean", 1, true) ~= nil
-        or string.find(text, "mop", 1, true) ~= nil
-        or string.find(text, "broom", 1, true) ~= nil
         or string.find(text, "sweep", 1, true) ~= nil
-end
+        or string.find(text, "mop", 1, true) ~= nil
 
--- Deteksi apakah prompt ini khusus ambil alat (misal: "Take Broom", "Ambil Pel", "Get Mop")
-local function isEquipToolPrompt(prompt)
-    if not isPrompt(prompt) then
-        return false
-    end
-
-    local action = string.lower(tostring(prompt.ActionText or ""))
-    local object = string.lower(tostring(prompt.ObjectText or ""))
-    local text = action .. " " .. object
-
-    return string.find(text, "take", 1, true) ~= nil
-        or string.find(text, "equip", 1, true) ~= nil
-        or string.find(text, "ambil", 1, true) ~= nil
+    -- Pastikan TIDAK mencakup teks mengambil atau mengembalikan alat
+    local isEquipOrReturn = string.find(text, "ambil", 1, true) ~= nil
+        or string.find(text, "kembalikan", 1, true) ~= nil
+        or string.find(text, "take", 1, true) ~= nil
+        or string.find(text, "return", 1, true) ~= nil
         or string.find(text, "get", 1, true) ~= nil
-        or string.find(text, "grab", 1, true) ~= nil
-        or string.find(text, "pick", 1, true) ~= nil
+
+    return isCleanWord and not isEquipOrReturn
 end
 
--- Fungsi Auto Hold Asli (Utuh seperti versi awal)
+-- Fungsi Auto Hold HANYA untuk actual cleaning
 local function fastCleaningHold(prompt)
-    if not Enabled or not isValid(prompt) or not isCleaningPrompt(prompt) then
-        return false
-    end
-
-    -- Jika ini prompt ambil alat, langsung batalkan hold dan biarkan dikerjakan instan
-    if isEquipToolPrompt(prompt) then
+    if not Enabled or not isValid(prompt) or not isActualCleaning(prompt) then
         return false
     end
 
@@ -324,6 +308,13 @@ local function instantAttempt(prompt)
         return false
     end
 
+    -- Jika ini adalah proses cleaning beneran, lempar ke auto-hold
+    if isActualCleaning(prompt) then
+        finish(prompt)
+        return fastCleaningHold(prompt)
+    end
+
+    -- Selain itu (termasuk Ambil Sapu, Kembalikan Pel, Buka Pintu, dll), jadikan INSTAN!
     local fired = firePrompt(prompt, 0, false)
     if fired then
         task.wait(RETRY_GAP)
@@ -359,11 +350,7 @@ local function activateNearest()
         return false
     end
 
-    if isCleaningPrompt(prompt) and not isEquipToolPrompt(prompt) then
-        return fastCleaningHold(prompt)
-    else
-        return instantAttempt(prompt)
-    end
+    return instantAttempt(prompt)
 end
 
 local function disconnectAll()
@@ -426,12 +413,10 @@ local function enableInstant()
                 return
             end
 
-            -- Jalankan instant attempt dulu untuk prompt biasa / ambil alat
-            instantAttempt(prompt)
-
-            -- Jalankan auto hold HANYA jika ini proses cleaning (bukan ambil alat)
-            if Enabled and isValid(prompt) and isCleaningPrompt(prompt) and not isEquipToolPrompt(prompt) then
+            if isActualCleaning(prompt) then
                 fastCleaningHold(prompt)
+            else
+                instantAttempt(prompt)
             end
         end)
     end))
@@ -470,7 +455,7 @@ end
 
 Plugin["Commands"]["instantprompts"] = {
     ["ListName"] = "instantprompts / ipp",
-    ["Description"] = "Enable always-instant ProximityPrompt interaction with Auto-Hold for cleaning",
+    ["Description"] = "Instant pickup, auto-hold for cleaning",
     ["Aliases"] = {"ipp"},
     ["Function"] = function(args, speaker)
         enableInstant()
