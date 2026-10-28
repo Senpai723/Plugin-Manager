@@ -214,7 +214,7 @@ local function firePrompt(prompt, holdTime, hidden)
     return ok
 end
 
--- Fungsi universal: Semua prompt dipaksa instan (holdTime = 0)
+-- SEMUA PROMPT DIJADIKAN INSTAN TANPA KECUALI
 local function instantAttempt(prompt)
     if not Enabled or not isValid(prompt) then
         return false
@@ -346,7 +346,7 @@ local function enableInstant()
     table.insert(Connections, workspace.DescendantRemoving:Connect(function(obj)
         if isPrompt(obj) then
             KnownPrompts[obj] = nil
-            VisiblePrompts[obj] = nil
+            VisiblePrompt[obj] = nil
             State[obj] = nil
         end
     end))
@@ -374,9 +374,6 @@ Plugin["Commands"]["uninstantprompts"] = {
     ["Function"] = function(args, speaker)
         disableInstant()
     end
-}
-
-return Plugin
 }
 
 return Plugin
