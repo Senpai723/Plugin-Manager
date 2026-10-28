@@ -218,7 +218,7 @@ local function firePrompt(prompt, holdTime, hidden)
     return ok
 end
 
--- FILTER KETAT: Pastikan prompt pengelolaan alat (ambil/taruh) TIDAK masuk kategori cleaning
+-- Filter pembersihan murni dari file InstanPrompt.txt asli
 local function isCleaningPrompt(prompt)
     if not isPrompt(prompt) then
         return false
@@ -228,7 +228,7 @@ local function isCleaningPrompt(prompt)
     local object = string.lower(tostring(prompt.ObjectText or ""))
     local text = action .. " " .. object
 
-    -- Jika mengandung kata ambil/taruh/kembalikan, TOLAK sebagai cleaning prompt agar tetap instan murni
+    -- Pastikan teks ambil/taruh alat tidak ikut keseret ke cleaning
     local isToolAction = string.find(text, "ambil", 1, true) ~= nil
         or string.find(text, "taruh", 1, true) ~= nil
         or string.find(text, "kembalikan", 1, true) ~= nil
@@ -241,7 +241,6 @@ local function isCleaningPrompt(prompt)
         return false
     end
 
-    -- Hanya deteksi aksi murni bersih-bersih/nyapu/ngepel
     return string.find(text, "sapu", 1, true) ~= nil
         or string.find(text, "pel", 1, true) ~= nil
         or string.find(text, "bersih", 1, true) ~= nil
@@ -251,7 +250,7 @@ local function isCleaningPrompt(prompt)
         or string.find(text, "sweep", 1, true) ~= nil
 end
 
--- FUNGSI AUTO-HOLD KHUSUS BERSIH-BERSIH: 1 klik langsung ditahan skrip sampai progress penuh
+-- Logika auto-hold 3 detik asli dari file InstanPrompt.txt
 local function fastCleaningHold(prompt)
     if not Enabled or not isValid(prompt) or not isCleaningPrompt(prompt) then
         return false
@@ -413,13 +412,13 @@ local function enableInstant()
                 return
             end
 
-            -- 1. UNTUK PROMPT BIASA / AMBIL ALAT: Jalankan instant attempt murni (1 klik langsung ambil)[span_2](start_span)[span_2](end_span)
+            -- AMBIL & TARUH ALAT: Jalankan instant attempt murni (1 klik langsung ambil)[span_6](start_span)[span_6](end_span)
             if not isCleaningPrompt(prompt) then
                 instantAttempt(prompt)
                 return
             end
 
-            -- 2. KHUSUS PROMPT BERSIH-BERSIH CUSTOM: 1 klik, biarkan skrip yang menahan otomatis sampai progress penuh[span_3](start_span)[span_3](end_span)
+            -- BERSIH-BERSIH: 1 klik, biarkan fungsi asli InstanPrompt.txt menahan otomatis selama 3 detik[span_7](start_span)[span_7](end_span)
             fastCleaningHold(prompt)
         end)
     end))
@@ -429,8 +428,8 @@ local function enableInstant()
             return
         end
 
-        val = input.KeyCode
-        if val == Enum.KeyCode.E or val == Enum.KeyCode.F or val == Enum.KeyCode.G then
+        local key = input.KeyCode
+        if key == Enum.KeyCode.E or key == Enum.KeyCode.F or key == Enum.KeyCode.G then
             task.defer(activateNearest)
         end
     end))
