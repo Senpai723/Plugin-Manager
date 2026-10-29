@@ -36,8 +36,8 @@ local CURRENT_MAP_KEY = getMapKey()
 
 local IGNORE_KEYWORDS = {
     -- Filter Teleport & Trigger Palsu
-    "teleport", "tp", "tele", "coin", "gold", "reward", "cash", "money", "gem", "stop", "jump", "ready",
-    "time", "seluncur", "remove", "clone", "seat", "laying", "down", "fall", "jatuh", "chat", "block",
+    "teleport", "tp", "tele", "coin", "gold", "reward", "cash", "money", "gem", "stop", "jump", "ready", "inner", "outer", "damage",
+    "time", "seluncur", "remove", "clone", "seat", "laying", "down", "fall", "jatuh", "chat", "block", "boost",
     "cave", "lake", "goa", "tutorial", "hit", "same", "spin", "kill", "brick", "birhday", "gift", "fun",
     "tanjakan", "maut", "uang", "join", "community", "komunitas", "enter", "handle", "squish", "stand",
     "adminzone",
@@ -51,7 +51,7 @@ local IGNORE_KEYWORDS = {
     "wood", "stone", "rock", "batu", "bambu", "raft", "platform", "floor", "step", "pijakan",
     "lamp", "lantern", "light", "street lamp", "speaker", "audio", "music", "sound", "fx", "effect",
     "head", "torso", "humanoid", "character", "arm", "leg", "face", "hair", "holder", "neon",
-    "prop", "decoration", "wall", "roof", "ceiling", "window", "door", "table", "chair",
+    "prop", "decoration", "wall", "roof", "ceiling", "window", "door", "table", "chair", "badge",
     "particle", "sparkle", "fire", "smoke", "cewe", "cowo", "refresh", "ava", "chinese",
     "chinematic", "cinematic", "dance", "male", "female", "outfit", "suguhan", "big", "small"
 }
