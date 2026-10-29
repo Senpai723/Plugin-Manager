@@ -154,7 +154,7 @@ local function validatePrefixText(prefixStr)
         return false, ""
     end
 
-    local isCrownOwner = string.find(prefixStr, "👑") and (string.find(lowerPrefix, "pemilik") or string.find(lowerPrefix, "owner") or string.find(lowerPrefix, "founder") or string.find(lowerPrefix, "admin") or string.find(lowerPrefix, "dev"))
+    local isCrownOwner = string.find(prefixStr, "👑") and (string.find(lowerPrefix, "pemilik") or string.find(lowerPrefix, "owner") or string.find(lowerPrefix, "founder"))
     if string.find(prefixStr, "🛡️") or string.find(prefixStr, "🔨") or isCrownOwner or string.match(lowerPrefix, "%f[%a]admin%f[%A]") or string.match(lowerPrefix, "%f[%a]dev%f[%A]") or string.match(lowerPrefix, "%f[%a]mod%f[%A]") or string.match(lowerPrefix, "%f[%a]staff%f[%A]") or lowerPrefix == "pemilik" then
         return true, prefixStr ~= "" and prefixStr or "Chat Admin Tag"
     end
@@ -251,7 +251,7 @@ pcall(function()
 end)
 
 -- ==========================================
--- 🔍 MAIN SCANNER (LOGIKA HEADADMIN DIPERBAIKI)
+-- 🔍 MAIN SCANNER (GROUP OWNER DIKUNCI RANK 255)
 -- ==========================================
 local isScanning = false
 function scanServerAdmins(isManual, isStateChange)
@@ -290,34 +290,21 @@ function scanServerAdmins(isManual, isStateChange)
                         end
                     end
 
+                    -- TIER 1: GROUP RANK CHECK (DIKUNCI MUTLAK HANYA RANK 255)
                     local isGroupType = (creatorType == Enum.CreatorType.Group) or (tostring(creatorType) == "Enum.CreatorType.Group") or (creatorType == 1)
                     local playerGroupRank = 0
-                    local playerGroupRole = ""
 
                     if not isTarget and creatorId > 0 and isGroupType then
                         local successRank, rank = pcall(function() return player:GetRankInGroup(creatorId) end)
-                        local successRole, roleName = pcall(function() return player:GetRoleInGroup(creatorId) end)
                         if successRank and type(rank) == "number" then playerGroupRank = rank end
-                        if successRole and type(roleName) == "string" then playerGroupRole = roleName end
 
-                        if playerGroupRole ~= "" then
-                            local lowerRole = string.lower(playerGroupRole)
-                            local isErrorMsg = string.find(lowerRole, "error") or string.find(lowerRole, "datamodel") or string.find(lowerRole, "not in")
-                            if not isErrorMsg then
-                                local isDevRole = string.find(lowerRole, "dev") or string.find(lowerRole, "creator") or string.find(lowerRole, "owner") or string.find(lowerRole, "admin") or string.find(lowerRole, "staff") or string.find(lowerRole, "mod") or string.find(lowerRole, "collaborator") or string.find(lowerRole, "builder") or string.find(lowerRole, "scripter") or string.find(lowerRole, "helper") or string.find(lowerRole, "manager")
-                                if (playerGroupRank >= 2) or isDevRole then
-                                    isTarget = true
-                                    if playerGroupRank == 255 then
-                                        detectedRole = "Group Owner 🔨"
-                                    else
-                                        detectedRole = (playerGroupRole ~= "" and playerGroupRole) or ("Group Rank " .. tostring(playerGroupRank))
-                                    end
-                                end
-                            end
+                        if playerGroupRank == 255 then
+                            isTarget = true
+                            detectedRole = "Group Owner 🔨"
                         end
                     end
 
-                    -- TIER 2: OVERHEAD SPECIAL TITLE SCANNER (HEADADMIN LANGSUNG DITANGKAP)
+                    -- TIER 2: OVERHEAD SPECIAL TITLE SCANNER (DENGAN VALIDASI KETAT)
                     if not isTarget and player.Character then
                         for _, obj in ipairs(player.Character:GetDescendants()) do
                             if obj:IsA("TextLabel") or obj:IsA("TextBox") then
@@ -331,10 +318,17 @@ function scanServerAdmins(isManual, isStateChange)
                                     local isJustPlayerName = (lowerText == pName) or (lowerText == pDisplayName) or string.find(lowerText, pName) or string.find(lowerText, pDisplayName)
 
                                     if not isJustPlayerName then
-                                        -- Langsung deteksi title formal seperti HEADADMIN, HEAD ADMIN, OWNER, PEMILIK tanpa syarat ketat grup
-                                        local isFormalAdminTag = string.find(lowerText, "headadmin") or string.find(lowerText, "head admin") or string.find(lowerText, "owner") or string.find(lowerText, "pemilik") or string.find(lowerText, "founder") or string.find(lowerText, "super admin") or string.find(lowerText, "co-owner")
+                                        local isFormalAdminTag = string.find(lowerText, "headadmin") or string.find(lowerText, "head admin") or string.find(lowerText, "super admin") or string.find(lowerText, "co-owner")
+                                        
+                                        -- Tag owner/pemilik di overhead wajib divalidasi (hanya diakui jika rank 255 atau creator ID asli)
+                                        local isOverheadOwner = string.find(lowerText, "pemilik") or string.find(lowerText, "owner") or string.find(lowerText, "founder")
+                                        if isOverheadOwner then
+                                            if player.UserId == creatorId or playerGroupRank == 255 then
+                                                isFormalAdminTag = true
+                                            end
+                                        end
 
-                                        local hasSpecialTag = string.find(rawText, "🛡️") or string.find(rawText, "🔨") or isFormalAdminTag or string.find(lowerText, "pathfinder") or string.find(lowerText, "prioritas") or string.find(lowerText, "builder") or string.find(lowerText, "scripter") or string.match(lowerText, "%[%s*admin%s*%]") or string.match(lowerText, "%[%s*dev%s*%]")
+                                        local hasSpecialTag = string.find(rawText, "🛡️") or string.find(rawText, "🔨") or isFormalAdminTag or string.match(lowerText, "%[%s*admin%s*%]") or string.match(lowerText, "%[%s*dev%s*%]")
                                         
                                         if hasSpecialTag then
                                             isTarget = true
