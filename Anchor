@@ -1,83 +1,79 @@
+local RunService = game:GetService("RunService")
+local lockedParts = {}
+local connection = nil
+
+-- Loop yang berjalan tiap frame untuk memastikan part tetap terkunci di tempatnya
+local function startLoop()
+    if connection then return end
+    connection = RunService.RenderStepped:Connect(function()
+        for obj, savedCFrame in pairs(lockedParts) do
+            if obj and obj.Parent then
+                obj.Anchored = true
+                obj.CFrame = savedCFrame -- Paksa posisi dan rotasinya agar tidak bergerak/goyang
+                obj.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+                obj.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+            else
+                lockedParts[obj] = nil
+            end
+        end
+    end)
+end
+
 local Plugin = {
-    ["PluginName"] = "Anti-Goyang Stabilizer",
-    ["PluginDescription"] = "Membekukan dan membuka kembali part goyang/ngacak di sekitar player.",
+    ["PluginName"] = "Anti-Goyang Ultimate",
+    ["PluginDescription"] = "Mengunci part bergoyang secara permanen menggunakan real-time loop.",
     ["Commands"] = {
         ["freeze"] = {
             ["ListName"] = "freeze / diam [radius]",
-            ["Description"] = "Kunci & diamkan part/tangga/papan bergoyang di sekitar kamu (Default radius: 100).",
+            ["Description"] = "Kunci mati part/tangga bergoyang secara real-time di sekitar kamu.",
             ["Aliases"] = {"diam", "unsway", "antigoyang"},
             ["Function"] = function(args, speaker)
                 local radius = tonumber(args[1]) or 100
                 local char = speaker.Character or speaker.CharacterAdded:Wait()
                 
                 if not char or not char:FindFirstChild("HumanoidRootPart") then
-                    notify("Anti-Goyang", "Karakter / HumanoidRootPart tidak ditemukan!")
+                    notify("Anti-Goyang", "Karakter tidak ditemukan!")
                     return
                 end
 
                 local rootPos = char.HumanoidRootPart.Position
-                local affectedCount = 0
+                local count = 0
 
                 for _, obj in ipairs(game:GetService("Workspace"):GetDescendants()) do
                     if obj:IsA("BasePart") and not obj:IsDescendantOf(char) then
                         if (obj.Position - rootPos).Magnitude <= radius then
-                            -- Simpan state asli (Anchored) sebelum diubah
-                            if originalStates[obj] == nil then
-                                originalStates[obj] = obj.Anchored
-                            end
-
+                            -- Simpan posisi diamnya, lalu masukkan ke daftar koki (lockedParts)
+                            lockedParts[obj] = obj.CFrame
                             obj.Anchored = true
-                            obj.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
-                            obj.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
                             
+                            -- Hapus constraint/joint pengganggu
                             for _, child in ipairs(obj:GetChildren()) do
                                 if child:IsA("Constraint") or child:IsA("JointInstance") or child:IsA("BodyMover") then
                                     child:Destroy()
                                 end
                             end
 
-                            affectedCount = affectedCount + 1
+                            count = count + 1
                         end
                     end
                 end
 
-                notify("Anti-Goyang", "Berhasil mengunci " .. affectedCount .. " part dalam radius " .. radius .. " studs!")
+                startLoop()
+                notify("Anti-Goyang", "Berhasil mengunci mati " .. count .. " part secara permanen!")
             end
         },
         ["unfreeze"] = {
-            ["ListName"] = "unfreeze / nyala [radius]",
-            ["Description"] = "Membuka kembali kunci part (mengembalikan ke kondisi semula) di sekitar kamu.",
-            ["Aliases"] = {"nyala", "bergerak", "unbound"},
+            ["ListName"] = "unfreeze / nyala",
+            ["Description"] = "Matikan pengunci real-time dan lepaskan semua part.",
+            ["Aliases"] = {"nyala", "bergerak"},
             ["Function"] = function(args, speaker)
-                local radius = tonumber(args[1]) or 100
-                local char = speaker.Character or speaker.CharacterAdded:Wait()
-                
-                if not char or not char:FindFirstChild("HumanoidRootPart") then
-                    notify("Anti-Goyang", "Karakter / HumanoidRootPart tidak ditemukan!")
-                    return
+                -- Bersihkan daftar dan matikan loop
+                table.clear(lockedParts)
+                if connection then
+                    connection:Disconnect()
+                    connection = nil
                 end
-
-                local rootPos = char.HumanoidRootPart.Position
-                local restoredCount = 0
-
-                for _, obj in ipairs(game:GetService("Workspace"):GetDescendants()) do
-                    if obj:IsA("BasePart") and not obj:IsDescendantOf(char) then
-                        if (obj.Position - rootPos).Magnitude <= radius then
-                            -- Kembalikan ke status Anchored semula jika terekam
-                            if originalStates[obj] ~= nil then
-                                obj.Anchored = originalStates[obj]
-                                originalStates[obj] = nil
-                                restoredCount = restoredCount + 1
-                            else
-                                -- Kalau tidak terekam tapi mau dibuka paksa
-                                obj.Anchored = false
-                                restoredCount = restoredCount + 1
-                            end
-                        end
-                    end
-                end
-
-                notify("Anti-Goyang", "Berhasil melepas kunci " .. restoredCount .. " part dalam radius " .. radius .. " studs!")
+                notify("Anti-Goyang", "Semua kunci dilepas dan loop dihentikan!")
             end
         }
     }
