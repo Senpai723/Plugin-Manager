@@ -78,14 +78,14 @@ return {
             Desc = "Membuat game menjadi terang, sudah termasuk anti kabut dan shadow",
             Cmd = "fullbright",
             UnCmd = "fullbright",
-            RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Fullbright"
+            RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Tools/Fullbright"
         },
         {
             Name = "Instant Prompts",
             Desc = "Always instant interaction",
             Cmd = "instantprompts",
             UnCmd = "uninstantprompts",
-            RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/InstanPrompt"
+            RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Tools/InstanPrompt"
         },
         {
             Name = "Walk Speed",
@@ -93,49 +93,49 @@ return {
             Cmd = "ws",
             UnCmd = "unws",
             NeedInput = true,
-            RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/WalkSpeed"
+            RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Tools/WalkSpeed"
         },
         {
             Name = "Infinite Jump",
             Desc = "Melompat tanpa batas dan Melampauinyaaaa...",
             Cmd = "infjump",
             UnCmd = "uninfjump",
-            RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/InfiniteJump"
+            RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Tools/InfiniteJump"
         },
         {
             Name = "Admin Detect",
             Desc = "Mendeteksi Owner dan Admin, tunggu beberapa detik setelah Execute",
             Cmd = "cad",
             UnCmd = "",
-            RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/AdminDetect"
+            RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Tools/AdminDetect"
         },
         {
             Name = "Noclip",
             Desc = "Menembus Objek yang ada di depan, tapi agak lebih pinter dikit",
             Cmd = "noclip",
             UnCmd = "unnoclip",
-            RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Noclip"
+            RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Tools/Noclip"
         },
         {
             Name = "Code Finder",
             Desc = "Menemukan Code angka dan Huruf",
             Cmd = "code",
             UnCmd = "",
-            RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/CodeFinder"
+            RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Tools/CodeFinder"
         },
         {
             Name = "Anchor Part",
             Desc = "Menghentikan Part yang bergoyang",
             Cmd = "freeze",
             UnCmd = "unfreeze",
-            RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Anchor"
+            RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Tools/Anchor"
         },
         {
             Name = "Anti AFK",
             Desc = "Anti Mental Mental Kleb 20 menit",
             Cmd = "antiafk",
             UnCmd = "unantiafk",
-            RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/AntiAFK"
+            RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Tools/AntiAFK"
         }
     },
 
@@ -167,14 +167,14 @@ return {
             Desc = "Membuat game menjadi terang, sudah termasuk anti kabut dan shadow",
             Cmd = "fullbright",
             UnCmd = "fullbright",
-            RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Fullbright"
+            RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Tools/Fullbright"
         },
         {
             Name = "Instant Prompts",
             Desc = "Instan klik pada objek yang di interact",
             Cmd = "instantprompts",
             UnCmd = "uninstantprompts",
-            RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/InstanPrompt"
+            RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Tools/InstanPrompt"
         },
         {
             Name = "Mute Sound",
@@ -189,21 +189,21 @@ return {
             Cmd = "ws",
             UnCmd = "unws",
             NeedInput = true,
-            RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/WalkSpeed"
+            RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Tools/WalkSpeed"
         },
         {
             Name = "Noclip",
             Desc = "Menembus Objek yang ada di depan, tapi agak lebih pinter dikit",
             Cmd = "noclip",
             UnCmd = "unnoclip",
-            RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Noclip"
+            RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Tools/Noclip"
         },
         {
             Name = "Code Finder",
             Desc = "Menemukan Code angka dan Huruf",
             Cmd = "code",
             UnCmd = "",
-            RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/CodeFinder"
+            RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Tools/CodeFinder"
         }
     }
 }
