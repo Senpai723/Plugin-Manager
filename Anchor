@@ -3,8 +3,8 @@ local CoreGui = game:GetService("CoreGui")
 local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
 
--- STORAGE GLOBAL & RESET MEMORI UNTUK ANTI-GOYANG
-_G.AntiGoyang_LockedParts = _G.AntiGoyang_LockedParts or {}
+-- STORAGE GLOBAL UNTUK MENYIMPAN STATE ASLI PART
+_G.AntiGoyang_OriginalStates = _G.AntiGoyang_OriginalStates or {}
 _G.AntiGoyang_DisabledConstraints = _G.AntiGoyang_DisabledConstraints or {}
 _G.AntiGoyang_Connection = _G.AntiGoyang_Connection or nil
 
@@ -24,41 +24,43 @@ end
 local function startStabilizerLoop()
     if _G.AntiGoyang_Connection then return end
     _G.AntiGoyang_Connection = RunService.RenderStepped:Connect(function()
-        for obj, savedCFrame in pairs(_G.AntiGoyang_LockedParts) do
+        for obj, data in pairs(_G.AntiGoyang_OriginalStates) do
             if obj and obj.Parent then
                 obj.Anchored = true
-                obj.CFrame = savedCFrame
+                obj.CFrame = data.CFrame -- Paksa diam di posisi pas di-freeze
                 obj.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
                 obj.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
             else
-                _G.AntiGoyang_LockedParts[obj] = nil
+                _G.AntiGoyang_OriginalStates[obj] = nil
             end
         end
     end)
 end
 
 local function stopStabilizerLoop()
-    -- Kembalikan status part ke tidak anchored semula
-    for obj, _ in pairs(_G.AntiGoyang_LockedParts) do
+    -- Matikan loop terlebih dahulu
+    if _G.AntiGoyang_Connection then
+        _G.AntiGoyang_Connection:Disconnect()
+        _G.AntiGoyang_Connection = nil
+    end
+
+    -- Kembalikan part ke status Anchored dan posisi CFrame asli mereka sebelum di-freeze
+    for obj, data in pairs(_G.AntiGoyang_OriginalStates) do
         if obj and obj.Parent then
-            obj.Anchored = false
+            obj.Anchored = data.Anchored
+            obj.CFrame = data.CFrame -- Kembalikan ke posisi awal supaya tidak jatuh/ambruk
         end
     end
     
-    -- Nyalakan kembali constraint/tali yang tadinya dimatikan
+    -- Nyalakan kembali tali / constraint seperti semula
     for constraint, _ in pairs(_G.AntiGoyang_DisabledConstraints) do
         if constraint and constraint.Parent then
             constraint.Enabled = true
         end
     end
     
-    table.clear(_G.AntiGoyang_LockedParts)
+    table.clear(_G.AntiGoyang_OriginalStates)
     table.clear(_G.AntiGoyang_DisabledConstraints)
-    
-    if _G.AntiGoyang_Connection then
-        _G.AntiGoyang_Connection:Disconnect()
-        _G.AntiGoyang_Connection = nil
-    end
 end
 
 -- ==========================================
@@ -77,10 +79,17 @@ local function freezeNearbyParts(radiusVal)
     for _, obj in ipairs(game:GetService("Workspace"):GetDescendants()) do
         if obj:IsA("BasePart") and not obj:IsDescendantOf(char) then
             if (obj.Position - rootPos).Magnitude <= radiusVal then
-                _G.AntiGoyang_LockedParts[obj] = obj.CFrame
+                -- Rekam status asli part sebelum di-lock (termasuk status anchored & posisinya)
+                if not _G.AntiGoyang_OriginalStates[obj] then
+                    _G.AntiGoyang_OriginalStates[obj] = {
+                        Anchored = obj.Anchored,
+                        CFrame = obj.CFrame
+                    }
+                end
+
                 obj.Anchored = true
                 
-                -- Alih-alih dihapus (Destroy), kita matikan (Enabled = false) constraint/tali supaya tidak ilang permanen
+                -- Matikan tali/constraint sementara tanpa menghapusnya
                 for _, child in ipairs(obj:GetChildren()) do
                     if child:IsA("Constraint") or child:IsA("JointInstance") then
                         if child.Enabled then
@@ -88,7 +97,6 @@ local function freezeNearbyParts(radiusVal)
                             _G.AntiGoyang_DisabledConstraints[child] = true
                         end
                     elseif child:IsA("Script") or child:IsA("LocalScript") or child:IsA("BodyMover") then
-                        -- Kalau script penggerak murni tetap bisa dihancurkan agar tidak melawan
                         child:Destroy()
                     end
                 end
@@ -99,12 +107,12 @@ local function freezeNearbyParts(radiusVal)
     end
 
     startStabilizerLoop()
-    notify("Berhasil mengunci " .. count .. " part & mengamankan talinya!")
+    notify("Berhasil mengunci " .. count .. " part dengan aman!")
 end
 
 local function unfreezeAllParts()
     stopStabilizerLoop()
-    notify("Semua kunci dilepas, tali & part kembali normal!")
+    notify("Semua part dikembalikan ke posisi & kondisi normal!")
 end
 
 -- ==========================================
@@ -124,7 +132,7 @@ return {
         },
         ["unfreeze"] = {
             ["ListName"] = "unfreeze / nyala",
-            ["Description"] = "Matikan pengunci dan pulihkan tali/part",
+            ["Description"] = "Kembalikan part dan tali ke kondisi semula tanpa jatuh",
             ["Aliases"] = {"nyala", "bergerak", "unbound"},
             ["Function"] = function(args, speaker)
                 unfreezeAllParts()
