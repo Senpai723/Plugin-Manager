@@ -37,7 +37,15 @@ local function startStabilizerLoop()
 end
 
 local function stopStabilizerLoop()
+    -- Kembalikan status part ke tidak anchored (atau dilepas kuncinya)
+    for obj, _ in pairs(_G.AntiGoyang_LockedParts) do
+        if obj and obj.Parent then
+            obj.Anchored = false
+        end
+    end
+    
     table.clear(_G.AntiGoyang_LockedParts)
+    
     if _G.AntiGoyang_Connection then
         _G.AntiGoyang_Connection:Disconnect()
         _G.AntiGoyang_Connection = nil
@@ -76,7 +84,7 @@ local function freezeNearbyParts(radiusVal)
     end
 
     startStabilizerLoop()
-    notify("Berhasil mengunci mati " .. count + 0 .. " part dalam radius " .. radiusVal .. " studs!")
+    notify("Berhasil mengunci mati " .. count .. " part dalam radius " .. radiusVal .. " studs!")
 end
 
 local function unfreezeAllParts()
@@ -93,6 +101,7 @@ return {
         ["freeze"] = {
             ["ListName"] = "freeze / diam [radius]",
             ["Description"] = "Kunci mati part/tangga bergoyang di sekitar kamu",
+            ["Aliases"] = {"diam", "antigoyang"},
             ["Function"] = function(args, speaker)
                 local radius = tonumber(args[1]) or 150
                 freezeNearbyParts(radius)
@@ -101,6 +110,7 @@ return {
         ["unfreeze"] = {
             ["ListName"] = "unfreeze / nyala",
             ["Description"] = "Matikan pengunci dan lepaskan part",
+            ["Aliases"] = {"nyala", "bergerak", "unbound"},
             ["Function"] = function(args, speaker)
                 unfreezeAllParts()
             end
