@@ -122,6 +122,13 @@ return {
             Cmd = "code",
             UnCmd = "",
             RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/CodeFinder"
+        },
+        {
+            Name = "Anti AFK",
+            Desc = "Anti Mental Mental Kleb 20 menit",
+            Cmd = "antiafk",
+            UnCmd = "unantiafk",
+            RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/AntiAFK"
         }
     },
 
