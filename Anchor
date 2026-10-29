@@ -1,82 +1,109 @@
+local Players = game:GetService("Players")
+local CoreGui = game:GetService("CoreGui")
 local RunService = game:GetService("RunService")
-local lockedParts = {}
-local connection = nil
+local LocalPlayer = Players.LocalPlayer
 
--- Loop yang berjalan tiap frame untuk memastikan part tetap terkunci di tempatnya
-local function startLoop()
-    if connection then return end
-    connection = RunService.RenderStepped:Connect(function()
-        for obj, savedCFrame in pairs(lockedParts) do
+-- STORAGE GLOBAL & RESET MEMORI UNTUK ANTI-GOYANG
+_G.AntiGoyang_LockedParts = _G.AntiGoyang_LockedParts or {}
+_G.AntiGoyang_Connection = _G.AntiGoyang_Connection or nil
+
+local function notify(text)
+    pcall(function()
+        game:GetService("StarterGui"):SetCore("SendNotification", {
+            Title = "Anti-Goyang Stabilizer",
+            Text = text,
+            Duration = 3
+        })
+    end)
+end
+
+-- ==========================================
+-- 🔄 REAL-TIME LOOP UNTUK MENGUNCI PART
+-- ==========================================
+local function startStabilizerLoop()
+    if _G.AntiGoyang_Connection then return end
+    _G.AntiGoyang_Connection = RunService.RenderStepped:Connect(function()
+        for obj, savedCFrame in pairs(_G.AntiGoyang_LockedParts) do
             if obj and obj.Parent then
                 obj.Anchored = true
-                obj.CFrame = savedCFrame -- Paksa posisi dan rotasinya agar tidak bergerak/goyang
+                obj.CFrame = savedCFrame
                 obj.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
                 obj.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
             else
-                lockedParts[obj] = nil
+                _G.AntiGoyang_LockedParts[obj] = nil
             end
         end
     end)
 end
 
-local Plugin = {
-    ["PluginName"] = "Anti-Goyang Ultimate",
-    ["PluginDescription"] = "Mengunci part bergoyang secara permanen menggunakan real-time loop.",
-    ["Commands"] = {
-        ["freeze"] = {
-            ["ListName"] = "freeze / diam [radius]",
-            ["Description"] = "Kunci mati part/tangga bergoyang secara real-time di sekitar kamu.",
-            ["Aliases"] = {"diam", "unsway", "antigoyang"},
-            ["Function"] = function(args, speaker)
-                local radius = tonumber(args[1]) or 100
-                local char = speaker.Character or speaker.CharacterAdded:Wait()
+local function stopStabilizerLoop()
+    table.clear(_G.AntiGoyang_LockedParts)
+    if _G.AntiGoyang_Connection then
+        _G.AntiGoyang_Connection:Disconnect()
+        _G.AntiGoyang_Connection = nil
+    end
+end
+
+-- ==========================================
+-- 🔍 FUNGSI UTAMA FREEZE & UNFREEZE
+-- ==========================================
+local function freezeNearbyParts(radiusVal)
+    local char = LocalPlayer.Character
+    if not char or not char:FindFirstChild("HumanoidRootPart") then
+        notify("Karakter / HumanoidRootPart tidak ditemukan!")
+        return
+    end
+
+    local rootPos = char.HumanoidRootPart.Position
+    local count = 0
+
+    for _, obj in ipairs(game:GetService("Workspace"):GetDescendants()) do
+        if obj:IsA("BasePart") and not obj:IsDescendantOf(char) then
+            if (obj.Position - rootPos).Magnitude <= radiusVal then
+                _G.AntiGoyang_LockedParts[obj] = obj.CFrame
+                obj.Anchored = true
                 
-                if not char or not char:FindFirstChild("HumanoidRootPart") then
-                    notify("Anti-Goyang", "Karakter tidak ditemukan!")
-                    return
-                end
-
-                local rootPos = char.HumanoidRootPart.Position
-                local count = 0
-
-                for _, obj in ipairs(game:GetService("Workspace"):GetDescendants()) do
-                    if obj:IsA("BasePart") and not obj:IsDescendantOf(char) then
-                        if (obj.Position - rootPos).Magnitude <= radius then
-                            -- Simpan posisi diamnya, lalu masukkan ke daftar koki (lockedParts)
-                            lockedParts[obj] = obj.CFrame
-                            obj.Anchored = true
-                            
-                            -- Hapus constraint/joint pengganggu
-                            for _, child in ipairs(obj:GetChildren()) do
-                                if child:IsA("Constraint") or child:IsA("JointInstance") or child:IsA("BodyMover") then
-                                    child:Destroy()
-                                end
-                            end
-
-                            count = count + 1
-                        end
+                -- Hancurkan script penggerak atau constraint di dalam part
+                for _, child in ipairs(obj:GetChildren()) do
+                    if child:IsA("Script") or child:IsA("LocalScript") or child:IsA("Constraint") or child:IsA("JointInstance") or child:IsA("BodyMover") then
+                        child:Destroy()
                     end
                 end
 
-                startLoop()
-                notify("Anti-Goyang", "Berhasil mengunci mati " .. count .. " part secara permanen!")
+                count = count + 1
+            end
+        end
+    end
+
+    startStabilizerLoop()
+    notify("Berhasil mengunci mati " .. count + 0 .. " part dalam radius " .. radiusVal .. " studs!")
+end
+
+local function unfreezeAllParts()
+    stopStabilizerLoop()
+    notify("Semua kunci part dilepas dan loop dihentikan!")
+end
+
+-- ==========================================
+-- 📦 RETURN PLUGIN INFINITE YIELD
+-- ==========================================
+return {
+    ["PluginName"] = "Anti-Goyang Stabilizer",
+    ["Commands"] = {
+        ["freeze"] = {
+            ["ListName"] = "freeze / diam [radius]",
+            ["Description"] = "Kunci mati part/tangga bergoyang di sekitar kamu",
+            ["Function"] = function(args, speaker)
+                local radius = tonumber(args[1]) or 150
+                freezeNearbyParts(radius)
             end
         },
         ["unfreeze"] = {
             ["ListName"] = "unfreeze / nyala",
-            ["Description"] = "Matikan pengunci real-time dan lepaskan semua part.",
-            ["Aliases"] = {"nyala", "bergerak"},
+            ["Description"] = "Matikan pengunci dan lepaskan part",
             ["Function"] = function(args, speaker)
-                -- Bersihkan daftar dan matikan loop
-                table.clear(lockedParts)
-                if connection then
-                    connection:Disconnect()
-                    connection = nil
-                end
-                notify("Anti-Goyang", "Semua kunci dilepas dan loop dihentikan!")
+                unfreezeAllParts()
             end
         }
     }
 }
-
-return Plugin
