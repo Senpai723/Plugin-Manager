@@ -124,6 +124,13 @@ return {
             RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/CodeFinder"
         },
         {
+            Name = "Anchor Part",
+            Desc = "Menghentikan Part yang bergoyang",
+            Cmd = "freeze",
+            UnCmd = "unfreeze",
+            RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Anchor"
+        },
+        {
             Name = "Anti AFK",
             Desc = "Anti Mental Mental Kleb 20 menit",
             Cmd = "antiafk",
