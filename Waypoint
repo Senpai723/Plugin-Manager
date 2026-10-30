@@ -214,33 +214,26 @@ local function getValidCheckpointPart(obj)
     return nil
 end
 
-
 local function parseCPIdentity(obj)
     local validPart = getValidCheckpointPart(obj)
-    if not validPart then return nil, nil, nil end
+    if not validPart then return nil, nil, nil, 0 end
 
     local name = obj.Name
     local lowerName = string.lower(name)
     local parentName = obj.Parent and obj.Parent.Name or ""
     local lowerParent = string.lower(parentName)
 
-    -- Filter awal sampah & nama umum yang tidak diinginkan (termasuk "field")
+    -- Filter awal sampah & nama umum
     if lowerName == "text" or lowerParent == "text" or lowerName == "field" or lowerParent == "field" or isBlacklisted(lowerName) or isBlacklisted(lowerParent) then 
-        return nil, nil, nil 
+        return nil, nil, nil, 0 
     end
     if string.find(lowerName, "teleport", 1, true) or string.find(lowerName, "tp", 1, true) or string.find(lowerName, "tele", 1, true) then 
-        return nil, nil, nil 
+        return nil, nil, nil, 0 
     end
 
-    -- ==================================================
-    -- 1. DETEKSI SUMMIT STRICT (SUPER STERIL)
-    -- ==================================================
+    -- Deteksi Summit (Tetap dipertahankan)
     local summitKeywords = {"summit", "peak", "finish", "puncak", "winpad"}
-    local summitBlacklist = {
-        "board", "papan", "donat", "donation", "detik", "time", "sec", "sign", 
-        "leaderboard", "stat", "total", "name", "top global", "global", "top", 
-        "finishmodel", "model", "gui"
-    }
+    local summitBlacklist = {"board", "papan", "donat", "donation", "detik", "time", "sec", "sign", "leaderboard", "stat", "total", "name", "top global", "global", "top", "finishmodel", "model", "gui"}
     
     local function isSummitBlacklisted(str)
         local lowerStr = string.lower(str)
@@ -252,7 +245,6 @@ local function parseCPIdentity(obj)
 
     local isSummit = false
     local summitName = name
-
     if not isSummitBlacklisted(lowerName) and not isSummitBlacklisted(lowerParent) then
         for _, kw in ipairs(summitKeywords) do
             if string.find(lowerName, kw, 1, true) or string.find(lowerParent, kw, 1, true) then
@@ -262,89 +254,44 @@ local function parseCPIdentity(obj)
         end
     end
 
-    if not isSummit then
-        local hasGui = validPart:FindFirstChildOfClass("BillboardGui") or validPart:FindFirstChildOfClass("SurfaceGui")
-        if not hasGui and validPart.Parent and validPart.Parent:IsA("Model") then
-            hasGui = validPart.Parent:FindFirstChildOfClass("BillboardGui") or validPart.Parent:FindFirstChildOfClass("SurfaceGui")
-        end
-
-        if hasGui then
-            local textLabel = hasGui:FindFirstChildOfClass("TextLabel")
-            if textLabel and textLabel.Text ~= "" then
-                local lowerTxt = string.lower(textLabel.Text)
-                if not isSummitBlacklisted(lowerTxt) then
-                    for _, kw in ipairs(summitKeywords) do
-                        if string.find(lowerTxt, kw, 1, true) then
-                            isSummit = true
-                            summitName = textLabel.Text
-                            break
-                        end
-                    end
-                end
-            end
-        end
-    end
-
     if isSummit then
-        return "SUMMIT", summitName, validPart
+        return "SUMMIT", summitName, validPart, 10
     end
 
-    -- ==================================================
-    -- 2. DOKTRIN STRICT: CEK KATA KUNCI CHECKPOINT / RING
-    -- ==================================================
-    local combined = lowerParent .. " " .. lowerName
-    local hasCPKeyword = string.find(combined, "checkpoint") or 
-                         string.find(combined, "cekpoin") or 
-                         string.find(combined, "cp") or 
-                         string.find(combined, "ring") or -- Ditambahkan dukungan untuk map bertipe "Ring"
-                         string.find(combined, "waypoint") or 
-                         string.find(combined, "wp") or 
-                         string.find(combined, "stage") or 
-                         string.find(combined, "pos") or
-                         validPart:FindFirstChild("TouchInterest")
-
+    -- Cek teks GUI jika ada
     local guiText = ""
     local hasGui = validPart:FindFirstChildOfClass("BillboardGui") or validPart:FindFirstChildOfClass("SurfaceGui")
     if not hasGui and validPart.Parent and validPart.Parent:IsA("Model") then
         hasGui = validPart.Parent:FindFirstChildOfClass("BillboardGui") or validPart.Parent:FindFirstChildOfClass("SurfaceGui")
     end
-
     if hasGui then
         local textLabel = hasGui:FindFirstChildOfClass("TextLabel")
         if textLabel and textLabel.Text ~= "" then
             guiText = string.lower(textLabel.Text)
-            if string.find(guiText, "checkpoint") or string.find(guiText, "cekpoin") or string.find(guiText, "cp") or string.find(guiText, "ring") or string.find(guiText, "waypoint") or string.find(guiText, "wp") or string.find(guiText, "stage") or string.find(guiText, "pos") then
-                hasCPKeyword = true
-            end
         end
     end
 
-    if not hasCPKeyword then
-        return nil, nil, nil
-    end
+    local combined = lowerParent .. " " .. lowerName .. " " .. guiText
 
-    -- ==================================================
-    -- 3. PARSING NOMOR CHECKPOINT (WAJIB ADA ANGKA & VALID)
-    -- ==================================================
+    -- PARSING NOMOR CHECKPOINT
     local num = string.match(combined, "checkpoints?%s*(%d+)") or
                 string.match(combined, "checkpoint%s*(%d+)") or
                 string.match(combined, "cekpoin%s*[%s_]*(%d+)") or 
                 string.match(combined, "cekpoin%s*(%d+)") or  
                 string.match(combined, "cp%s*(%d+)") or
                 string.match(combined, "cp(%d+)") or 
-                string.match(combined, "ring%s*(%d+)") or -- Tangkap angka dari format "Ring3", "Ring4", dll
-                string.match(combined, "ring(%d+)") or
                 string.match(combined, "stage%s*(%d+)") or
                 string.match(combined, "pos%s*(%d+)") or
                 string.match(combined, "waypoint%s*(%d+)") or
-                string.match(combined, "wp%s*(%d+)")
+                string.match(combined, "wp%s*(%d+)") or
+                string.match(combined, "ring%s*(%d+)") or
+                string.match(combined, "ring(%d+)")
 
     if not num and guiText ~= "" then
         num = string.match(guiText, "(%d+)")
     end
 
     if not num then
-        -- Jika nama objek murni angka (contoh: part dinamai "3" atau "4" di dalam folder stage)
         if tonumber(name) then
             num = name
         else
@@ -352,22 +299,41 @@ local function parseCPIdentity(obj)
         end
     end
 
-    -- Jika tetap tidak ada angka sama sekali (seperti "Field", "Base", dll), tolak mutlak!
     if not num then
-        return nil, nil, nil
+        return nil, nil, nil, 0
     end
 
     local nVal = tonumber(num)
-    if nVal and nVal >= 0 and nVal <= 500 then
-        -- Prioritaskan deskripsi yang bersih, gunakan nama asli objek atau teks GUI
-        local descText = name
-        if guiText ~= "" then
-            descText = guiText
-        end
-        return nVal, descText, validPart
+    if not nVal or nVal < 0 or nVal > 500 then
+        return nil, nil, nil, 0
     end
 
-    return nil, nil, nil
+    -- SISTEM PENILAIAN PRIORITAS (SCORING)
+    -- Semakin tinggi skor, semakin diprioritaskan untuk dimunculkan sendirian
+    local priorityScore = 1 -- Default (misal: Ring / angka biasa)
+    
+    local hasExplicitKeyword = string.find(combined, "checkpoint") or 
+                               string.find(combined, "cekpoin") or 
+                               string.find(combined, "cp") or 
+                               string.find(combined, "waypoint") or 
+                               string.find(combined, "wp") or 
+                               string.find(combined, "stage") or 
+                               string.find(combined, "pos")
+
+    if hasExplicitKeyword then
+        priorityScore = 3 -- Prioritas Tertinggi (Ada kata CP, Stage, Waypoint, dll)
+    elseif tonumber(name) or (guiText ~= "" and tonumber(guiText)) then
+        priorityScore = 2 -- Prioritas Kedua (Murni Angka)
+    else
+        priorityScore = 1 -- Prioritas Terendah (Ring / Lainnya)
+    end
+
+    local descText = name
+    if guiText ~= "" then
+        descText = guiText
+    end
+
+    return nVal, descText, validPart, priorityScore
 end
 
 
@@ -417,20 +383,22 @@ local function processAndHookPart(obj)
     if not obj or not (obj:IsA("BasePart") or obj:IsA("MeshPart") or obj:IsA("UnionOperation") or obj:IsA("Model")) then return end
     if hookedParts[obj] then return end
 
-    local cpKey, partDesc, realPart = parseCPIdentity(obj)
-    
-    if cpKey and realPart and not hookedParts[realPart] then
-        hookedParts[realPart] = true
+            local cpKey, partDesc, realPart, pScore = parseCPIdentity(obj)
         
-        local targetCFrame = realPart:IsA("Model") and (realPart.PrimaryPart and realPart.PrimaryPart.CFrame or realPart:GetAttribute("CFrame") or realPart:GetPivot()) or realPart.CFrame
+        if cpKey and realPart and not hookedParts[realPart] then
+            hookedParts[realPart] = true
+            
+            local targetCFrame = realPart:IsA("Model") and (realPart.PrimaryPart and realPart.PrimaryPart.CFrame or realPart:GetAttribute("CFrame") or realPart:GetPivot()) or realPart.CFrame
 
-        local uniqueKey = getInstancePath(realPart)
-        streamingCache[uniqueKey] = {
-            key = cpKey,
-            desc = partDesc,
-            part = realPart,
-            cf = targetCFrame
-        }
+            local uniqueKey = getInstancePath(realPart)
+            streamingCache[uniqueKey] = {
+                key = cpKey,
+                desc = partDesc,
+                part = realPart,
+                cf = targetCFrame,
+                priorityScore = pScore -- Simpan skor prioritas di sini
+            }
+
 
         if updateRadarGuiContent then updateRadarGuiContent() end
 
@@ -506,12 +474,43 @@ updateRadarGuiContent = function()
         if child:IsA("Frame") then child:Destroy() end
     end
 
-    local list = {}
+    local rawList = {}
     for _, data in pairs(streamingCache) do
         local uniqueVisitKey = tostring(data.key) .. "_" .. tostring(data.desc)
         if not visitedKeys[uniqueVisitKey] then
-            table.insert(list, data)
+            table.insert(rawList, data)
         end
+    end
+
+    -- TAHAP FILTER CERDAS: Kelompokkan berdasarkan Nomor Checkpoint (key)
+    -- Ambil hanya 1 yang memiliki priorityScore tertinggi per nomor checkpoint!
+    local filteredMap = {}
+    for _, data in ipairs(rawList) do
+        local cpKey = tostring(data.key)
+        if not filteredMap[cpKey] then
+            filteredMap[cpKey] = data
+        else
+            -- Jika sudah ada, bandingkan prioritasnya
+            if (data.priorityScore or 1) > (filteredMap[cpKey].priorityScore or 1) then
+                filteredMap[cpKey] = data
+            -- Jika prioritas sama, pilih yang jaraknya paling dekat dengan player atau pilih berdasarkan nama bersih
+            elseif (data.priorityScore or 1) == (filteredMap[cpKey].priorityScore or 1) then
+                if data.part and filteredMap[cpKey].part and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                    local hrpPos = LocalPlayer.Character.HumanoidRootPart.Position
+                    local distNew = (data.part.Position - hrpPos).Magnitude
+                    local distOld = (filteredMap[cpKey].part.Position - hrpPos).Magnitude
+                    if distNew < distOld then
+                        filteredMap[cpKey] = data
+                    end
+                end
+            end
+        end
+    end
+
+    -- Masukkan hasil filter ke dalam list final
+    local list = {}
+    for _, data in pairs(filteredMap) do
+        table.insert(list, data)
     end
 
     table.sort(list, function(a, b)
@@ -570,18 +569,16 @@ updateRadarGuiContent = function()
         btnCorner.CornerRadius = UDim.new(0, 4)
         btnCorner.Parent = teleBtn
 
-                                teleBtn.MouseButton1Click:Connect(function()
+        teleBtn.MouseButton1Click:Connect(function()
             if data.part and data.part.Parent then
                 safeTeleport(data.part.CFrame)
                 addOrUpdateSavedCP(data.key, data.desc, data.part.CFrame)
                 
-                -- LOGIKA SUMMIT TELEPORT DENGAN FILTER JARAK
                 if data.key == "SUMMIT" or string.find(string.lower(tostring(data.desc)), "summit") then
                     for cacheKey, cacheData in pairs(streamingCache) do
                         if cacheData.key == "SUMMIT" or string.find(string.lower(tostring(cacheData.desc)), "summit") then
                             if cacheData.part and cacheData.part.Parent and data.part and data.part.Parent then
                                 local dist = (cacheData.part.Position - data.part.Position).Magnitude
-                                -- Sembunyikan hanya jika posisinya berdekatan (satu tempat/duplikat)
                                 if dist <= 25 then
                                     local uniqueVisitKey = tostring(cacheData.key) .. "_" .. tostring(cacheData.desc)
                                     visitedKeys[uniqueVisitKey] = true
@@ -601,6 +598,7 @@ updateRadarGuiContent = function()
 
     radarScrollContainer.CanvasSize = UDim2.new(0, 0, 0, yOffset)
 end
+
 
 local function createSCPWindow()
     if radarGui then
