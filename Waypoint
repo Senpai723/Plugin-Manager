@@ -40,17 +40,17 @@ local IGNORE_KEYWORDS = {
     "time", "seluncur", "remove", "clone", "seat", "laying", "down", "fall", "jatuh", "chat", "block", "boost",
     "cave", "lake", "goa", "tutorial", "hit", "same", "spin", "kill", "brick", "birhday", "gift", "fun",
     "tanjakan", "maut", "uang", "join", "community", "komunitas", "enter", "handle", "squish", "stand",
-    "adminzone", "run", "jaw",
+    "adminzone", "run", "jaw", "sphere", "lompat", "long", "pop", "cube", "
     -- Filter Hewan, NPC, & Monster
     "crocodile", "alligator", "mob", "npc", "monster", "animal", "pet", "zombie", "boss", "bear",
     -- Filter Part Langit & Batasan Map
     "sky", "skypart", "skybox", "cloud", "atmosphere", "barrier", "invisible", "boundary",
     -- Filter Dekorasi & Alam
-    "tree", "pohon", "branch", "trunk", "foliage", "leaf", "leaves", "mushroom", "axe", "ice",
+    "tree", "pohon", "branch", "trunk", "foliage", "leaf", "leaves", "mushroom", "axe", "ice", "shell", "cookie", "stick",
     "fence", "pagar", "bridge", "jembatan", "ladder", "stair", "tangga", "fog", "hat", "skip", "skipboard",
-    "wood", "stone", "rock", "batu", "bambu", "raft", "platform", "floor", "step", "pijakan",
+    "wood", "stone", "rock", "batu", "bambu", "raft", "platform", "floor", "step", "pijakan", "slime", "camera", "wax", 
     "lamp", "lantern", "light", "street lamp", "speaker", "audio", "music", "sound", "fx", "effect",
-    "head", "torso", "humanoid", "character", "arm", "leg", "face", "hair", "holder", "neon",
+    "head", "torso", "humanoid", "character", "arm", "leg", "face", "hair", "holder", "neon", "oreo", "view",
     "prop", "decoration", "wall", "roof", "ceiling", "window", "door", "table", "chair", "badge",
     "particle", "sparkle", "fire", "smoke", "cewe", "cowo", "refresh", "ava", "chinese",
     "chinematic", "cinematic", "dance", "male", "female", "outfit", "suguhan", "big", "small"
