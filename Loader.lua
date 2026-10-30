@@ -130,7 +130,8 @@ return {
             SubFeatures = {
                 { Name = "Anchor", Desc = "Untuk menghentikan Part yang bergoyang", Cmd = "freeze", UnCmd = "unfreeze", RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Tools/Anchor" },
                 { Name = "Anti Shkae", Desc = "Untuk menghentikan Kamera yang bergoyang", Cmd = "antishake", UnCmd = "unshake", RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Tools/AntiEffect" },
-                { Name = "Anti Wind", Desc = "Untuk menghentikan Angin yang menggeser karakter", Cmd = "antiwind", UnCmd = "unwind", RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Tools/AntiEffect" }
+                { Name = "Anti Wind", Desc = "Untuk menghentikan Angin yang menggeser karakter", Cmd = "antiwind", UnCmd = "unwind", RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Tools/AntiEffect" },
+                { Name = "Anti Trigger", Desc = "Untuk mematikan Trigger dalam map", Cmd = "antitrigger", UnCmd = "untrigger", RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Tools/AntiEffect" }
             }
         },
         {
