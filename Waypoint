@@ -97,7 +97,6 @@ local function loadSavedCheckpoints()
                 if type(decoded) == "table" then masterData = decoded end
             end
 
-            -- Migrasi otomatis file JSON lama yang berserakan
             local files = listfiles("")
             for _, filePath in ipairs(files) do
                 if string.match(filePath, "TeleportCP_.+_Saves%.json$") and not string.match(filePath, "Master") then
@@ -118,9 +117,9 @@ local function loadSavedCheckpoints()
             if masterData[CURRENT_MAP_KEY] then
                 savedCheckpointsList = masterData[CURRENT_MAP_KEY]
                 for _, item in ipairs(savedCheckpointsList) do
-                    if item.desc then 
-                        local uniqueVisitKey = tostring(item.key) .. "_" .. tostring(item.desc)
-                        visitedKeys[uniqueVisitKey] = true 
+                    if item.key ~= nil then 
+                        -- KUNCI UTAMA: Masukkan semua key yang sudah tersimpan ke visitedKeys
+                        visitedKeys[tostring(item.key)] = true 
                     end
                 end
             end
@@ -335,13 +334,25 @@ end
 local function addOrUpdateSavedCP(key, desc, cf)
     local serializedCF = {cf:GetComponents()}
     
-    -- Lacak kunjungan murni berdasarkan NOMOR CP (key) agar seluruh part di nomor yang sama ikut bersih dari SCP
+    -- Catat langsung ke memori visited agar SCP langsung membersihkannya
     local visitKey = tostring(key)
     visitedKeys[visitKey] = true
 
+    -- Bersihkan cache sekitar area CP dalam radius 25 stud
+    if cf then
+        local pos = cf.Position
+        for _, cacheData in pairs(streamingCache) do
+            if cacheData.part and cacheData.part.Parent then
+                if (cacheData.part.Position - pos).Magnitude <= 25 then
+                    visitedKeys[tostring(cacheData.key)] = true
+                end
+            end
+        end
+    end
+
     for _, item in ipairs(savedCheckpointsList) do
         if tostring(item.key) == tostring(key) then
-            item.desc = desc -- Update deskripsi jika perlu
+            item.desc = desc
             item.cf = serializedCF
             saveCheckpointsToFile()
             if updateCpnGuiContent then updateCpnGuiContent() end
