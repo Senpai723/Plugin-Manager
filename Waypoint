@@ -38,7 +38,7 @@ local IGNORE_KEYWORDS = {
     -- Filter Teleport & Trigger Palsu
     "teleport", "tp", "tele", "coin", "gold", "reward", "cash", "money", "gem", "stop", "jump", "ready", "inner", "outer", "damage",
     "time", "seluncur", "remove", "clone", "seat", "laying", "down", "fall", "jatuh", "chat", "block", "boost",
-    "cave", "lake", "goa", "tutorial", "hit", "same", "spin", "kill", "brick", "birhday", "gift", "fun",
+    "cave", "lake", "goa", "tutorial", "hit", "same", "spin", "kill", "brick", "birhday", "gift", "fun", "needoh", "rintangan",
     "tanjakan", "maut", "uang", "join", "community", "komunitas", "enter", "handle", "squish", "stand",
     "adminzone", "run", "jaw", "sphere", "lompat", "long", "pop",
     -- Filter Hewan, NPC, & Monster
