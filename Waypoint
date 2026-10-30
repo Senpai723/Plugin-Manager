@@ -223,17 +223,29 @@ local function parseCPIdentity(obj)
         return nil, nil, nil, 0 
     end
 
+    -- Ambil nama folder induk terdekat sebagai identitas jalur (misal: Gunung1, Gunung2, dll)
+    local folderContext = ""
+    local curr = validPart.Parent
+    while curr and curr ~= Workspace do
+        local lowerFolder = string.lower(curr.Name)
+        if string.find(lowerFolder, "gunung") or string.find(lowerFolder, "jalur") or string.find(lowerFolder, "track") or string.find(lowerFolder, "path") or string.find(lowerFolder, "route") then
+            folderContext = curr.Name
+            break
+        end
+        curr = curr.Parent
+    end
+
     -- ==================================================
-    -- 1. DETEKSI SUMMIT (Termasuk nama "Reset" khusus map ini)
+    -- 1. DETEKSI SUMMIT (Termasuk nama "Reset" khusus di jalur obby/checkpoint)
     -- ==================================================
     local summitKeywords = {"summit", "peak", "finish", "puncak", "winpad", "reset"}
     local isSummit = false
     
     for _, kw in ipairs(summitKeywords) do
         if string.find(lowerName, kw, 1, true) or string.find(lowerParent, kw, 1, true) then
-            -- Pastikan jika namanya "reset", dia berada di dalam folder Checkpoints/Obby atau bukan tombol mati biasa
             if kw == "reset" then
-                if string.find(string.lower(getInstancePath(obj)), "checkpoint") or string.find(string.lower(getInstancePath(obj)), "obby") then
+                local fullInstancePath = string.lower(getInstancePath(obj))
+                if string.find(fullInstancePath, "checkpoint") or string.find(fullInstancePath, "obby") or string.find(fullInstancePath, "gunung") then
                     isSummit = true
                     break
                 end
@@ -248,7 +260,7 @@ local function parseCPIdentity(obj)
     local guiText = ""
     local hasGui = validPart:FindFirstChildOfClass("BillboardGui") or validPart:FindFirstChildOfClass("SurfaceGui")
     if not hasGui and validPart.Parent and validPart.Parent:IsA("Model") then
-        hasGui = validPart.Parent:FindFirstChildOfClass("BillboardGui") or validPart:FindFirstChildOfClass("SurfaceGui")
+        hasGui = validPart.Parent:FindFirstChildOfClass("BillboardGui") or validPart.Parent:FindFirstChildOfClass("SurfaceGui")
     end
     if hasGui then
         local textLabel = hasGui:FindFirstChildOfClass("TextLabel")
@@ -264,10 +276,16 @@ local function parseCPIdentity(obj)
     end
 
     if isSummit then
-        -- Langsung kembalikan sebagai SUMMIT dengan prioritas tertinggi (Skor 10)
-        return "SUMMIT", (guiText ~= "" and guiText or name), validPart, 10
+        local summitDesc = (guiText ~= "" and guiText or name)
+        if folderContext ~= "" then
+            summitDesc = folderContext .. " - " .. summitDesc
+        end
+        return "SUMMIT", summitDesc, validPart, 10
     end
 
+    -- ==================================================
+    -- 2. PARSING NOMOR CHECKPOINT BIASA (Mendukung Desimal & Jalur Ganda)
+    -- ==================================================
     local combined = lowerParent .. " " .. lowerName .. " " .. guiText
 
     local num = string.match(combined, "checkpoints?%s*(%d+%.?%d*)") or
@@ -319,9 +337,13 @@ local function parseCPIdentity(obj)
         priorityScore = 1
     end
 
+    -- Gabungkan nama jalur (folder) agar deskripsi di SCP dan CPN jadi spesifik
     local descText = name
+    if folderContext ~= "" then
+        descText = folderContext .. " (" .. name .. ")"
+    end
     if guiText ~= "" then
-        descText = guiText
+        descText = folderContext ~= "" and (folderContext .. " - " .. guiText) or guiText
     end
 
     return nVal, descText, validPart, priorityScore
@@ -399,7 +421,22 @@ local function processAndHookPart(obj)
         local function triggerAutoSave()
             if realPart and realPart.Parent then
                 local pos = realPart.Position
-                local uniqueVisitKey = tostring(cpKey) .. "_" .. math.floor(pos.X) .. "_" .. math.floor(pos.Y) .. "_" .. math.floor(pos.Z)
+                
+                -- AMBIL FOLDER / JALUR GUNUNG DARI PART-NYA SECARA LANGSUNG
+                local folderContext = ""
+                local curr = realPart.Parent
+                while curr and curr ~= Workspace do
+                    local lowerFolder = string.lower(curr.Name)
+                    if string.find(lowerFolder, "gunung") or string.find(lowerFolder, "jalur") or string.find(lowerFolder, "track") or string.find(lowerFolder, "path") or string.find(lowerFolder, "route") then
+                        folderContext = curr.Name
+                        break
+                    end
+                    curr = curr.Parent
+                end
+
+                -- TARUH KODE UNIK INI DI SINI, BRO (Perhatikan operator .. untuk penggabungan string)
+                local folderPrefix = folderContext ~= "" and folderContext or "Main"
+                local uniqueVisitKey = tostring(cpKey) .. "_" .. folderPrefix .. "_" .. math.floor(pos.X) .. "_" .. math.floor(pos.Y) .. "_" .. math.floor(pos.Z)
                 
                 if not visitedKeys[uniqueVisitKey] then
                     addOrUpdateSavedCP(cpKey, partDesc, targetCFrame)
@@ -431,6 +468,7 @@ local function processAndHookPart(obj)
         end
     end
 end
+
 
 --==================================================
 -- GUI: SCP FLOATING WINDOW
