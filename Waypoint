@@ -223,15 +223,15 @@ local function parseCPIdentity(obj)
     local parentName = obj.Parent and obj.Parent.Name or ""
     local lowerParent = string.lower(parentName)
 
-    -- Filter awal sampah & nama umum
-    if lowerName == "text" or lowerParent == "text" or lowerName == "field" or lowerParent == "field" or isBlacklisted(lowerName) or isBlacklisted(lowerParent) then 
+    -- Filter awal sampah, nama umum, dan "base" / "field"
+    if lowerName == "text" or lowerParent == "text" or lowerName == "field" or lowerParent == "field" or lowerName == "base" or lowerParent == "base" or isBlacklisted(lowerName) or isBlacklisted(lowerParent) then 
         return nil, nil, nil, 0 
     end
     if string.find(lowerName, "teleport", 1, true) or string.find(lowerName, "tp", 1, true) or string.find(lowerName, "tele", 1, true) then 
         return nil, nil, nil, 0 
     end
 
-    -- Deteksi Summit (Tetap dipertahankan)
+    -- Deteksi Summit
     local summitKeywords = {"summit", "peak", "finish", "puncak", "winpad"}
     local summitBlacklist = {"board", "papan", "donat", "donation", "detik", "time", "sec", "sign", "leaderboard", "stat", "total", "name", "top global", "global", "top", "finishmodel", "model", "gui"}
     
@@ -291,11 +291,12 @@ local function parseCPIdentity(obj)
         num = string.match(guiText, "(%d+)")
     end
 
+    -- PENTING: Jangan ambil nama murni angka jika objek tersebut bukan bagian utama CP 
+    -- (untuk mencegah part bernnama "2" atau "3" doang lolos padahal ada nama CP-nya)
     if not num then
-        if tonumber(name) then
-            num = name
-        else
-            num = string.match(lowerName, "(%d+)")
+        if string.find(combined, "cp") or string.find(combined, "checkpoint") or string.find(combined, "stage") or string.find(combined, "waypoint") then
+            -- Kalau ada kata kunci utama tapi tidak ada nomornya, abaikan
+            return nil, nil, nil, 0
         end
     end
 
@@ -308,10 +309,11 @@ local function parseCPIdentity(obj)
         return nil, nil, nil, 0
     end
 
-    -- SISTEM PENILAIAN PRIORITAS (SCORING)
-    -- Semakin tinggi skor, semakin diprioritaskan untuk dimunculkan sendirian
-    local priorityScore = 1 -- Default (misal: Ring / angka biasa)
-    
+    -- SISTEM PRIORITAS KETAT
+    -- Skor 3: Format eksplisit (CP 2, Checkpoint 2, Stage 2, dll) -> PALING UTAMA
+    -- Skor 2: Format Ring (Ring2) -> Cadangan jika tidak ada format CP
+    -- Skor 1: Murni angka atau lainnya -> Dibuang jika sudah ada skor 3 di area sekitar
+    local priorityScore = 1
     local hasExplicitKeyword = string.find(combined, "checkpoint") or 
                                string.find(combined, "cekpoin") or 
                                string.find(combined, "cp") or 
@@ -321,11 +323,14 @@ local function parseCPIdentity(obj)
                                string.find(combined, "pos")
 
     if hasExplicitKeyword then
-        priorityScore = 3 -- Prioritas Tertinggi (Ada kata CP, Stage, Waypoint, dll)
-    elseif tonumber(name) or (guiText ~= "" and tonumber(guiText)) then
-        priorityScore = 2 -- Prioritas Kedua (Murni Angka)
+        priorityScore = 3
+    elseif string.find(combined, "ring") then
+        priorityScore = 2
     else
-        priorityScore = 1 -- Prioritas Terendah (Ring / Lainnya)
+        -- Jika murni angka doang tanpa teks pendukung, berikan skor sangat rendah agar terseleksi filter jarak
+        priorityScore = 1
+        -- Opsional: Jika kamu ingin angka murni langsung di-banned total, uncomment baris di bawah ini:
+        -- return nil, nil, nil, 0
     end
 
     local descText = name
