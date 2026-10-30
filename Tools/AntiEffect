@@ -111,7 +111,7 @@ local function disableTriggers(radiusVal)
 
                 if obj:IsA("BasePart") then
                     obj.CanTouch = false
-                    obj.Transparency = 0.8 -- Dibuat agak transparan biar kelihatan kalau di-disable
+                    obj.Transparency = 0.8
                 end
 
                 count = count + 1
@@ -139,19 +139,20 @@ local function restoreTriggers()
 end
 
 -- ==========================================
--- 📷 3. FITUR ABSOLUTE ANTI-CAMERA SHAKE (STABILIZER)
+-- 📷 3. ULTRASHAKE LOCK (HARD OVERRIDE CAMERA)
 -- ==========================================
-local lockedCameraSubjectCFrame = nil
-
 RunService.RenderStepped:Connect(function()
     if _G.AntiShake_Active then
         pcall(function()
             local cam = Workspace.CurrentCamera
             local char = LocalPlayer.Character
-            if cam and char and char:FindFirstChild("HumanoidRootPart") then
-                -- Jika game mencoba mengguncangkan kamera, kita redam offset getarannya di sini
-                -- Dengan memastikan fokus kamera tetap stabil mengikuti karakter tanpa getaran acak
-                cam.FieldOfView = 70 -- Kunci FOV agar tidak ikut bergelombang
+            if cam and char and char:FindFirstChild("Head") then
+                -- Memaksa posisi kamera agar tidak tergeser oleh efek getaran luar
+                -- Dengan mengunci jarak relatif terhadap kepala karakter
+                local head = char.Head
+                local currentCF = cam.CFrame
+                -- Jika kamera bergeser liar karena shake, kita redam dengan mengunci sumbu posisinya
+                cam.CFrame = CFrame.new(head.Position + (currentCF.Position - head.Position).Unit * 10, head.Position)
             end
         end)
     end
@@ -182,16 +183,16 @@ return {
         },
         ["antishake"] = {
             ["ListName"] = "antishake / noshake",
-            ["Description"] = "Kunci mutlak getaran kamera (Absolute Camera Stabilization)",
+            ["Description"] = "Hard lock kamera agar tidak bisa digetarkan game",
             ["Aliases"] = {"noshake"},
             ["Function"] = function(args, speaker)
                 _G.AntiShake_Active = true
-                notify("Anti-Camera Shake: AKTIF 🟢 (Kamera dikunci stabil)")
+                notify("Anti-Camera Shake: HARD-LOCK AKTIF 🟢")
             end
         },
         ["unshake"] = {
             ["ListName"] = "unshake / normalshake",
-            ["Description"] = "Kembalikan getaran kamera seperti semula",
+            ["Description"] = "Kembalikan mode kamera normal",
             ["Aliases"] = {"normalshake", "ameshake"},
             ["Function"] = function(args, speaker)
                 _G.AntiShake_Active = false
