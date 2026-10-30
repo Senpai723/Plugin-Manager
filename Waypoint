@@ -348,11 +348,13 @@ end
 local function addOrUpdateSavedCP(key, desc, cf)
     local serializedCF = {cf:GetComponents()}
     
-    local uniqueVisitKey = tostring(key) .. "_" .. tostring(desc)
-    visitedKeys[uniqueVisitKey] = true
+    -- Lacak kunjungan murni berdasarkan NOMOR CP (key) agar seluruh part di nomor yang sama ikut bersih dari SCP
+    local visitKey = tostring(key)
+    visitedKeys[visitKey] = true
 
     for _, item in ipairs(savedCheckpointsList) do
-        if tostring(item.key) == tostring(key) and tostring(item.desc) == tostring(desc) then
+        if tostring(item.key) == tostring(key) then
+            item.desc = desc -- Update deskripsi jika perlu
             item.cf = serializedCF
             saveCheckpointsToFile()
             if updateCpnGuiContent then updateCpnGuiContent() end
@@ -376,7 +378,7 @@ local function addOrUpdateSavedCP(key, desc, cf)
     saveCheckpointsToFile()
     if updateCpnGuiContent then updateCpnGuiContent() end
     if updateRadarGuiContent then updateRadarGuiContent() end
-    notify("Auto-Save CP", "Checkpoint tersimpan: " .. tostring(key) .. " (" .. tostring(desc) .. ")", 2)
+    notify("Auto-Save CP", "Checkpoint tersimpan: " .. tostring(key), 2)
 end
 
 --==================================================
@@ -481,38 +483,26 @@ updateRadarGuiContent = function()
 
     local rawList = {}
     for _, data in pairs(streamingCache) do
-        local uniqueVisitKey = tostring(data.key) .. "_" .. tostring(data.desc)
-        if not visitedKeys[uniqueVisitKey] then
+        -- SYARAT UTAMA: Jika Nomor CP (key) sudah ada di visitedKeys (sudah disentuh/masuk CPN), ABAIKAN/JANGAN MUNCULKAN DI SCP!
+        local visitKey = tostring(data.key)
+        if not visitedKeys[visitKey] then
             table.insert(rawList, data)
         end
     end
 
-    -- TAHAP FILTER CERDAS: Kelompokkan berdasarkan Nomor Checkpoint (key)
-    -- Ambil hanya 1 yang memiliki priorityScore tertinggi per nomor checkpoint!
+    -- Filter cerdas per nomor checkpoint agar tidak numpuk
     local filteredMap = {}
     for _, data in ipairs(rawList) do
         local cpKey = tostring(data.key)
         if not filteredMap[cpKey] then
             filteredMap[cpKey] = data
         else
-            -- Jika sudah ada, bandingkan prioritasnya
             if (data.priorityScore or 1) > (filteredMap[cpKey].priorityScore or 1) then
                 filteredMap[cpKey] = data
-            -- Jika prioritas sama, pilih yang jaraknya paling dekat dengan player atau pilih berdasarkan nama bersih
-            elseif (data.priorityScore or 1) == (filteredMap[cpKey].priorityScore or 1) then
-                if data.part and filteredMap[cpKey].part and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                    local hrpPos = LocalPlayer.Character.HumanoidRootPart.Position
-                    local distNew = (data.part.Position - hrpPos).Magnitude
-                    local distOld = (filteredMap[cpKey].part.Position - hrpPos).Magnitude
-                    if distNew < distOld then
-                        filteredMap[cpKey] = data
-                    end
-                end
             end
         end
     end
 
-    -- Masukkan hasil filter ke dalam list final
     local list = {}
     for _, data in pairs(filteredMap) do
         table.insert(list, data)
@@ -924,26 +914,19 @@ updateCpnGuiContent = function()
         dBtnCorner.CornerRadius = UDim.new(0, 4)
         dBtnCorner.Parent = delBtn
 
-                delBtn.MouseButton1Click:Connect(function()
+           delBtn.MouseButton1Click:Connect(function()
             local removed = table.remove(savedCheckpointsList, index)
             if removed and removed.key then
                 local removedKey = tostring(removed.key)
-                
-                -- HAPUS SEMUA ENTRY DENGAN KEY / NOMOR CP YANG SAMA DARI VISITEDKEYS
-                -- Agar kalau di map awal ada 2 CP dengan nomor sama (misal CP 10 pakai spasi & tanpa spasi),
-                -- KEDUANYA BALIK LAGI SECARA NORMAL KE SCP RADAR!
-                for visitedKey, _ in pairs(visitedKeys) do
-                    local prefix = string.match(visitedKey, "^([^_]+)_")
-                    if prefix and prefix == removedKey then
-                        visitedKeys[visitedKey] = nil
-                    end
-                end
+                -- Hapus dari status visited agar muncul kembali di SCP Radar jika dihapus dari CPN
+                visitedKeys[removedKey] = nil
             end
             saveCheckpointsToFile()
             updateCpnGuiContent()
             if updateRadarGuiContent then updateRadarGuiContent() end
-            notify("CPN Manager", "Saved CP dihapus & semua duplikatnya dimunculkan kembali di SCP!", 1.5)
+            notify("CPN Manager", "Saved CP dihapus & dimunculkan kembali di SCP!", 1.5)
         end)
+
 
         yOffset = yOffset + 32
     end
