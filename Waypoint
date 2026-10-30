@@ -335,26 +335,30 @@ end
 --==================================================
 local function addOrUpdateSavedCP(key, desc, cf)
     local serializedCF = {cf:GetComponents()}
+    local pos = cf.Position
     
-    -- Gunakan key string utuh (misal "3" dan "3.5" dianggap beda total)
-    local visitKey = tostring(key)
-    visitedKeys[visitKey] = true
+    -- Buat identifier unik berdasarkan Key + Posisi koordinat bulat (agar 3 dan 3.5 tidak bentrok)
+    local uniqueSaveKey = tostring(key) .. "_" .. math.floor(pos.X) .. "_" .. math.floor(pos.Y) .. "_" .. math.floor(pos.Z)
+    visitedKeys[uniqueSaveKey] = true
+    visitedKeys[tostring(key)] = true
 
-    -- Bersihkan cache HANYA dalam radius sangat dekat (misal <= 8 stud) 
-    -- untuk mencegah CP 3 memblokir CP 3.5 yang letaknya berdekatan
-    if cf then
-        local pos = cf.Position
-        for _, cacheData in pairs(streamingCache) do
-            if cacheData.part and cacheData.part.Parent then
-                if (cacheData.part.Position - pos).Magnitude <= 8 then
-                    visitedKeys[tostring(cacheData.key)] = true
-                end
+    -- Bersihkan cache HANYA dalam radius sangat dekat (<= 4 stud) dari posisi pas checkpoint ini
+    for _, cacheData in pairs(streamingCache) do
+        if cacheData.part and cacheData.part.Parent then
+            if (cacheData.part.Position - pos).Magnitude <= 4 then
+                local cacheUniqueKey = tostring(cacheData.key) .. "_" .. math.floor(cacheData.part.Position.X) .. "_" .. math.floor(cacheData.part.Position.Y) .. "_" .. math.floor(cacheData.part.Position.Z)
+                visitedKeys[cacheUniqueKey] = true
             end
         end
     end
 
+    -- Cek apakah checkpoint dengan posisi atau key yang sama sudah ada di list
     for _, item in ipairs(savedCheckpointsList) do
-        if tostring(item.key) == tostring(key) then
+        local itemCF = CFrame.new(unpack(item.cf))
+        local itemPos = itemCF.Position
+        -- Jika key sama ATAU jarak posisinya sangat dekat (< 3 stud), update datanya
+        if tostring(item.key) == tostring(key) or (itemPos - pos).Magnitude < 3 then
+            item.key = key
             item.desc = desc
             item.cf = serializedCF
             saveCheckpointsToFile()
@@ -364,13 +368,14 @@ local function addOrUpdateSavedCP(key, desc, cf)
         end
     end
 
+    -- Jika benar-benar baru, masukkan sebagai entri baru ke list
     table.insert(savedCheckpointsList, {
         key = key,
         desc = desc,
         cf = serializedCF
     })
     
-    -- Urutkan list berdasarkan nilai numerik (mendukung desimal dengan akurat)
+    -- Urutkan list berdasarkan nilai numerik secara akurat (mendukung desimal)
     table.sort(savedCheckpointsList, function(a, b)
         local na, nb = tonumber(a.key), tonumber(b.key)
         if na and nb then return na < nb end
@@ -382,6 +387,7 @@ local function addOrUpdateSavedCP(key, desc, cf)
     if updateRadarGuiContent then updateRadarGuiContent() end
     notify("Auto-Save CP", "Checkpoint tersimpan: " .. tostring(key), 2)
 end
+
 
 --==================================================
 -- PERBAIKAN 3: PURE EVENT-DRIVEN & ANTI-STUTTER (NO BACKGROUND LOOP)
@@ -411,24 +417,18 @@ local function processAndHookPart(obj)
 
         if updateRadarGuiContent then updateRadarGuiContent() end
 
-        local function triggerAutoSave()
-            local uniqueVisitKey = tostring(cpKey) .. "_" .. tostring(partDesc)
-            if not visitedKeys[uniqueVisitKey] then
-                addOrUpdateSavedCP(cpKey, partDesc, targetCFrame)
+                local function triggerAutoSave()
+            if realPart and realPart.Parent then
+                local pos = realPart.Position
+                local uniqueSaveKey = tostring(cpKey) .. "_" .. math.floor(pos.X) .. "_" .. math.floor(pos.Y) .. "_" .. math.floor(pos.Z)
                 
-                -- LOGIKA SUMMIT DENGAN FILTER JARAK (DISTANCE CHECK)
-                if cpKey == "SUMMIT" or string.find(string.lower(tostring(partDesc)), "summit") then
-                    for cacheKey, cacheData in pairs(streamingCache) do
-                        if cacheData.key == "SUMMIT" or string.find(string.lower(tostring(cacheData.desc)), "summit") then
-                            if cacheData.part and cacheData.part.Parent and realPart and realPart.Parent then
-                                local dist = (cacheData.part.Position - realPart.Position).Magnitude
-                                if dist <= 25 then
-                                    local summitVisitKey = tostring(cacheData.key) .. "_" .. tostring(cacheData.desc)
-                                    visitedKeys[summitVisitKey] = true
-                                end
-                            end
-                        end
-                    end
+                if not visitedKeys[uniqueSaveKey] then
+                    addOrUpdateSavedCP(cpKey, partDesc, targetCFrame)
+                    if updateRadarGuiContent then updateRadarGuiContent() end
+                end
+            end
+        end
+
                     if updateRadarGuiContent then updateRadarGuiContent() end
                 else
                     -- LOGIKA CP BIASA: Hilangkan duplikat key yang sama jika jaraknya dekat/satu tempat
@@ -483,12 +483,16 @@ updateRadarGuiContent = function()
         if child:IsA("Frame") then child:Destroy() end
     end
 
-    local rawList = {}
+        local rawList = {}
     for _, data in pairs(streamingCache) do
-        -- SYARAT UTAMA: Jika Nomor CP (key) sudah ada di visitedKeys (sudah disentuh/masuk CPN), ABAIKAN/JANGAN MUNCULKAN DI SCP!
-        local visitKey = tostring(data.key)
-        if not visitedKeys[visitKey] then
-            table.insert(rawList, data)
+        if data.part and data.part.Parent then
+            local pos = data.part.Position
+            local uniqueSaveKey = tostring(data.key) .. "_" .. math.floor(pos.X) .. "_" .. math.floor(pos.Y) .. "_" .. math.floor(pos.Z)
+            
+            -- Hanya masukkan ke SCP jika posisi unik ini belum pernah dikunjungi/disave
+            if not visitedKeys[uniqueSaveKey] then
+                table.insert(rawList, data)
+            end
         end
     end
 
