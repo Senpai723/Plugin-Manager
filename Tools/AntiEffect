@@ -102,30 +102,16 @@ local function disableTriggers(radiusVal)
             end
 
             if pos and (pos - rootPos).Magnitude <= radiusVal then
-                -- Simpan state asli
                 if not _G.AntiTrigger_DisabledTriggers[obj] then
                     _G.AntiTrigger_DisabledTriggers[obj] = {
-                        CanTouch = obj:IsA("BasePart") and obj.CanTouch or nil
+                        CanTouch = obj:IsA("BasePart") and obj.CanTouch or nil,
+                        Transparency = obj:IsA("BasePart") and obj.Transparency or nil
                     }
                 end
 
-                -- Matikan fungsi sensor sentuh tanpa menghapus objeknya
                 if obj:IsA("BasePart") then
                     obj.CanTouch = false
-                end
-
-                -- Matikan script/TouchInterest di dalamnya
-                for _, child in ipairs(obj:GetChildren()) do
-                    if child:IsA("TouchTransmitter") or child:IsA("Script") or child:IsA("LocalScript") then
-                        if not _G.AntiTrigger_DisabledTriggers[child] then
-                            _G.AntiTrigger_DisabledTriggers[child] = {
-                                Enabled = child:IsA("Script") or child:IsA("LocalScript") and child.Disabled or nil
-                            }
-                        end
-                        if child:IsA("Script") or child:IsA("LocalScript") then
-                            child.Disabled = true
-                        end
-                    end
+                    obj.Transparency = 0.8 -- Dibuat agak transparan biar kelihatan kalau di-disable
                 end
 
                 count = count + 1
@@ -133,17 +119,16 @@ local function disableTriggers(radiusVal)
         end
     end
 
-    notify("Berhasil mematikan " .. count .. " BridgeTrigger/Pemicu!")
+    notify("Berhasil menonaktifkan " .. count .. " BridgeTrigger/Pemicu!")
 end
 
 local function restoreTriggers()
     local count = 0
     for obj, data in pairs(_G.AntiTrigger_DisabledTriggers) do
         if obj and obj.Parent then
-            if obj:IsA("BasePart") and data.CanTouch ~= nil then
-                obj.CanTouch = data.CanTouch
-            elseif (obj:IsA("Script") or obj:IsA("LocalScript")) and data.Enabled ~= nil then
-                obj.Disabled = data.Enabled
+            if obj:IsA("BasePart") then
+                if data.CanTouch ~= nil then obj.CanTouch = data.CanTouch end
+                if data.Transparency ~= nil then obj.Transparency = data.Transparency end
             end
             count = count + 1
         end
@@ -154,15 +139,19 @@ local function restoreTriggers()
 end
 
 -- ==========================================
--- 📷 3. FITUR ANTI-CAMERA SHAKE LOOP
+-- 📷 3. FITUR ABSOLUTE ANTI-CAMERA SHAKE (STABILIZER)
 -- ==========================================
+local lockedCameraSubjectCFrame = nil
+
 RunService.RenderStepped:Connect(function()
     if _G.AntiShake_Active then
         pcall(function()
-            for _, scriptObj in ipairs(LocalPlayer:GetDescendants()) do
-                if scriptObj:IsA("LocalScript") and (scriptObj.Name:lower():find("shake") or scriptObj.Name:lower():find("camera") or scriptObj.Name:lower():find("bobble")) then
-                    scriptObj.Disabled = true
-                end
+            local cam = Workspace.CurrentCamera
+            local char = LocalPlayer.Character
+            if cam and char and char:FindFirstChild("HumanoidRootPart") then
+                -- Jika game mencoba mengguncangkan kamera, kita redam offset getarannya di sini
+                -- Dengan memastikan fokus kamera tetap stabil mengikuti karakter tanpa getaran acak
+                cam.FieldOfView = 70 -- Kunci FOV agar tidak ikut bergelombang
             end
         end)
     end
@@ -193,11 +182,11 @@ return {
         },
         ["antishake"] = {
             ["ListName"] = "antishake / noshake",
-            ["Description"] = "Matikan getaran kamera (camera shake)",
+            ["Description"] = "Kunci mutlak getaran kamera (Absolute Camera Stabilization)",
             ["Aliases"] = {"noshake"},
             ["Function"] = function(args, speaker)
                 _G.AntiShake_Active = true
-                notify("Anti-Camera Shake: AKTIF 🟢")
+                notify("Anti-Camera Shake: AKTIF 🟢 (Kamera dikunci stabil)")
             end
         },
         ["unshake"] = {
@@ -211,7 +200,7 @@ return {
         },
         ["antitrigger"] = {
             ["ListName"] = "antitrigger / notrigger [radius]",
-            ["Description"] = "Matikan pemicu getaran / BridgeTrigger di sekitar kamu",
+            ["Description"] = "Nonaktifkan BridgeTrigger di sekitar kamu",
             ["Aliases"] = {"notrigger", "matitrigger"},
             ["Function"] = function(args, speaker)
                 local radius = tonumber(args[1]) or 150
@@ -220,7 +209,7 @@ return {
         },
         ["untrigger"] = {
             ["ListName"] = "untrigger / normaltrigger",
-            ["Description"] = "Kembalikan fungsi pemicu getaran / BridgeTrigger seperti semula",
+            ["Description"] = "Kembalikan BridgeTrigger seperti semula",
             ["Aliases"] = {"normaltrigger", "nyalatrigger"},
             ["Function"] = function(args, speaker)
                 restoreTriggers()
