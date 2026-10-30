@@ -224,9 +224,13 @@ local function parseCPIdentity(obj)
     local parentName = obj.Parent and obj.Parent.Name or ""
     local lowerParent = string.lower(parentName)
 
-    -- Filter awal
-    if lowerName == "text" or lowerParent == "text" or isBlacklisted(lowerName) or isBlacklisted(lowerParent) then return nil, nil, nil end
-    if string.find(lowerName, "teleport", 1, true) or string.find(lowerName, "tp", 1, true) or string.find(lowerName, "tele", 1, true) then return nil, nil, nil end
+    -- Filter awal sampah & nama umum yang tidak diinginkan (termasuk "field")
+    if lowerName == "text" or lowerParent == "text" or lowerName == "field" or lowerParent == "field" or isBlacklisted(lowerName) or isBlacklisted(lowerParent) then 
+        return nil, nil, nil 
+    end
+    if string.find(lowerName, "teleport", 1, true) or string.find(lowerName, "tp", 1, true) or string.find(lowerName, "tele", 1, true) then 
+        return nil, nil, nil 
+    end
 
     -- ==================================================
     -- 1. DETEKSI SUMMIT STRICT (SUPER STERIL)
@@ -286,12 +290,13 @@ local function parseCPIdentity(obj)
     end
 
     -- ==================================================
-    -- 2. DOKTRIN STRICT: CEK KATA KUNCI CHECKPOINT
+    -- 2. DOKTRIN STRICT: CEK KATA KUNCI CHECKPOINT / RING
     -- ==================================================
     local combined = lowerParent .. " " .. lowerName
     local hasCPKeyword = string.find(combined, "checkpoint") or 
                          string.find(combined, "cekpoin") or 
                          string.find(combined, "cp") or 
+                         string.find(combined, "ring") or -- Ditambahkan dukungan untuk map bertipe "Ring"
                          string.find(combined, "waypoint") or 
                          string.find(combined, "wp") or 
                          string.find(combined, "stage") or 
@@ -308,7 +313,7 @@ local function parseCPIdentity(obj)
         local textLabel = hasGui:FindFirstChildOfClass("TextLabel")
         if textLabel and textLabel.Text ~= "" then
             guiText = string.lower(textLabel.Text)
-            if string.find(guiText, "checkpoint") or string.find(guiText, "cekpoin") or string.find(guiText, "cp") or string.find(guiText, "waypoint") or string.find(guiText, "wp") or string.find(guiText, "stage") or string.find(guiText, "pos") then
+            if string.find(guiText, "checkpoint") or string.find(guiText, "cekpoin") or string.find(guiText, "cp") or string.find(guiText, "ring") or string.find(guiText, "waypoint") or string.find(guiText, "wp") or string.find(guiText, "stage") or string.find(guiText, "pos") then
                 hasCPKeyword = true
             end
         end
@@ -319,7 +324,7 @@ local function parseCPIdentity(obj)
     end
 
     -- ==================================================
-    -- 3. PARSING NOMOR CHECKPOINT (WAJIB ADA ANGKA!)
+    -- 3. PARSING NOMOR CHECKPOINT (WAJIB ADA ANGKA & VALID)
     -- ==================================================
     local num = string.match(combined, "checkpoints?%s*(%d+)") or
                 string.match(combined, "checkpoint%s*(%d+)") or
@@ -327,6 +332,8 @@ local function parseCPIdentity(obj)
                 string.match(combined, "cekpoin%s*(%d+)") or  
                 string.match(combined, "cp%s*(%d+)") or
                 string.match(combined, "cp(%d+)") or 
+                string.match(combined, "ring%s*(%d+)") or -- Tangkap angka dari format "Ring3", "Ring4", dll
+                string.match(combined, "ring(%d+)") or
                 string.match(combined, "stage%s*(%d+)") or
                 string.match(combined, "pos%s*(%d+)") or
                 string.match(combined, "waypoint%s*(%d+)") or
@@ -337,17 +344,27 @@ local function parseCPIdentity(obj)
     end
 
     if not num then
-        num = string.match(lowerName, "(%d+)")
+        -- Jika nama objek murni angka (contoh: part dinamai "3" atau "4" di dalam folder stage)
+        if tonumber(name) then
+            num = name
+        else
+            num = string.match(lowerName, "(%d+)")
+        end
     end
 
-    -- KUNCI UTAMA: Jika tidak ditemukan angka sama sekali, TOLAK MUTLAK! (Supaya label huruf doang tersembunyi)
+    -- Jika tetap tidak ada angka sama sekali (seperti "Field", "Base", dll), tolak mutlak!
     if not num then
         return nil, nil, nil
     end
 
     local nVal = tonumber(num)
     if nVal and nVal >= 0 and nVal <= 500 then
-        return nVal, (guiText ~= "" and guiText or name), validPart
+        -- Prioritaskan deskripsi yang bersih, gunakan nama asli objek atau teks GUI
+        local descText = name
+        if guiText ~= "" then
+            descText = guiText
+        end
+        return nVal, descText, validPart
     end
 
     return nil, nil, nil
