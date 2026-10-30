@@ -223,7 +223,6 @@ local function parseCPIdentity(obj)
     local parentName = obj.Parent and obj.Parent.Name or ""
     local lowerParent = string.lower(parentName)
 
-    -- Filter awal sampah, nama umum, dan "base" / "field"
     if lowerName == "text" or lowerParent == "text" or lowerName == "field" or lowerParent == "field" or lowerName == "base" or lowerParent == "base" or isBlacklisted(lowerName) or isBlacklisted(lowerParent) then 
         return nil, nil, nil, 0 
     end
@@ -231,34 +230,20 @@ local function parseCPIdentity(obj)
         return nil, nil, nil, 0 
     end
 
-    -- Deteksi Summit
+    -- ==================================================
+    -- 1. DETEKSI SUMMIT (DILEMPAR KE ATAS AGAR LANGSUNG LOLOS)
+    -- ==================================================
     local summitKeywords = {"summit", "peak", "finish", "puncak", "winpad"}
-    local summitBlacklist = {"board", "papan", "donat", "donation", "detik", "time", "sec", "sign", "leaderboard", "stat", "total", "name", "top global", "global", "top", "finishmodel", "model", "gui"}
-    
-    local function isSummitBlacklisted(str)
-        local lowerStr = string.lower(str)
-        for _, bkw in ipairs(summitBlacklist) do
-            if string.find(lowerStr, bkw, 1, true) then return true end
-        end
-        return false
-    end
-
     local isSummit = false
-    local summitName = name
-    if not isSummitBlacklisted(lowerName) and not isSummitBlacklisted(lowerParent) then
-        for _, kw in ipairs(summitKeywords) do
-            if string.find(lowerName, kw, 1, true) or string.find(lowerParent, kw, 1, true) then
-                isSummit = true
-                break
-            end
+    
+    for _, kw in ipairs(summitKeywords) do
+        if string.find(lowerName, kw, 1, true) or string.find(lowerParent, kw, 1, true) then
+            isSummit = true
+            break
         end
     end
 
-    if isSummit then
-        return "SUMMIT", summitName, validPart, 10
-    end
-
-    -- Cek teks GUI jika ada
+    -- Cek juga teks pada BillboardGui/SurfaceGui jika ada
     local guiText = ""
     local hasGui = validPart:FindFirstChildOfClass("BillboardGui") or validPart:FindFirstChildOfClass("SurfaceGui")
     if not hasGui and validPart.Parent and validPart.Parent:IsA("Model") then
@@ -268,12 +253,25 @@ local function parseCPIdentity(obj)
         local textLabel = hasGui:FindFirstChildOfClass("TextLabel")
         if textLabel and textLabel.Text ~= "" then
             guiText = string.lower(textLabel.Text)
+            for _, kw in ipairs(summitKeywords) do
+                if string.find(guiText, kw, 1, true) then
+                    isSummit = true
+                    break
+                end
+            end
         end
     end
 
+    if isSummit then
+        -- Langsung kembalikan sebagai SUMMIT dengan prioritas tertinggi (Skor 10)
+        return "SUMMIT", (guiText ~= "" and guiText or name), validPart, 10
+    end
+
+    -- ==================================================
+    -- 2. PARSING NOMOR CHECKPOINT BIASA
+    -- ==================================================
     local combined = lowerParent .. " " .. lowerName .. " " .. guiText
 
-    -- PARSING NOMOR CHECKPOINT
     local num = string.match(combined, "checkpoints?%s*(%d+)") or
                 string.match(combined, "checkpoint%s*(%d+)") or
                 string.match(combined, "cekpoin%s*[%s_]*(%d+)") or 
@@ -291,11 +289,8 @@ local function parseCPIdentity(obj)
         num = string.match(guiText, "(%d+)")
     end
 
-    -- PENTING: Jangan ambil nama murni angka jika objek tersebut bukan bagian utama CP 
-    -- (untuk mencegah part bernnama "2" atau "3" doang lolos padahal ada nama CP-nya)
     if not num then
         if string.find(combined, "cp") or string.find(combined, "checkpoint") or string.find(combined, "stage") or string.find(combined, "waypoint") then
-            -- Kalau ada kata kunci utama tapi tidak ada nomornya, abaikan
             return nil, nil, nil, 0
         end
     end
@@ -309,10 +304,6 @@ local function parseCPIdentity(obj)
         return nil, nil, nil, 0
     end
 
-    -- SISTEM PRIORITAS KETAT
-    -- Skor 3: Format eksplisit (CP 2, Checkpoint 2, Stage 2, dll) -> PALING UTAMA
-    -- Skor 2: Format Ring (Ring2) -> Cadangan jika tidak ada format CP
-    -- Skor 1: Murni angka atau lainnya -> Dibuang jika sudah ada skor 3 di area sekitar
     local priorityScore = 1
     local hasExplicitKeyword = string.find(combined, "checkpoint") or 
                                string.find(combined, "cekpoin") or 
@@ -327,10 +318,7 @@ local function parseCPIdentity(obj)
     elseif string.find(combined, "ring") then
         priorityScore = 2
     else
-        -- Jika murni angka doang tanpa teks pendukung, berikan skor sangat rendah agar terseleksi filter jarak
         priorityScore = 1
-        -- Opsional: Jika kamu ingin angka murni langsung di-banned total, uncomment baris di bawah ini:
-        -- return nil, nil, nil, 0
     end
 
     local descText = name
@@ -340,7 +328,6 @@ local function parseCPIdentity(obj)
 
     return nVal, descText, validPart, priorityScore
 end
-
 
 --==================================================
 -- AUTO-SAVE SYSTEM & VISITED TRACKER
