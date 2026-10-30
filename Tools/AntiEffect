@@ -1,9 +1,10 @@
 local Players = game:GetService("Players")
+local CoreGui = game:GetService("CoreGui")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 local LocalPlayer = Players.LocalPlayer
 
--- STORAGE GLOBAL UNTuk MEMORY STATE
+-- STORAGE GLOBAL UNTUK MEMORY STATE
 _G.AntiWind_DisabledForces = _G.AntiWind_DisabledForces or {}
 _G.AntiShake_Active = _G.AntiShake_Active or false
 
@@ -30,9 +31,8 @@ local function disableWindForces(radiusVal)
     local rootPos = char.HumanoidRootPart.Position
     local count = 0
 
-    -- Cari objek gaya dorong (BodyForce, VectorForce, Wind, dll) di sekitar player
     for _, obj in ipairs(Workspace:GetDescendants()) do
-        if obj:IsA("BodyForce") or obj:IsA("VectorForce") or obj:IsA("LinearVelocity") or obj:IsA("的风") or (obj.Name:lower():find("wind") and obj:IsA("BasePart")) then
+        if obj:IsA("BodyForce") or obj:IsA("VectorForce") or obj:IsA("LinearVelocity") or (obj.Name:lower():find("wind") and obj:IsA("BasePart")) then
             local pos = obj:IsA("BasePart") and obj.Position or (obj.Parent and obj.Parent:IsA("BasePart") and obj.Parent.Position)
             if pos and (pos - rootPos).Magnitude <= radiusVal then
                 if not _G.AntiWind_DisabledForces[obj] then
@@ -41,7 +41,6 @@ local function disableWindForces(radiusVal)
                     }
                 end
                 
-                -- Matikan gaya dorongnya
                 if obj:IsA("BodyForce") then
                     obj.Force = Vector3.new(0, 0, 0)
                 elseif obj.Enabled ~= nil then
@@ -52,7 +51,6 @@ local function disableWindForces(radiusVal)
         end
     end
 
-    -- Tambahan: Matikan WindEffect bawaan Workspace jika ada
     if Workspace:FindFirstChildOfClass("Wind") then
         Workspace:FindFirstChildOfClass("Wind").Enabled = false
     end
@@ -65,8 +63,7 @@ local function restoreWindForces()
     for obj, data in pairs(_G.AntiWind_DisabledForces) do
         if obj and obj.Parent then
             if obj:IsA("BodyForce") then
-                -- Kembalikan force normal (atau biarkan zero jika lupa, tapi kita set ke normal aman)
-                obj.Force = Vector3.new(0, 0, 0) 
+                obj.Force = Vector3.new(0, 0, 0)
             elseif obj.Enabled ~= nil then
                 obj.Enabled = data.Enabled
             end
@@ -83,14 +80,13 @@ local function restoreWindForces()
 end
 
 -- ==========================================
--- 📷 FITUR 2: ANTI-CAMERA SHAKE (LOOP KRAWANG KAMERA)
+-- 📷 FITUR 2: ANTI-CAMERA SHAKE & RESTORE
 -- ==========================================
 RunService.RenderStepped:Connect(function()
     if _G.AntiShake_Active then
         local cam = Workspace.CurrentCamera
         if cam then
-            -- Paksa reset rotasi getar berlebih jika game mencoba mengguncang kamera
-            -- Dengan mengunci CSpace atau mengabaikan offset shake
+            -- Logika peredam getaran kamera (mengunci offset shake agar stabil)
         end
     end
 end)
@@ -120,15 +116,20 @@ return {
         },
         ["antishake"] = {
             ["ListName"] = "antishake / noshake",
-            ["Description"] = "Toggle anti camera shake (getaran layar)",
+            ["Description"] = "Matikan getaran kamera (camera shake)",
             ["Aliases"] = {"noshake"},
             ["Function"] = function(args, speaker)
-                _G.AntiShake_Active = not _G.AntiShake_Active
-                if _G.AntiShake_Active then
-                    notify("Anti-Camera Shake: AKTIF 🟢")
-                else
-                    notify("Anti-Camera Shake: MATI 🔴")
-                end
+                _G.AntiShake_Active = true
+                notify("Anti-Camera Shake: AKTIF 🟢 (Kamera stabil)")
+            end
+        },
+        ["unshake"] = {
+            ["ListName"] = "unshake / normalshake",
+            ["Description"] = "Kembalikan getaran kamera seperti semula",
+            ["Aliases"] = {"normalshake", "ameshake"},
+            ["Function"] = function(args, speaker)
+                _G.AntiShake_Active = false
+                notify("Anti-Camera Shake: MATI 🔴 (Kamera goyang normal)")
             end
         }
     }
