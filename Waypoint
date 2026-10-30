@@ -223,20 +223,32 @@ local function parseCPIdentity(obj)
         return nil, nil, nil, 0 
     end
 
-    local summitKeywords = {"summit", "peak", "finish", "puncak", "winpad"}
+    -- ==================================================
+    -- 1. DETEKSI SUMMIT (Termasuk nama "Reset" khusus map ini)
+    -- ==================================================
+    local summitKeywords = {"summit", "peak", "finish", "puncak", "winpad", "reset"}
     local isSummit = false
     
     for _, kw in ipairs(summitKeywords) do
         if string.find(lowerName, kw, 1, true) or string.find(lowerParent, kw, 1, true) then
-            isSummit = true
-            break
+            -- Pastikan jika namanya "reset", dia berada di dalam folder Checkpoints/Obby atau bukan tombol mati biasa
+            if kw == "reset" then
+                if string.find(string.lower(getInstancePath(obj)), "checkpoint") or string.find(string.lower(getInstancePath(obj)), "obby") then
+                    isSummit = true
+                    break
+                end
+            else
+                isSummit = true
+                break
+            end
         end
     end
 
+    -- Cek juga teks pada BillboardGui/SurfaceGui jika ada
     local guiText = ""
     local hasGui = validPart:FindFirstChildOfClass("BillboardGui") or validPart:FindFirstChildOfClass("SurfaceGui")
     if not hasGui and validPart.Parent and validPart.Parent:IsA("Model") then
-        hasGui = validPart.Parent:FindFirstChildOfClass("BillboardGui") or validPart.Parent:FindFirstChildOfClass("SurfaceGui")
+        hasGui = validPart.Parent:FindFirstChildOfClass("BillboardGui") or validPart:FindFirstChildOfClass("SurfaceGui")
     end
     if hasGui then
         local textLabel = hasGui:FindFirstChildOfClass("TextLabel")
@@ -252,6 +264,7 @@ local function parseCPIdentity(obj)
     end
 
     if isSummit then
+        -- Langsung kembalikan sebagai SUMMIT dengan prioritas tertinggi (Skor 10)
         return "SUMMIT", (guiText ~= "" and guiText or name), validPart, 10
     end
 
