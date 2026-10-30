@@ -271,21 +271,22 @@ local function parseCPIdentity(obj)
     -- ==================================================
     local combined = lowerParent .. " " .. lowerName .. " " .. guiText
 
-    local num = string.match(combined, "checkpoints?%s*(%d+)") or
-                string.match(combined, "checkpoint%s*(%d+)") or
-                string.match(combined, "cekpoin%s*[%s_]*(%d+)") or 
-                string.match(combined, "cekpoin%s*(%d+)") or  
-                string.match(combined, "cp%s*(%d+)") or
-                string.match(combined, "cp(%d+)") or 
-                string.match(combined, "stage%s*(%d+)") or
-                string.match(combined, "pos%s*(%d+)") or
-                string.match(combined, "waypoint%s*(%d+)") or
-                string.match(combined, "wp%s*(%d+)") or
-                string.match(combined, "ring%s*(%d+)") or
-                string.match(combined, "ring(%d+)")
+        -- PARSING NOMOR CHECKPOINT (Mendukung Angka Bulat maupun Desimal seperti 3.5, 1.5)
+    local num = string.match(combined, "checkpoints?%s*(%d+%.?%d*)") or
+                string.match(combined, "checkpoint%s*(%d+%.?%d*)") or
+                string.match(combined, "cekpoin%s*[%s_]*(%d+%.?%d*)") or 
+                string.match(combined, "cekpoin%s*(%d+%.?%d*)") or  
+                string.match(combined, "cp%s*(%d+%.?%d*)") or
+                string.match(combined, "cp(%d+%.?%d*)") or 
+                string.match(combined, "stage%s*(%d+%.?%d*)") or
+                string.match(combined, "pos%s*(%d+%.?%d*)") or
+                string.match(combined, "waypoint%s*(%d+%.?%d*)") or
+                string.match(combined, "wp%s*(%d+%.?%d*)") or
+                string.match(combined, "ring%s*(%d+%.?%d*)") or
+                string.match(combined, "ring(%d+%.?%d*)")
 
     if not num and guiText ~= "" then
-        num = string.match(guiText, "(%d+)")
+        num = string.match(guiText, "(%d+%.?%d*)")
     end
 
     if not num then
@@ -302,6 +303,7 @@ local function parseCPIdentity(obj)
     if not nVal or nVal < 0 or nVal > 500 then
         return nil, nil, nil, 0
     end
+
 
     local priorityScore = 1
     local hasExplicitKeyword = string.find(combined, "checkpoint") or 
@@ -334,16 +336,17 @@ end
 local function addOrUpdateSavedCP(key, desc, cf)
     local serializedCF = {cf:GetComponents()}
     
-    -- Catat langsung ke memori visited agar SCP langsung membersihkannya
+    -- Gunakan key string utuh (misal "3" dan "3.5" dianggap beda total)
     local visitKey = tostring(key)
     visitedKeys[visitKey] = true
 
-    -- Bersihkan cache sekitar area CP dalam radius 25 stud
+    -- Bersihkan cache HANYA dalam radius sangat dekat (misal <= 8 stud) 
+    -- untuk mencegah CP 3 memblokir CP 3.5 yang letaknya berdekatan
     if cf then
         local pos = cf.Position
         for _, cacheData in pairs(streamingCache) do
             if cacheData.part and cacheData.part.Parent then
-                if (cacheData.part.Position - pos).Magnitude <= 25 then
+                if (cacheData.part.Position - pos).Magnitude <= 8 then
                     visitedKeys[tostring(cacheData.key)] = true
                 end
             end
@@ -367,6 +370,7 @@ local function addOrUpdateSavedCP(key, desc, cf)
         cf = serializedCF
     })
     
+    -- Urutkan list berdasarkan nilai numerik (mendukung desimal dengan akurat)
     table.sort(savedCheckpointsList, function(a, b)
         local na, nb = tonumber(a.key), tonumber(b.key)
         if na and nb then return na < nb end
@@ -529,12 +533,19 @@ updateRadarGuiContent = function()
         leftLabel.Size = UDim2.new(0, 75, 1, 0)
         leftLabel.Position = UDim2.new(0, 5, 0, 0)
         leftLabel.BackgroundTransparency = 1
-        leftLabel.Text = (type(data.key) == "number") and ("CP " .. data.key) or tostring(data.key)
+        -- Jika key ada desimalnya, tampilkan langsung desimalnya. Jika bulat, beri awalan CP
+        local keyStr = tostring(data.key)
+        if tonumber(keyStr) then
+            leftLabel.Text = "CP " .. keyStr
+        else
+            leftLabel.Text = keyStr
+        end
         leftLabel.TextColor3 = Color3.fromRGB(0, 200, 255)
         leftLabel.Font = Enum.Font.SourceSansBold
         leftLabel.TextSize = 12
         leftLabel.TextXAlignment = Enum.TextXAlignment.Left
         leftLabel.Parent = itemFrame
+
 
         local rightLabel = Instance.new("TextLabel")
         rightLabel.Size = UDim2.new(1, -135, 1, 0)
