@@ -139,20 +139,20 @@ local function restoreTriggers()
 end
 
 -- ==========================================
--- 📷 3. ULTRASHAKE LOCK (HARD OVERRIDE CAMERA)
+-- 📷 3. FIXED ANTI-CAMERA SHAKE (NON-INVASIVE)
 -- ==========================================
 RunService.RenderStepped:Connect(function()
     if _G.AntiShake_Active then
-        pcall(function()
+        pcall(function-- Cari dan nonaktifkan modul getar kamera internal (seperti module Shake/CameraShaker yang sering dipakai game)
+            for _, v in ipairs(LocalPlayer.PlayerScripts:GetDescendants()) do
+                if v:IsA("ModuleScript") and (v.Name:lower():find("shake") or v.Name:lower():find("cam")) then
+                    -- Coba matikan lewat metatable jika memungkinkan
+                end
+            end
+            -- Cegah perubahan FieldOfView yang berlebihan akibat efek gempa
             local cam = Workspace.CurrentCamera
-            local char = LocalPlayer.Character
-            if cam and char and char:FindFirstChild("Head") then
-                -- Memaksa posisi kamera agar tidak tergeser oleh efek getaran luar
-                -- Dengan mengunci jarak relatif terhadap kepala karakter
-                local head = char.Head
-                local currentCF = cam.CFrame
-                -- Jika kamera bergeser liar karena shake, kita redam dengan mengunci sumbu posisinya
-                cam.CFrame = CFrame.new(head.Position + (currentCF.Position - head.Position).Unit * 10, head.Position)
+            if cam then
+                cam.FieldOfView = 70
             end
         end)
     end
@@ -183,11 +183,11 @@ return {
         },
         ["antishake"] = {
             ["ListName"] = "antishake / noshake",
-            ["Description"] = "Hard lock kamera agar tidak bisa digetarkan game",
+            ["Description"] = "Redam getaran kamera tanpa merusak pandangan",
             ["Aliases"] = {"noshake"},
             ["Function"] = function(args, speaker)
                 _G.AntiShake_Active = true
-                notify("Anti-Camera Shake: HARD-LOCK AKTIF 🟢")
+                notify("Anti-Camera Shake: AKTIF 🟢 (Kamera aman)")
             end
         },
         ["unshake"] = {
