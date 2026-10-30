@@ -40,7 +40,7 @@ local IGNORE_KEYWORDS = {
     "time", "seluncur", "remove", "clone", "seat", "laying", "down", "fall", "jatuh", "chat", "block", "boost",
     "cave", "lake", "goa", "tutorial", "hit", "same", "spin", "kill", "brick", "birhday", "gift", "fun",
     "tanjakan", "maut", "uang", "join", "community", "komunitas", "enter", "handle", "squish", "stand",
-    "adminzone", "run", "jaw", "sphere", "lompat", "long", "pop", "cube", "
+    "adminzone", "run", "jaw", "sphere", "lompat", "long", "pop", "cube",
     -- Filter Hewan, NPC, & Monster
     "crocodile", "alligator", "mob", "npc", "monster", "animal", "pet", "zombie", "boss", "bear",
     -- Filter Part Langit & Batasan Map
