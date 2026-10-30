@@ -249,7 +249,6 @@ local function parseCPIdentity(obj)
     local isSummit = false
     local summitName = name
 
-    -- Cek dari Nama Objek atau Parent
     if not isSummitBlacklisted(lowerName) and not isSummitBlacklisted(lowerParent) then
         for _, kw in ipairs(summitKeywords) do
             if string.find(lowerName, kw, 1, true) or string.find(lowerParent, kw, 1, true) then
@@ -259,7 +258,6 @@ local function parseCPIdentity(obj)
         end
     end
 
-    -- Cek dari BillboardGui / SurfaceGui jika belum ketemu
     if not isSummit then
         local hasGui = validPart:FindFirstChildOfClass("BillboardGui") or validPart:FindFirstChildOfClass("SurfaceGui")
         if not hasGui and validPart.Parent and validPart.Parent:IsA("Model") then
@@ -288,9 +286,8 @@ local function parseCPIdentity(obj)
     end
 
     -- ==================================================
-    -- 2. DOKTRIN STRICT: CEK ATAU KATA KUNCI CHECKPOINT WAJIB ADA
+    -- 2. DOKTRIN STRICT: CEK KATA KUNCI CHECKPOINT
     -- ==================================================
-        -- Pastikan bagian pengecekan kata kunci di parseCPIdentity tidak terlalu kaku
     local combined = lowerParent .. " " .. lowerName
     local hasCPKeyword = string.find(combined, "checkpoint") or 
                          string.find(combined, "cekpoin") or 
@@ -299,9 +296,8 @@ local function parseCPIdentity(obj)
                          string.find(combined, "wp") or 
                          string.find(combined, "stage") or 
                          string.find(combined, "pos") or
-                         validPart:FindFirstChild("TouchInterest") -- TAMBAHKAN INI: Asalkan punya TouchInterest checkpoint, anggap sah!
+                         validPart:FindFirstChild("TouchInterest")
 
-    -- Ambil teks dari BillboardGui jika ada
     local guiText = ""
     local hasGui = validPart:FindFirstChildOfClass("BillboardGui") or validPart:FindFirstChildOfClass("SurfaceGui")
     if not hasGui and validPart.Parent and validPart.Parent:IsA("Model") then
@@ -318,12 +314,13 @@ local function parseCPIdentity(obj)
         end
     end
 
-    -- JIKA TIDAK MEMILIKI KATA KUNCI CHECKPOINT SAH = BUANG / TOLAK MUTLAK!
     if not hasCPKeyword then
         return nil, nil, nil
     end
 
-    -- 3. PARSING NOMOR CHECKPOINT (Hanya jika lolos verifikasi Kata Kunci di atas)
+    -- ==================================================
+    -- 3. PARSING NOMOR CHECKPOINT (WAJIB ADA ANGKA!)
+    -- ==================================================
     local num = string.match(combined, "checkpoints?%s*(%d+)") or
                 string.match(combined, "checkpoint%s*(%d+)") or
                 string.match(combined, "cekpoin%s*[%s_]*(%d+)") or 
@@ -343,16 +340,19 @@ local function parseCPIdentity(obj)
         num = string.match(lowerName, "(%d+)")
     end
 
-    if num then
-        local nVal = tonumber(num)
-        if nVal and nVal >= 0 and nVal <= 500 then
-            return nVal, (guiText ~= "" and guiText or name), validPart
-        end
+    -- KUNCI UTAMA: Jika tidak ditemukan angka sama sekali, TOLAK MUTLAK! (Supaya label huruf doang tersembunyi)
+    if not num then
+        return nil, nil, nil
     end
 
-    -- Fallback Label String jika valid CP tanpa angka
-    return "CP", name, validPart
+    local nVal = tonumber(num)
+    if nVal and nVal >= 0 and nVal <= 500 then
+        return nVal, (guiText ~= "" and guiText or name), validPart
+    end
+
+    return nil, nil, nil
 end
+
 
 --==================================================
 -- AUTO-SAVE SYSTEM & VISITED TRACKER
