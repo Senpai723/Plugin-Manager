@@ -1054,30 +1054,42 @@ local function createCPNWindow()
     end)
 
 plusBtn.MouseButton1Click:Connect(function()
-        local hrp = getHRP()
-        if not hrp then
-            notify("CPN Manager", "HumanoidRootPart tidak ditemukan!", 2)
-            return
-        end
+plusBtn.MouseButton1Click:Connect(function()
+    local hrp = getHRP()
+    if not hrp then
+        notify("CPN Manager", "HumanoidRootPart tidak ditemukan!", 2)
+        return
+    end
 
-        local nearestName, nearestKey = nil, nil
-        local pos = hrp.Position
-        for _, data in pairs(streamingCache) do
-            if data.part and (data.part.Position - pos).Magnitude <= 15 then
-                nearestName = data.desc
-                nearestKey = data.key
-                break
+    local nearestName, nearestKey = nil, nil
+    local nearestCF = nil
+    local pos = hrp.Position
+    
+    -- Cari dari cache SCP yang jaraknya dekat (<= 12 stud) dan benar-benar valid
+    for _, data in pairs(streamingCache) do
+        if data.part and data.part.Parent then
+            local dist = (data.part.Position - pos).Magnitude
+            if dist <= 12 then
+                -- Pastikan hanya mengambil yang memiliki key/nama valid dan belum tersimpan di visitedKeys utama
+                if data.key ~= nil and data.desc ~= nil then
+                    nearestName = data.desc
+                    nearestKey = data.key
+                    nearestCF = data.part.CFrame
+                    break
+                end
             end
         end
+    end
 
-        if not nearestName then
-            showCustomNamePrompt(function(customText)
-                addOrUpdateSavedCP("", customText, hrp.CFrame)
-            end)
-        else
-            addOrUpdateSavedCP(nearestKey, nearestName, hrp.CFrame)
-        end
-    end)
+    -- JIKA TIDAK ADA CHECKPOINT VALID DI DEKATNYA, MUNCULKAN KOTAK INPUT TEXT MANUAL!
+    if not nearestName or nearestKey == nil then
+        showCustomNamePrompt(function(customText)
+            addOrUpdateSavedCP("", customText, hrp.CFrame, hrp.Position)
+        end)
+    else
+        addOrUpdateSavedCP(nearestKey, nearestName, nearestCF, hrp.Position)
+    end
+end)
 
     minBtn.MouseButton1Click:Connect(function()
         isCpnMinimized = not isCpnMinimized
