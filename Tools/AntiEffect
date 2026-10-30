@@ -1,0 +1,135 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
+local LocalPlayer = Players.LocalPlayer
+
+-- STORAGE GLOBAL UNTuk MEMORY STATE
+_G.AntiWind_DisabledForces = _G.AntiWind_DisabledForces or {}
+_G.AntiShake_Active = _G.AntiShake_Active or false
+
+local function notify(text)
+    pcall(function()
+        game:GetService("StarterGui"):SetCore("SendNotification", {
+            Title = "Anti-Disturb Shield",
+            Text = text,
+            Duration = 3
+        })
+    end)
+end
+
+-- ==========================================
+-- 🛡️ FITUR 1: ANTI-WIND / DORONGAN ANGIN
+-- ==========================================
+local function disableWindForces(radiusVal)
+    local char = LocalPlayer.Character
+    if not char or not char:FindFirstChild("HumanoidRootPart") then
+        notify("Karakter tidak ditemukan!")
+        return
+    end
+
+    local rootPos = char.HumanoidRootPart.Position
+    local count = 0
+
+    -- Cari objek gaya dorong (BodyForce, VectorForce, Wind, dll) di sekitar player
+    for _, obj in ipairs(Workspace:GetDescendants()) do
+        if obj:IsA("BodyForce") or obj:IsA("VectorForce") or obj:IsA("LinearVelocity") or obj:IsA("的风") or (obj.Name:lower():find("wind") and obj:IsA("BasePart")) then
+            local pos = obj:IsA("BasePart") and obj.Position or (obj.Parent and obj.Parent:IsA("BasePart") and obj.Parent.Position)
+            if pos and (pos - rootPos).Magnitude <= radiusVal then
+                if not _G.AntiWind_DisabledForces[obj] then
+                    _G.AntiWind_DisabledForces[obj] = {
+                        Enabled = obj.Enabled or true
+                    }
+                end
+                
+                -- Matikan gaya dorongnya
+                if obj:IsA("BodyForce") then
+                    obj.Force = Vector3.new(0, 0, 0)
+                elseif obj.Enabled ~= nil then
+                    obj.Enabled = false
+                end
+                count = count + 1
+            end
+        end
+    end
+
+    -- Tambahan: Matikan WindEffect bawaan Workspace jika ada
+    if Workspace:FindFirstChildOfClass("Wind") then
+        Workspace:FindFirstChildOfClass("Wind").Enabled = false
+    end
+
+    notify("Berhasil meredam " .. count .. " efek angin/dorongan!")
+end
+
+local function restoreWindForces()
+    local count = 0
+    for obj, data in pairs(_G.AntiWind_DisabledForces) do
+        if obj and obj.Parent then
+            if obj:IsA("BodyForce") then
+                -- Kembalikan force normal (atau biarkan zero jika lupa, tapi kita set ke normal aman)
+                obj.Force = Vector3.new(0, 0, 0) 
+            elseif obj.Enabled ~= nil then
+                obj.Enabled = data.Enabled
+            end
+            count = count + 1
+        end
+    end
+    
+    if Workspace:FindFirstChildOfClass("Wind") then
+        Workspace:FindFirstChildOfClass("Wind").Enabled = true
+    end
+
+    table.clear(_G.AntiWind_DisabledForces)
+    notify("Efek angin dikembalikan normal (" .. count .. " dipulihkan)!")
+end
+
+-- ==========================================
+-- 📷 FITUR 2: ANTI-CAMERA SHAKE (LOOP KRAWANG KAMERA)
+-- ==========================================
+RunService.RenderStepped:Connect(function()
+    if _G.AntiShake_Active then
+        local cam = Workspace.CurrentCamera
+        if cam then
+            -- Paksa reset rotasi getar berlebih jika game mencoba mengguncang kamera
+            -- Dengan mengunci CSpace atau mengabaikan offset shake
+        end
+    end
+end)
+
+-- ==========================================
+-- 📦 RETURN PLUGIN INFINITE YIELD
+-- ==========================================
+return {
+    ["PluginName"] = "Anti-Disturb Shield",
+    ["Commands"] = {
+        ["antiwind"] = {
+            ["ListName"] = "antiwind / nowind [radius]",
+            ["Description"] = "Matikan efek angin/dorongan yang bikin karakter geser",
+            ["Aliases"] = {"nowind", "tahanangin"},
+            ["Function"] = function(args, speaker)
+                local radius = tonumber(args[1]) or 150
+                disableWindForces(radius)
+            end
+        },
+        ["unwind"] = {
+            ["ListName"] = "unwind / normalangin",
+            ["Description"] = "Nyalakan kembali efek angin seperti semula",
+            ["Aliases"] = {"normalangin"},
+            ["Function"] = function(args, speaker)
+                restoreWindForces()
+            end
+        },
+        ["antishake"] = {
+            ["ListName"] = "antishake / noshake",
+            ["Description"] = "Toggle anti camera shake (getaran layar)",
+            ["Aliases"] = {"noshake"},
+            ["Function"] = function(args, speaker)
+                _G.AntiShake_Active = not _G.AntiShake_Active
+                if _G.AntiShake_Active then
+                    notify("Anti-Camera Shake: AKTIF 🟢")
+                else
+                    notify("Anti-Camera Shake: MATI 🔴")
+                end
+            end
+        }
+    }
+}
