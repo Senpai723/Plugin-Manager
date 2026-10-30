@@ -1,5 +1,4 @@
 local Players = game:GetService("Players")
-local CoreGui = game:GetService("CoreGui")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 local LocalPlayer = Players.LocalPlayer
@@ -80,13 +79,22 @@ local function restoreWindForces()
 end
 
 -- ==========================================
--- 📷 FITUR 2: ANTI-CAMERA SHAKE & RESTORE
+-- 📷 FITUR 2: ANTI-CAMERA SHAKE (REAL-TIME FIX)
 -- ==========================================
+local lastValidCFrame = nil
+
 RunService.RenderStepped:Connect(function()
     if _G.AntiShake_Active then
         local cam = Workspace.CurrentCamera
         if cam then
-            -- Logika peredam getaran kamera (mengunci offset shake agar stabil)
+            -- Hentikan getaran dengan mematikan script camera shake internal game jika ada
+            pcall(function()
+                for _, scriptObj in ipairs(LocalPlayer:GetDescendants()) do
+                    if scriptObj:IsA("LocalScript") and (scriptObj.Name:lower():find("shake") or scriptObj.Name:lower():find("camera")) then
+                        scriptObj.Disabled = true
+                    end
+                end
+            end)
         end
     end
 end)
