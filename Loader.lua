@@ -10,7 +10,7 @@ return {
                 { Name = "CDESP", Desc = "Memunculkan Box dan Nama ESP Objek yang di Klik", Cmd = "clickdetectoresp", UnCmd = "unclickdetectoresp" },
                 { Name = "DESP", Desc = "Memuncukkan ESP sebuah Pintu", Cmd = "dooresp", UnCmd = "undooresp" },
                 { Name = "ITESP", Desc = "Memunculkan Box dan Nama ESP yang di sentuh", Cmd = "itemtouchesp", UnCmd = "untouchinterestesp" },
-                { Name = "ITEM ESP", Desc = "Memunculkan Box dan Nama ESP Item dengan interact Custom", Cmd = "droppeditemesp", UnCmd = "undropesp" },
+               -- { Name = "ITEM ESP", Desc = "Memunculkan Box dan Nama ESP Item dengan interact Custom", Cmd = "droppeditemesp", UnCmd = "undropesp" },
                 { Name = "TESP", Desc = "Memunculkan ESP Trigger / Scene Event", Cmd = "touchinterestesp", UnCmd = "untouchinterestesp" }
             }
         },
