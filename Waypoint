@@ -223,7 +223,6 @@ local function parseCPIdentity(obj)
         return nil, nil, nil, 0 
     end
 
-    -- Ambil nama folder induk terdekat sebagai identitas jalur (misal: Gunung1, Gunung2, dll)
     local folderContext = ""
     local curr = validPart.Parent
     while curr and curr ~= Workspace do
@@ -235,9 +234,6 @@ local function parseCPIdentity(obj)
         curr = curr.Parent
     end
 
-    -- ==================================================
-    -- 1. DETEKSI SUMMIT (Termasuk nama "Reset" khusus di jalur obby/checkpoint)
-    -- ==================================================
     local summitKeywords = {"summit", "peak", "finish", "puncak", "winpad", "reset"}
     local isSummit = false
     
@@ -256,7 +252,6 @@ local function parseCPIdentity(obj)
         end
     end
 
-    -- Cek juga teks pada BillboardGui/SurfaceGui jika ada
     local guiText = ""
     local hasGui = validPart:FindFirstChildOfClass("BillboardGui") or validPart:FindFirstChildOfClass("SurfaceGui")
     if not hasGui and validPart.Parent and validPart.Parent:IsA("Model") then
@@ -283,9 +278,6 @@ local function parseCPIdentity(obj)
         return "SUMMIT", summitDesc, validPart, 10
     end
 
-    -- ==================================================
-    -- 2. PARSING NOMOR CHECKPOINT BIASA (Mendukung Desimal & Jalur Ganda)
-    -- ==================================================
     local combined = lowerParent .. " " .. lowerName .. " " .. guiText
 
     local num = string.match(combined, "checkpoints?%s*(%d+%.?%d*)") or
@@ -337,7 +329,6 @@ local function parseCPIdentity(obj)
         priorityScore = 1
     end
 
-    -- Gabungkan nama jalur (folder) agar deskripsi di SCP dan CPN jadi spesifik
     local descText = name
     if folderContext ~= "" then
         descText = folderContext .. " (" .. name .. ")"
@@ -392,7 +383,7 @@ local function addOrUpdateSavedCP(key, desc, cf)
 end
 
 --==================================================
--- EVENT-DRIVEN & ANTI-STUTTER SCANNER
+-- EVENT-DRIVEN & ANTI-STUTTER SCANNER (OPTIMIZED)
 --==================================================
 local hookedParts = {}
 
@@ -422,7 +413,6 @@ local function processAndHookPart(obj)
             if realPart and realPart.Parent then
                 local pos = realPart.Position
                 
-                -- AMBIL FOLDER / JALUR GUNUNG DARI PART-NYA SECARA LANGSUNG
                 local folderContext = ""
                 local curr = realPart.Parent
                 while curr and curr ~= Workspace do
@@ -434,7 +424,6 @@ local function processAndHookPart(obj)
                     curr = curr.Parent
                 end
 
-                -- TARUH KODE UNIK INI DI SINI, BRO (Perhatikan operator .. untuk penggabungan string)
                 local folderPrefix = folderContext ~= "" and folderContext or "Main"
                 local uniqueVisitKey = tostring(cpKey) .. "_" .. folderPrefix .. "_" .. math.floor(pos.X) .. "_" .. math.floor(pos.Y) .. "_" .. math.floor(pos.Z)
                 
@@ -447,11 +436,16 @@ local function processAndHookPart(obj)
 
         local touch = realPart:FindFirstChild("TouchInterest") or realPart:FindFirstChildOfClass("TouchTransmitter")
         if touch then
+            -- Mencegah koneksi berlebih (debounce ringan via koneksi touch)
+            local lastTouch = 0
             realPart.Touched:Connect(function(hit)
+                local now = tick()
+                if now - lastTouch < 1.0 then return end
                 local char = LocalPlayer.Character
                 if char and hit:IsDescendantOf(char) then
                     local humanoid = char:FindFirstChildOfClass("Humanoid")
                     if humanoid and humanoid.Health > 0 then
+                        lastTouch = now
                         triggerAutoSave()
                     end
                 end
@@ -468,7 +462,6 @@ local function processAndHookPart(obj)
         end
     end
 end
-
 
 --==================================================
 -- GUI: SCP FLOATING WINDOW
@@ -584,7 +577,7 @@ updateRadarGuiContent = function()
         yOffset = yOffset + 32
     end
 
-    radarScrollContainer.CanvasSize = UDim2.new(0, 0, 0, yOffset)
+radarScrollContainer.CanvasSize = UDim2.new(0, 0, 0, yOffset)
 end
 
 local function createSCPWindow()
@@ -706,12 +699,19 @@ header.InputChanged:Connect(function(input)
         end
     end)
 
+    -- OPTIMIZED REFRESH: Menggunakan batching frame agar tombol R tidak bikin nge-lag/freeze
     refBtn.MouseButton1Click:Connect(function()
-        for _, obj in ipairs(Workspace:GetDescendants()) do
-            processAndHookPart(obj)
-        end
-        updateRadarGuiContent()
-        notify("SCP Radar", "Radar Discan Ulang & Diperbarui!", 1.5)
+        task.spawn(function()
+            local allDescendants = Workspace:GetDescendants()
+            for i, obj in ipairs(allDescendants) do
+                processAndHookPart(obj)
+                if i % 40 == 0 then
+                    task.wait() -- Jeda per frame agar HP tidak ngadat
+                end
+            end
+            updateRadarGuiContent()
+            notify("SCP Radar", "Radar Discan Ulang & Diperbarui!", 1.5)
+        end)
     end)
 
     minBtn.MouseButton1Click:Connect(function()
@@ -1135,7 +1135,7 @@ task.spawn(function()
             local allDescendants = Workspace:GetDescendants()
             for i, obj in ipairs(allDescendants) do
                 processAndHookPart(obj)
-                if i % 50 == 0 then
+                if i % 40 == 0 then
                     task.wait()
                 end
             end
