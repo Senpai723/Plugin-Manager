@@ -2,14 +2,14 @@ return {
     Main = {
         {
             Name = "Interactable / ITP",
-            Desc = "Proximity, Door, Click, Touch & ITP",
+            Desc = "Memunculkan ESP Objek berdasarkan Promot, Touch, Click, Pintu atau Trigger",
             RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Interactable",
             SubFeatures = {
                 { Name = "ITP", Desc = "Memunculkan window berisikan list objek yang bisa diteleport", Cmd = "itp", UnCmd = "itp" },
-                { Name = "PPESP", Desc = "Memunculkan Box dan Nama ESP Objek yang di Pencet/Tekan", Cmd = "proximityesp", UnCmd = "unproximityesp", NeedInput = true },
-                { Name = "CDESP", Desc = "Memunculkan Box dan Nama ESP Objek yang di Klik", Cmd = "clickdetectoresp", UnCmd = "unclickdetectoresp", NeedInput = true },
-                { Name = "DESP", Desc = "Memuncukkan ESP sebuah Pintu", Cmd = "dooresp", UnCmd = "undooresp", NeedInput = true },
-                { Name = "ITESP", Desc = "Memunculkan Box dan Nama ESP yang di sentuh", Cmd = "itemtouchesp", UnCmd = "untouchinterestesp", NeedInput = true },
+                { Name = "PPESP", Desc = "Masukan 1 nama objek untuk filter, kosongkan kolom untuk mendeteksi semua Objek", Cmd = "proximityesp", UnCmd = "unproximityesp", NeedInput = true },
+                { Name = "CDESP", Desc = "Masukan 1 nama objek untuk filter, kosongkan kolom untuk mendeteksi semua Objek", Cmd = "clickdetectoresp", UnCmd = "unclickdetectoresp", NeedInput = true },
+                { Name = "DESP", Desc = "Masukan 1 nama objek untuk filter, kosongkan kolom untuk mendeteksi semua Objek", Cmd = "dooresp", UnCmd = "undooresp", NeedInput = true },
+                { Name = "ITESP", Desc = "Masukan 1 nama objek untuk filter, kosongkan kolom untuk mendeteksi semua Objek", Cmd = "itemtouchesp", UnCmd = "untouchinterestesp", NeedInput = true },
                -- { Name = "ITEM ESP", Desc = "Memunculkan Box dan Nama ESP Item dengan interact Custom", Cmd = "droppeditemesp", UnCmd = "undropesp" },
                 { Name = "TESP", Desc = "Memunculkan ESP Trigger / Scene Event", Cmd = "touchinterestesp", UnCmd = "untouchinterestesp" }
             }
