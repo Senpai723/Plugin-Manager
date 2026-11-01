@@ -139,8 +139,8 @@ return {
         {
             Name = "Click Inspector",
             Desc = "Untuk Mengetahui Jalur Path Parent-Cild sebuah Part",
-            Cmd = "clickinspector",
-            UnCmd = "unclickinspector",
+            Cmd = "mobileinspector",
+            UnCmd = "unmobileinspector",
             RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Tools/clickinspector.iy"
         },
         {
