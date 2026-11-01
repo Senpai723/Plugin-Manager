@@ -8,6 +8,12 @@ return function(speaker)
     end
     local featureStates = _G.MasterPluginHub_States
     
+    -- Menyimpan referensi semua tombol yang dibuat agar bisa di-update serentak
+    if not _G.MasterPluginHub_Buttons then
+        _G.MasterPluginHub_Buttons = {}
+    end
+    local activeButtons = _G.MasterPluginHub_Buttons
+
     local loadedModules = {}
 
     local oldCore = CoreGui:FindFirstChild("MasterPluginHub")
@@ -120,14 +126,11 @@ return function(speaker)
     SubMenuContainer.Visible = false
     SubMenuContainer.Parent = ContentArea
 
-    -- ==========================================
-    -- SISTEM TAB DINAMIS (Bisa digeser horizontal ala ITP)
-    -- ==========================================
     local tabDefinitions = {
         { Name = "Main",  DataKey = "Main" },
         { Name = "Tools", DataKey = "Tools" },
         { Name = "Horor", DataKey = "Horor" },
-        { Name = "Coming Soon",   DataKey = "PVP" }   -- Sekarang tab PVP dan seterusnya aman digeser ke samping!
+        { Name = "Coming Soon",   DataKey = "PVP" }
     }
 
     local totalTabs = #tabDefinitions
@@ -136,14 +139,12 @@ return function(speaker)
     local currentActiveScroll = nil
     local isCurrentlyInSubMenu = false
 
-    -- Tab Bar (Dibuat ScrollingFrame horizontal murni yang leluasa digeser)
     local TabBar = Instance.new("ScrollingFrame")
     TabBar.Size = UDim2.new(1, -12, 0, 26)
     TabBar.Position = UDim2.new(0, 6, 0, 36)
     TabBar.BackgroundTransparency = 1
     TabBar.BorderSizePixel = 0
     TabBar.ScrollBarThickness = 0 
-    -- Lebar canvas total diperlebar (tiap tab dikali 90 pixel supaya ada sisa buat digeser)
     TabBar.CanvasSize = UDim2.new(0, totalTabs * 90, 0, 0)
     TabBar.Parent = Frame
 
@@ -153,9 +154,7 @@ return function(speaker)
     TabBarLayout.Padding = UDim.new(0, 4)
     TabBarLayout.Parent = TabBar
 
-    -- Looping otomatis untuk membuat Tombol Tab dan Area Scroll
     for i, tabInfo in ipairs(tabDefinitions) do
-        -- 1. Buat Tombol Tab dengan lebar tetap (misal 85 pixel per tombol)
         local Btn = Instance.new("TextButton")
         Btn.Size = UDim2.new(0, 85, 1, 0) 
         Btn.BackgroundColor3 = (i == 1) and Color3.fromRGB(0, 150, 90) or Color3.fromRGB(50, 50, 55)
@@ -168,7 +167,6 @@ return function(speaker)
         Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 4)
         tabButtons[tabInfo.Name] = Btn
 
-        -- 2. Buat Area ScrollingFrame secara Otomatis
         local Scroll = Instance.new("ScrollingFrame")
         Scroll.Size = UDim2.new(1, 0, 1, 0)
         Scroll.BackgroundTransparency = 1
@@ -188,7 +186,6 @@ return function(speaker)
             currentActiveScroll = Scroll
         end
 
-        -- 3. Logika Interaksi Klik Tombol Tab
         Btn.MouseButton1Click:Connect(function()
             for _, otherBtn in pairs(tabButtons) do
                 otherBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 55)
@@ -300,6 +297,22 @@ return function(speaker)
         end)
     end
 
+    -- Fungsi helper untuk mengupdate tampilan semua tombol yang memiliki UniqueKey sama di seluruh tab
+    local function updateAllButtonStates(uniqueKey, isActive)
+        if not activeButtons[uniqueKey] then return end
+        for _, btnObj in ipairs(activeButtons[uniqueKey]) do
+            if btnObj and btnObj.Parent then
+                if isActive then
+                    btnObj.Text = "UNEXECUTE"
+                    btnObj.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+                else
+                    btnObj.Text = "EXECUTE"
+                    btnObj.BackgroundColor3 = Color3.fromRGB(0, 150, 90)
+                end
+            end
+        end
+    end
+
     local function showSubMenu(menuTitle, rawUrl, subFeatures)
         isCurrentlyInSubMenu = true
         for _, child in ipairs(SubMenuContainer:GetChildren()) do
@@ -341,7 +354,8 @@ return function(speaker)
         end)
 
         for _, subFeat in ipairs(subFeatures) do
-            if featureStates[subFeat.Name] == nil then featureStates[subFeat.Name] = false end
+            local uniqueKey = tostring(subFeat.RawUrl or rawUrl) .. "_" .. tostring(subFeat.Cmd)
+            if featureStates[uniqueKey] == nil then featureStates[uniqueKey] = false end
 
             local Item = Instance.new("Frame")
             Item.Size = UDim2.new(1, 0, 0, 52)
@@ -378,15 +392,19 @@ return function(speaker)
             local ExecSub = Instance.new("TextButton")
             ExecSub.Size = UDim2.new(0, 75, 0, 24)
             ExecSub.Position = UDim2.new(1, -80, 0, 14)
-            ExecSub.BackgroundColor3 = featureStates[subFeat.Name] and Color3.fromRGB(200, 50, 50) or Color3.fromRGB(0, 150, 90)
+            ExecSub.BackgroundColor3 = featureStates[uniqueKey] and Color3.fromRGB(200, 50, 50) or Color3.fromRGB(0, 150, 90)
             ExecSub.BorderSizePixel = 0
-            ExecSub.Text = featureStates[subFeat.Name] and "UNEXECUTE" or "EXECUTE"
+            ExecSub.Text = featureStates[uniqueKey] and "UNEXECUTE" or "EXECUTE"
             ExecSub.TextColor3 = Color3.fromRGB(255, 255, 255)
             ExecSub.Font = Enum.Font.GothamBold
             ExecSub.TextSize = 10
             ExecSub.Parent = Item
 
             Instance.new("UICorner", ExecSub).CornerRadius = UDim.new(0, 4)
+
+            -- Daftarkan tombol ke tracking global supaya tersinkronisasi
+            if not activeButtons[uniqueKey] then activeButtons[uniqueKey] = {} end
+            table.insert(activeButtons[uniqueKey], ExecSub)
 
             local hasUnCmd = subFeat.UnCmd and subFeat.UnCmd ~= ""
             if not hasUnCmd then
@@ -424,21 +442,15 @@ return function(speaker)
                     end)
 
                     if hasUnCmd then
-                        featureStates[subFeat.Name] = not featureStates[subFeat.Name]
-                        if featureStates[subFeat.Name] then
-                            ExecSub.Text = "UNEXECUTE"
-                            ExecSub.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-                        else
-                            ExecSub.Text = "EXECUTE"
-                            ExecSub.BackgroundColor3 = Color3.fromRGB(0, 150, 90)
-                        end
+                        featureStates[uniqueKey] = not featureStates[uniqueKey]
+                        updateAllButtonStates(uniqueKey, featureStates[uniqueKey])
                     else
-                        ExecSub.Text = "EXECUTE"
-                        ExecSub.BackgroundColor3 = Color3.fromRGB(0, 150, 90)
+                        featureStates[uniqueKey] = false
+                        updateAllButtonStates(uniqueKey, false)
                     end
                 end
 
-                local isCurrentlyActive = featureStates[subFeat.Name]
+                local isCurrentlyActive = featureStates[uniqueKey]
                 if isCurrentlyActive then
                     runCommand({}, true)
                 else
@@ -512,19 +524,25 @@ return function(speaker)
                     showSubMenu(item.Name, item.RawUrl, item.SubFeatures)
                 end)
             else
-                if featureStates[item.Name] == nil then featureStates[item.Name] = false end
+                -- Menggunakan kombinasi RawUrl + Cmd sebagai UniqueKey agar antar tab saling sinkron
+                local uniqueKey = tostring(item.RawUrl) .. "_" .. tostring(item.Cmd)
+                if featureStates[uniqueKey] == nil then featureStates[uniqueKey] = false end
 
                 local ExecBtn = Instance.new("TextButton")
                 ExecBtn.Size = UDim2.new(0, 75, 0, 24)
                 ExecBtn.Position = UDim2.new(1, -80, 0, 14)
-                ExecBtn.BackgroundColor3 = featureStates[item.Name] and Color3.fromRGB(200, 50, 50) or Color3.fromRGB(0, 150, 90)
+                ExecBtn.BackgroundColor3 = featureStates[uniqueKey] and Color3.fromRGB(200, 50, 50) or Color3.fromRGB(0, 150, 90)
                 ExecBtn.BorderSizePixel = 0
-                ExecBtn.Text = featureStates[item.Name] and "UNEXECUTE" or "EXECUTE"
+                ExecBtn.Text = featureStates[uniqueKey] and "UNEXECUTE" or "EXECUTE"
                 ExecBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
                 ExecBtn.Font = Enum.Font.GothamBold
                 ExecBtn.TextSize = 10
                 ExecBtn.Parent = ItemFrame
                 Instance.new("UICorner", ExecBtn).CornerRadius = UDim.new(0, 4)
+
+                -- Daftarkan tombol ke tracking global supaya tersinkronisasi
+                if not activeButtons[uniqueKey] then activeButtons[uniqueKey] = {} end
+                table.insert(activeButtons[uniqueKey], ExecBtn)
 
                 local hasUnCmd = item.UnCmd and item.UnCmd ~= ""
                 if not hasUnCmd then
@@ -559,21 +577,15 @@ return function(speaker)
                         end)
 
                         if hasUnCmd then
-                            featureStates[item.Name] = not featureStates[item.Name]
-                            if featureStates[item.Name] then
-                                ExecBtn.Text = "UNEXECUTE"
-                                ExecBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-                            else
-                                ExecBtn.Text = "EXECUTE"
-                                ExecBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 90)
-                            end
+                            featureStates[uniqueKey] = not featureStates[uniqueKey]
+                            updateAllButtonStates(uniqueKey, featureStates[uniqueKey])
                         else
-                            ExecBtn.Text = "EXECUTE"
-                            ExecBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 90)
+                            featureStates[uniqueKey] = false
+                            updateAllButtonStates(uniqueKey, false)
                         end
                     end
 
-                    local isCurrentlyActive = featureStates[item.Name]
+                    local isCurrentlyActive = featureStates[uniqueKey]
                     if isCurrentlyActive then
                         runDirectCommand({}, true)
                     else
@@ -595,16 +607,12 @@ return function(speaker)
         targetParentScroll.CanvasSize = UDim2.new(0, 0, 0, #menuList * 57)
     end
 
-    -- ==========================================
-    -- FETCH LOADER.LUA SECARA OTOMATIS
-    -- ==========================================
     local configOk, configErr = xpcall(function()
         local configUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Loader.lua"
         local source = game:HttpGet(configUrl)
         local chunk = loadstring(source)
         local data = chunk()
 
-        -- Looping otomatis membaca data berdasarkan tabDefinitions di atas
         for _, tabInfo in ipairs(tabDefinitions) do
             if data[tabInfo.DataKey] and tabScrolls[tabInfo.Name] then
                 renderMenuCategory(data[tabInfo.DataKey], tabScrolls[tabInfo.Name])
