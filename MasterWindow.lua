@@ -130,7 +130,7 @@ return function(speaker)
         { Name = "Main",  DataKey = "Main" },
         { Name = "Tools", DataKey = "Tools" },
         { Name = "Horor", DataKey = "Horor" },
-        { Name = "Coming Soon",   DataKey = "PVP" }
+        { Name = "Gunung",   DataKey = "Gunung" }
     }
 
     local totalTabs = #tabDefinitions
