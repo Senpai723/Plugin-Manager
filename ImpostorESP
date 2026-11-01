@@ -1,0 +1,183 @@
+local function startImpostorESP()
+    local Players = game:GetService("Players")
+    local RunService = game:GetService("RunService")
+    local LocalPlayer = Players.LocalPlayer
+
+    if not LocalPlayer then return end
+
+    -- Cek apakah sudah berjalan sebelumnya untuk mencegah double loop
+    if LocalPlayer:FindFirstChild("IMPOSTOR_ESP_RUNNING") then
+        print("ImpostorESP sudah aktif!")
+        return
+    end
+
+    local marker = Instance.new("BoolValue")
+    marker.Name = "IMPOSTOR_ESP_RUNNING"
+    marker.Parent = LocalPlayer
+
+    print("Loading ImpostorESP (Independent Mode)...")
+
+    local CREW_COLOR = Color3.fromRGB(0, 255, 0)      -- Hijau (Crew / Warga)
+    local IMPOSTOR_COLOR = Color3.fromRGB(255, 0, 0)   -- Merah (Impostor / Killer / Traitor)
+
+    local function getRoleColor(player)
+        if not player then return CREW_COLOR end
+
+        -- 1. Cek berdasarkan Team Name
+        if player.Team then
+            local tName = player.Team.Name:lower()
+            if string.find(tName, "impostor") 
+                or string.find(tName, "murderer") 
+                or string.find(tName, "traitor") 
+                or string.find(tName, "killer") then
+                return IMPOSTOR_COLOR
+            end
+        end
+
+        -- 2. Cek berdasarkan Attribute Role
+        local roleAttr = player:GetAttribute("Role") or player:GetAttribute("Team") or player:GetAttribute("Status")
+        if typeof(roleAttr) == "string" then
+            local r = roleAttr:lower()
+            if string.find(r, "impostor") or string.find(r, "murderer") or string.find(r, "traitor") or string.find(r, "killer") then
+                return IMPOSTOR_COLOR
+            end
+        end
+
+        if player:GetAttribute("IsImpostor") == true 
+            or player:GetAttribute("Impostor") == true 
+            or player:GetAttribute("IsMurderer") == true then
+            return IMPOSTOR_COLOR
+        end
+
+        return CREW_COLOR
+    end
+
+    local function removeESP(character)
+        if not character then return end
+        local hl = character:FindFirstChild("Imp_HL")
+        if hl then hl:Destroy() end
+        local bg = character:FindFirstChild("Imp_Name")
+        if bg then bg:Destroy() end
+    end
+
+    local function applyESP(character, player)
+        if not character or not player or player == LocalPlayer then return end
+
+        local color = getRoleColor(player)
+
+        -- Highlight Badan
+        local hl = character:FindFirstChild("Imp_HL")
+        if not hl then
+            hl = Instance.new("Highlight")
+            hl.Name = "Imp_HL"
+            hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+            hl.FillTransparency = 0.65
+            hl.OutlineTransparency = 0
+            hl.Parent = character
+        end
+        hl.Adornee = character
+        hl.FillColor = color
+        hl.OutlineColor = color
+        hl.Enabled = true
+
+        -- Name ESP (Infinite Distance)
+        local head = character:FindFirstChild("Head") or character:FindFirstChild("HumanoidRootPart")
+        local bg = character:FindFirstChild("Imp_Name")
+        if not bg and head then
+            bg = Instance.new("BillboardGui")
+            bg.Name = "Imp_Name"
+            bg.Size = UDim2.new(0, 220, 0, 35)
+            bg.StudsOffset = Vector3.new(0, 3, 0)
+            bg.AlwaysOnTop = true
+            bg.MaxDistance = math.huge
+            bg.Adornee = head
+            bg.Parent = character
+
+            local label = Instance.new("TextLabel")
+            label.Name = "NameLabel"
+            label.BackgroundTransparency = 1
+            label.Size = UDim2.new(1, 0, 1, 0)
+            label.Font = Enum.Font.SourceSansBold
+            label.TextSize = 14
+            label.TextStrokeTransparency = 0
+            label.TextStrokeColor3 = Color3.new(0, 0, 0)
+            label.Parent = bg
+        end
+
+        if bg then
+            bg.Enabled = true
+            local label = bg:FindFirstChild("NameLabel")
+            if label then
+                label.Text = player.DisplayName or player.Name
+                label.TextColor3 = color
+            end
+        end
+    end
+
+    -- Initial load untuk player yang sudah ada di server
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character then
+            applyESP(player.Character, player)
+        end
+    end
+
+    -- Loop berkala untuk update warna otomatis jika role berubah (misal round mulai)
+    local heartbeatConn
+    heartbeatConn = RunService.Heartbeat:Connect(function()
+        if not marker.Parent then
+            if heartbeatConn then heartbeatConn:Disconnect() end
+            return
+        end
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer and player.Character then
+                applyESP(player.Character, player)
+            end
+        end
+    end)
+end
+
+local function stopImpostorESP()
+    local Players = game:GetService("Players")
+    local LocalPlayer = Players.LocalPlayer
+    if not LocalPlayer then return end
+
+    local marker = LocalPlayer:FindFirstChild("IMPOSTOR_ESP_RUNNING")
+    if marker then
+        marker:Destroy()
+    end
+
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player.Character then
+            local hl = player.Character:FindFirstChild("Imp_HL")
+            if hl then hl:Destroy() end
+            local bg = player.Character:FindFirstChild("Imp_Name")
+            if bg then bg:Destroy() end
+        end
+    end
+    print("ImpostorESP dimatikan.")
+end
+
+local Plugin = {
+    ["PluginName"] = "ImpostorESP",
+    ["PluginDescription"] = "Independent Among Us Role ESP (Green for Crew, Red for Impostor).",
+    ["Commands"] = {
+        ["imposon"] = {
+            ["ListName"] = "imposon",
+            ["Description"] = "Menyalakan Role ESP (Impostor Merah, Crew Hijau).",
+            ["Aliases"] = {"imposon"},
+            ["Function"] = function(args, speaker)
+                startImpostorESP()
+            end
+        },
+        ["imposoff"] = {
+            ["ListName"] = "imposoff",
+            ["Description"] = "Mematikan Role ESP.",
+            ["Aliases"] = {"imposoff"},
+            ["Function"] = function(args, speaker)
+                stopImpostorESP()
+            end
+        }
+    }
+}
+
+return Plugin
