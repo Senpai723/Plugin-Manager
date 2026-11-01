@@ -102,13 +102,15 @@ local Plugin = {
                         Camera.CameraSubject = foundTarget.Character.Humanoid
                         Camera.CameraType = Enum.CameraType.Custom
                         
-                        -- TAMBAHAN: Pindahkan karakter lokal mendekati target supaya bisa diklik/interaksi
+                        -- Pindahkan karakter lokal mendekati target supaya bisa diklik/interaksi
                         if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") and foundTarget.Character:FindFirstChild("HumanoidRootPart") then
                             LocalPlayer.Character.HumanoidRootPart.CFrame = foundTarget.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3)
                         end
                     end
                 end)
 
+                print("[Spectate] Sedang melihat player: " .. foundTarget.Name)
+            end
         },
         ["unspectate"] = {
             ["ListName"] = "unspectate",
