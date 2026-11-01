@@ -211,5 +211,53 @@ return {
             UnCmd = "",
             RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Tools/CodeFinder"
         }
+    },
+
+    Gunung = {
+        {
+            Name = "Teleport",
+            Desc = "Waypoint & Teleport",
+            RawUrl = "",
+            SubFeatures = {
+                { Name = "Radar Checkpoint", Desc = "Menampilkan Checkpoint yang belum di sentuh", Cmd = "scp", UnCmd = "scp_close", RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Waypoint" },
+                { Name = "CP & Waypoint", Desc = "Menampilkan Checkpoint atau Waypoint", Cmd = "cpn", UnCmd = "cpn_close", RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Waypoint" },
+                { Name = "Teleport to Player", Desc = "Teleport ke player dengan 1 klik", Cmd = "tp", UnCmd = "", RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/PlayerTeleport" }
+            }
+        },
+        {
+            Name = "Sound & View Manage",
+            Desc = "Mengatur suara di map dan memutar Lagu",
+            RawUrl = "",
+            SubFeatures = {
+                { Name = "Spectator", Desc = "Menonton dan menguping target dari jauh", Cmd = "spectate", UnCmd = "unspectate", NeedInput = true, RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/SoundManage" },
+                { Name = "Mute Sound", Desc = "Membisukan suara Latar Belakang Map", Cmd = "mutesound", UnCmd = "unmutesound", RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/SoundManage" },
+                { Name = "Play Music", Desc = "Mendengarkan musik", Cmd = "playmusic", UnCmd = "stopmusic", NeedInput = true, RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/MusicTimeML" }
+            }
+        },
+        {
+            Name = "ESP Player",
+            Desc = "Player & Enemy ESP",
+            RawUrl = "",
+            SubFeatures = {
+                { Name = "PESP", Desc = "Menampilkan ESP Body dan mama Player", Cmd = "pesp", UnCmd = "unloadColorESP", RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/colorESP" },
+                { Name = "EESP", Desc = "Menampilkan ESP Musuh dan NPC", Cmd = "eesp", UnCmd = "unloadColorESP", RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/colorESP" },
+            --    { Name = "Impostor ESP", Desc = "Untuk menmunculkan ESP di game seperti Among Us", Cmd = "imposon", UnCmd = "imposoff", RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/ImpostorESP" }
+            }
+        },
+        {
+            Name = "Walk Speed",
+            Desc = "Masukan angka speed yang kami mau, misal 20 ( tergantung map )",
+            Cmd = "ws",
+            UnCmd = "unws",
+            NeedInput = true,
+            RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Tools/WalkSpeed"
+        },
+        {
+            Name = "Infinite Jump",
+            Desc = "Melompat tanpa batas dan Melampauinyaaaa...",
+            Cmd = "infjump",
+            UnCmd = "uninfjump",
+            RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Tools/InfiniteJump"
+        }
     }
 }
