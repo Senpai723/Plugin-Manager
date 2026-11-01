@@ -15,12 +15,15 @@ local function startImpostorESP()
     marker.Name = "IMPOSTOR_ESP_RUNNING"
     marker.Parent = LocalPlayer
 
-    print("Loading ImpostorESP v3 (Bot Folder & Status Scanner)...")
+    print("Loading ImpostorESP v4 (Strict Local Exclusion & Deep Bot Scan)...")
 
     local CREW_COLOR = Color3.fromRGB(0, 255, 0)      -- Hijau (Crew / Warga)
     local IMPOSTOR_COLOR = Color3.fromRGB(255, 0, 0)   -- Merah (Impostor / Killer)
 
     local function checkIsImpostor(targetObject, player)
+        -- Jangan pernah anggap LocalPlayer sebagai Impostor untuk ESP musuh
+        if player and player == LocalPlayer then return false end
+
         -- 1. Cek jika Player
         if player then
             if player.Team then
@@ -35,27 +38,33 @@ local function startImpostorESP()
             end
         end
 
-        -- 2. Cek Model Bot (Berdasarkan struktur Dex: Workspace -> Bots -> Bot_Name -> Humanoid -> Status)
+        -- 2. Cek Model Bot (Scan menyeluruh ke semua anak objek & attribute di dalam model bot)
         if targetObject and targetObject:IsA("Model") then
-            local humanoid = targetObject:FindFirstChildOfClass("Humanoid")
-            if humanoid then
-                -- Cek Objek "Status" di dalam Humanoid (bisa Value object atau Attribute)
-                local statusObj = humanoid:FindFirstChild("Status")
-                if statusObj then
-                    local valText = ""
-                    if statusObj:IsA("StringValue") or statusObj:IsA("ValueBase") then
-                        valText = tostring(statusObj.Value):lower()
-                    end
-                    if string.find(valText, "impostor") or string.find(valText, "murderer") or string.find(valText, "killer") or string.find(valText, "traitor") then
+            -- Pastikan bukan karakter LocalPlayer
+            if LocalPlayer.Character and targetObject == LocalPlayer.Character then
+                return false
+            end
+
+            -- Scan semua Attributes di model bot
+            for _, attrVal in pairs(targetObject:GetAttributes()) do
+                if typeof(attrVal) == "string" then
+                    local val = attrVal:lower()
+                    if string.find(val, "impostor") or string.find(val, "murderer") or string.find(val, "killer") then
                         return true
                     end
                 end
+            end
 
-                -- Cek Attribute Status/Role di Humanoid atau Model
-                local attrStatus = humanoid:GetAttribute("Status") or humanoid:GetAttribute("Role") or targetObject:GetAttribute("Status") or targetObject:GetAttribute("Role")
-                if typeof(attrStatus) == "string" then
-                    local s = attrStatus:lower()
-                    if string.find(s, "impostor") or string.find(s, "murderer") or string.find(s, "killer") then
+            -- Scan semua objek Value (StringValue, BoolValue, dll) di dalam model bot
+            for _, desc in ipairs(targetObject:GetDescendants()) do
+                if desc:IsA("StringValue") or desc:IsA("TextValue") or desc:IsA("ValueBase") then
+                    local textVal = tostring(desc.Value):lower()
+                    if string.find(textVal, "impostor") or string.find(textVal, "murderer") or string.find(textVal, "killer") then
+                        return true
+                    end
+                elseif desc:IsA("TextLabel") or desc:IsA("TextButton") then
+                    local tText = desc.Text:lower()
+                    if string.find(tText, "impostor") or string.find(tText, "murderer") then
                         return true
                     end
                 end
@@ -71,16 +80,26 @@ local function startImpostorESP()
         return false
     end
 
+    local function removeESP(character)
+        if not character then return end
+        local hl = character:FindFirstChild("Imp_HL")
+        if hl then hl:Destroy() end
+        local bg = character:FindFirstChild("Imp_Name")
+        if bg then bg:Destroy() end
+    end
+
     local function applyESP(character, player)
         if not character or not character.Parent then return end
-        if LocalPlayer.Character and character == LocalPlayer.Character then return end
+
+        -- JAMINAN: Karakter LocalPlayer (lu sendiri) dibersihkan total dari ESP
+        if (player and player == LocalPlayer) or (LocalPlayer.Character and character == LocalPlayer.Character) then
+            removeESP(character)
+            return
+        end
 
         local humanoid = character:FindFirstChildOfClass("Humanoid")
         if not humanoid or humanoid.Health <= 0 then
-            local hl = character:FindFirstChild("Imp_HL")
-            if hl then hl:Destroy() end
-            local bg = character:FindFirstChild("Imp_Name")
-            if bg then bg:Destroy() end
+            removeESP(character)
             return
         end
 
@@ -144,14 +163,19 @@ local function startImpostorESP()
             return
         end
 
-        -- 1. Scan Player biasa
+        -- Pastikan LocalPlayer bersih dari ESP
+        if LocalPlayer.Character then
+            removeESP(LocalPlayer.Character)
+        end
+
+        -- 1. Scan Player lain
         for _, player in ipairs(Players:GetPlayers()) do
             if player ~= LocalPlayer and player.Character then
                 applyESP(player.Character, player)
             end
         end
 
-        -- 2. Scan Folder "Bots" di Workspace (Sesuai penampakan Dex lu)
+        -- 2. Scan Folder "Bots" di Workspace
         local botsFolder = Workspace:FindFirstChild("Bots")
         if botsFolder then
             for _, botModel in ipairs(botsFolder:GetChildren()) do
@@ -161,7 +185,7 @@ local function startImpostorESP()
             end
         end
 
-        -- Backup: Scan umum kalau bot ada di luar folder Bots tapi punya Humanoid
+        -- 3. Scan umum model lain di Workspace
         for _, obj in ipairs(Workspace:GetChildren()) do
             if obj:IsA("Model") and obj:FindFirstChildOfClass("Humanoid") then
                 if not Players:GetPlayerFromCharacter(obj) and obj.Name ~= "Bots" then
@@ -194,12 +218,12 @@ local function stopImpostorESP()
 end
 
 local Plugin = {
-    ["PluginName"] = "ImpostorESP v3",
-    ["PluginDescription"] = "Among Us Role ESP for Players and Workspace.Bots folder.",
+    ["PluginName"] = "ImpostorESP v4",
+    ["PluginDescription"] = "Among Us Role ESP with LocalPlayer Exclusion & Deep Bot Scan.",
     ["Commands"] = {
         ["imposon"] = {
             ["ListName"] = "imposon",
-            ["Description"] = "Menyalakan Role ESP (Support Bots Folder & Status).",
+            ["Description"] = "Menyalakan Role ESP (Karakter Sendiri Bersih, Bot & Player Lain Ter-scan).",
             ["Aliases"] = {"imposon"},
             ["Function"] = function(args, speaker)
                 startImpostorESP()
