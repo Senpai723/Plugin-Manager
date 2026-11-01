@@ -10,7 +10,8 @@ _G.__SpectateState = _G.__SpectateState or {
     isSpectating = false,
     spectateTarget = nil,
     originalSubject = nil,
-    originalCameraType = nil
+    originalCameraType = nil,
+    targetIndex = 0
 }
 
 _G.__VoiceSpyMuteState = _G.__VoiceSpyMuteState or {
@@ -60,28 +61,45 @@ end
 
 local Plugin = {
     ["PluginName"] = "Spectate & MuteManager",
-    ["PluginDescription"] = "Spectate player target untuk memantau & mendengar suara, serta kelola suara map",
+    ["PluginDescription"] = "Spectate player target atau cycle player secara otomatis",
     ["Commands"] = {
         ["spectate"] = {
-            ["ListName"] = "spectate [nama_player]",
-            ["Description"] = "Melihat dan mendengarkan player target dari kejauhan secara 3D bebas",
+            ["ListName"] = "spectate [nama_player (opsional)]",
+            ["Description"] = "Spectate target spesifik atau kosongkan nama untuk cycle player otomatis",
             ["Aliases"] = {"spec", "view"},
             ["Function"] = function(args, speaker)
                 local targetName = args[1]
-                if not targetName or targetName == "" then
-                    print("[Spectate] Masukkan nama player target!")
+                local otherPlayers = {}
+
+                for _, p in ipairs(Players:GetPlayers()) do
+                    if p ~= LocalPlayer then
+                        table.insert(otherPlayers, p)
+                    end
+                end
+
+                if #otherPlayers == 0 then
+                    print("[Spectate] Tidak ada player lain di server!")
                     return
                 end
 
                 local foundTarget = nil
-                local targetLower = string.lower(targetName)
 
-                for _, p in ipairs(Players:GetPlayers()) do
-                    if p ~= LocalPlayer then
+                -- OPSI 1: Jika nama player TIDAK diisi, lakukan Cycle otomatis ke player berikutnya
+                if not targetName or targetName == "" then
+                    state.targetIndex = state.targetIndex + 1
+                    if state.targetIndex > #otherPlayers then
+                        state.targetIndex = 1
+                    end
+                    foundTarget = otherPlayers[state.targetIndex]
+                else
+                    -- OPSI 2: Cari berdasarkan nama yang diinput user
+                    local targetLower = string.lower(targetName)
+                    for i, p in ipairs(otherPlayers) do
                         local pName = string.lower(p.Name)
                         local pDisp = string.lower(p.DisplayName or "")
                         if pName == targetLower or pDisp == targetLower or string.find(pName, targetLower, 1, true) or string.find(pDisp, targetLower, 1, true) then
                             foundTarget = p
+                            state.targetIndex = i
                             break
                         end
                     end
@@ -99,13 +117,12 @@ local Plugin = {
 
                 pcall(function()
                     if foundTarget.Character and foundTarget.Character:FindFirstChild("Humanoid") then
-                        -- Fokuskan kamera ke Humanoid target agar jadi 3D orbit bebas tanpa merusak karakter lokal
                         Camera.CameraSubject = foundTarget.Character.Humanoid
                         Camera.CameraType = Enum.CameraType.Custom
                     end
                 end)
 
-                print("[Spectate] Sedang melihat player: " + foundTarget.Name)
+                print("[Spectate] Sedang melihat player: " .. foundTarget.Name .. " (Ketik 'spectate' lagi untuk pindah ke player lain)")
             end
         },
         ["unspectate"] = {
@@ -115,8 +132,8 @@ local Plugin = {
             ["Function"] = function(args, speaker)
                 state.isSpectating = false
                 state.spectateTarget = nil
+                state.targetIndex = 0
                 
-                -- Kembalikan kamera ke karakter lokal
                 pcall(function()
                     Camera.CameraType = Enum.CameraType.Custom
                     if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
