@@ -127,10 +127,10 @@ return function(speaker)
     SubMenuContainer.Parent = ContentArea
 
     local tabDefinitions = {
-        { Name = "Main",  DataKey = "Main" },
+        { Name = "Main", DataKey = "Main" },
         { Name = "Tools", DataKey = "Tools" },
         { Name = "Horor", DataKey = "Horor" },
-        { Name = "Gunung",   DataKey = "Gunung" }
+        { Name = "Gunung", DataKey = "Gunung" }
     }
 
     local totalTabs = #tabDefinitions
