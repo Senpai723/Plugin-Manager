@@ -99,17 +99,13 @@ local Plugin = {
 
                 pcall(function()
                     if foundTarget.Character and foundTarget.Character:FindFirstChild("Humanoid") then
+                        -- Fokuskan kamera ke Humanoid target agar jadi 3D orbit bebas tanpa merusak karakter lokal
                         Camera.CameraSubject = foundTarget.Character.Humanoid
                         Camera.CameraType = Enum.CameraType.Custom
-                        
-                        -- Pindahkan karakter lokal mendekati target supaya bisa diklik/interaksi
-                        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") and foundTarget.Character:FindFirstChild("HumanoidRootPart") then
-                            LocalPlayer.Character.HumanoidRootPart.CFrame = foundTarget.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3)
-                        end
                     end
                 end)
 
-                print("[Spectate] Sedang melihat player: " .. foundTarget.Name)
+                print("[Spectate] Sedang melihat player: " + foundTarget.Name)
             end
         },
         ["unspectate"] = {
