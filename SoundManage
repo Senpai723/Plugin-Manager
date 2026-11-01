@@ -2,6 +2,7 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local SoundService = game:GetService("SoundService")
 local Workspace = game:GetService("Workspace")
+local CoreGui = game:GetService("CoreGui")
 local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
 
@@ -9,9 +10,9 @@ local Camera = Workspace.CurrentCamera
 _G.__SpectateState = _G.__SpectateState or {
     isSpectating = false,
     spectateTarget = nil,
-    originalSubject = nil,
-    originalCameraType = nil,
-    targetIndex = 0
+    targetIndex = 1,
+    conn = nil,
+    uiGui = nil
 }
 
 _G.__VoiceSpyMuteState = _G.__VoiceSpyMuteState or {
@@ -59,91 +60,240 @@ local function applyMute(sound)
     end
 end
 
+-- FUNGSI UNTUK MEMBUAT UI TOMBOL PANAH KIRI KANAN & NAMA PLAYER
+local nameLabelRef = nil
+
+local function createSpectateUI(onPrev, onNext, onExit)
+    if state.uiGui then
+        state.uiGui:Destroy()
+        state.uiGui = nil
+    end
+
+    local ScreenGui = Instance.new("ScreenGui")
+    ScreenGui.Name = "SpectateOverlayUI"
+    ScreenGui.ResetOnSpawn = false
+    
+    local parentOk = pcall(function()
+        ScreenGui.Parent = CoreGui
+    end)
+    if not parentOk then
+        ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+    end
+
+    local MainContainer = Instance.new("Frame")
+    MainContainer.Size = UDim2.new(0, 320, 0, 50)
+    MainContainer.Position = UDim2.new(0.5, -160, 1, -80)
+    MainContainer.BackgroundTransparency = 1
+    MainContainer.Parent = ScreenGui
+
+    -- Tombol Kiri (<)
+    local PrevBtn = Instance.new("TextButton")
+    PrevBtn.Size = UDim2.new(0, 50, 0, 40)
+    PrevBtn.Position = UDim2.new(0, 0, 0, 5)
+    PrevBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    PrevBtn.BackgroundTransparency = 0.3
+    PrevBtn.BorderSizePixel = 0
+    PrevBtn.Font = Enum.Font.GothamBold
+    PrevBtn.Text = "<"
+    PrevBtn.TextColor3 = Color3.fromRGB(0, 255, 150)
+    PrevBtn.TextSize = 20
+    PrevBtn.Parent = MainContainer
+    Instance.new("UICorner", PrevBtn).CornerRadius = UDim.new(0, 8)
+
+    -- Kotak Nama Player di Tengah
+    local NameBox = Instance.new("Frame")
+    NameBox.Size = UDim2.new(0, 190, 0, 40)
+    NameBox.Position = UDim2.new(0, 55, 0, 5)
+    NameBox.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    NameBox.BackgroundTransparency = 0.3
+    NameBox.BorderSizePixel = 0
+    NameBox.Parent = MainContainer
+    Instance.new("UICorner", NameBox).CornerRadius = UDim.new(0, 8)
+
+    local NameLabel = Instance.new("TextLabel")
+    NameLabel.Size = UDim2.new(1, 0, 1, 0)
+    NameLabel.BackgroundTransparency = 1
+    NameLabel.Font = Enum.Font.GothamBold
+    NameLabel.Text = "Menunggu Target..."
+    NameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    NameLabel.TextSize = 14
+    NameLabel.Parent = NameBox
+    nameLabelRef = NameLabel
+
+    -- Tombol Kanan (>)
+    local NextBtn = Instance.new("TextButton")
+    NextBtn.Size = UDim2.new(0, 50, 0, 40)
+    NextBtn.Position = UDim2.new(1, -50, 0, 5)
+    NextBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    NextBtn.BackgroundTransparency = 0.3
+    NextBtn.BorderSizePixel = 0
+    NextBtn.Font = Enum.Font.GothamBold
+    NextBtn.Text = ">"
+    NextBtn.TextColor3 = Color3.fromRGB(0, 255, 150)
+    NextBtn.TextSize = 20
+    NextBtn.Parent = MainContainer
+    Instance.new("UICorner", NextBtn).CornerRadius = UDim.new(0, 8)
+
+    PrevBtn.MouseButton1Click:Connect(onPrev)
+    NextBtn.MouseButton1Click:Connect(onNext)
+
+    state.uiGui = ScreenGui
+end
+
+local function updateSpectateUItext(text)
+    if nameLabelRef and nameLabelRef.Parent then
+        nameLabelRef.Text = text
+    end
+end
+
+local function stopSpectate()
+    state.isSpectating = false
+    state.spectateTarget = nil
+
+    if state.conn then
+        state.conn:Disconnect()
+        state.conn = nil
+    end
+
+    if state.uiGui then
+        state.uiGui:Destroy()
+        state.uiGui = nil
+    end
+
+    pcall(function()
+        Camera.CameraType = Enum.CameraType.Custom
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+            Camera.CameraSubject = LocalPlayer.Character.Humanoid
+        end
+    end)
+    print("[Spectate] Keluar dari mode spectate.")
+end
+
+local function startSpectate(targetPlayer)
+    if not targetPlayer or not targetPlayer.Character then
+        print("[Spectate] Target tidak valid!")
+        return
+    end
+
+    state.spectateTarget = targetPlayer
+    state.isSpectating = true
+
+    updateSpectateUItext(targetPlayer.Name)
+
+    if state.conn then
+        state.conn:Disconnect()
+    end
+
+    -- Gunakan RenderStepped agar kamera mengikuti posisi target tapi bebas digeser 3D
+    Camera.CameraType = Enum.CameraType.Custom
+    state.conn = RunService.RenderStepped:Connect(function()
+        if not state.isSpectating or not state.spectateTarget or not state.spectateTarget.Character then
+            return
+        end
+        local char = state.spectateTarget.Character
+        local head = char:FindFirstChild("Head") or char:FindFirstChild("HumanoidRootPart")
+        if head then
+            -- Set CameraSubject ke Humanoid target supaya bebas diputar-putar
+            local hum = char:FindFirstChild("Humanoid")
+            if hum and Camera.CameraSubject ~= hum then
+                Camera.CameraSubject = hum
+            end
+        end
+    end)
+
+    print("[Spectate] Sedang melihat: " .. targetPlayer.Name)
+end
+
+local function getOtherPlayers()
+    local list = {}
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer then
+            table.insert(list, p)
+        end
+    end
+    return list
+end
+
+local function cycleTarget(direction)
+    local players = getOtherPlayers()
+    if #players == 0 then return end
+
+    -- Cari index target saat ini
+    local currentIndex = 1
+    for i, p in ipairs(players) do
+        if p == state.spectateTarget then
+            currentIndex = i
+            break
+        end
+    end
+
+    currentIndex = currentIndex + direction
+    if currentIndex > #players then
+        currentIndex = 1
+    elseif currentIndex < 1 then
+        currentIndex = #players
+    end
+
+    startSpectate(players[currentIndex])
+end
+
 local Plugin = {
     ["PluginName"] = "Spectate & MuteManager",
-    ["PluginDescription"] = "Spectate player target atau cycle player secara otomatis",
+    ["PluginDescription"] = "Spectate player dengan UI tombol panah interaktif",
     ["Commands"] = {
         ["spectate"] = {
             ["ListName"] = "spectate [nama_player (opsional)]",
-            ["Description"] = "Spectate target spesifik atau kosongkan nama untuk cycle player otomatis",
+            ["Description"] = "Spectate target dengan tombol UI interaktif kiri/kanan",
             ["Aliases"] = {"spec", "view"},
             ["Function"] = function(args, speaker)
                 local targetName = args[1]
-                local otherPlayers = {}
+                local players = getOtherPlayers()
 
-                for _, p in ipairs(Players:GetPlayers()) do
-                    if p ~= LocalPlayer then
-                        table.insert(otherPlayers, p)
-                    end
-                end
-
-                if #otherPlayers == 0 then
+                if #players == 0 then
                     print("[Spectate] Tidak ada player lain di server!")
                     return
                 end
 
                 local foundTarget = nil
 
-                -- OPSI 1: Jika nama player TIDAK diisi, lakukan Cycle otomatis ke player berikutnya
                 if not targetName or targetName == "" then
-                    state.targetIndex = state.targetIndex + 1
-                    if state.targetIndex > #otherPlayers then
-                        state.targetIndex = 1
+                    -- Kalau cuma ketik 'spectate', ambil player pertama atau lanjutkan yang aktif
+                    if state.spectateTarget then
+                        foundTarget = state.spectateTarget
+                    else
+                        foundTarget = players[1]
                     end
-                    foundTarget = otherPlayers[state.targetIndex]
                 else
-                    -- OPSI 2: Cari berdasarkan nama yang diinput user
                     local targetLower = string.lower(targetName)
-                    for i, p in ipairs(otherPlayers) do
-                        local pName = string.lower(p.Name)
-                        local pDisp = string.lower(p.DisplayName or "")
-                        if pName == targetLower or pDisp == targetLower or string.find(pName, targetLower, 1, true) or string.find(pDisp, targetLower, 1, true) then
+                    for _, p in ipairs(players) do
+                        if string.find(string.lower(p.Name), targetLower, 1, true) or string.find(string.lower(p.DisplayName or ""), targetLower, 1, true) then
                             foundTarget = p
-                            state.targetIndex = i
                             break
                         end
                     end
                 end
 
                 if not foundTarget then
-                    print("[Spectate] Player '" .. tostring(targetName) .. "' tidak ditemukan!")
+                    print("[Spectate] Player tidak ditemukan!")
                     return
                 end
 
-                state.spectateTarget = foundTarget
-                state.isSpectating = true
-                state.originalCameraType = Camera.CameraType
-                state.originalSubject = Camera.CameraSubject
+                -- Munculkan UI Overlay Tombol Kiri-Kanan
+                createSpectateUI(
+                    function() cycleTarget(-1) end, -- Tombol Kiri (Prev)
+                    function() cycleTarget(1)  end, -- Tombol Kanan (Next)
+                    function() stopSpectate()  end  -- Tombol Keluar (opsional)
+                )
 
-                pcall(function()
-                    if foundTarget.Character and foundTarget.Character:FindFirstChild("Humanoid") then
-                        Camera.CameraSubject = foundTarget.Character.Humanoid
-                        Camera.CameraType = Enum.CameraType.Custom
-                    end
-                end)
-
-                print("[Spectate] Sedang melihat player: " .. foundTarget.Name .. " (Ketik 'spectate' lagi untuk pindah ke player lain)")
+                startSpectate(foundTarget)
             end
         },
         ["unspectate"] = {
             ["ListName"] = "unspectate",
-            ["Description"] = "Keluar dari mode spectate dan kembali ke karakter sendiri",
+            ["Description"] = "Keluar dari mode spectate",
             ["Aliases"] = {"unspec", "backview"},
             ["Function"] = function(args, speaker)
-                state.isSpectating = false
-                state.spectateTarget = nil
-                state.targetIndex = 0
-                
-                pcall(function()
-                    Camera.CameraType = Enum.CameraType.Custom
-                    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-                        Camera.CameraSubject = LocalPlayer.Character.Humanoid
-                    elseif state.originalSubject then
-                        Camera.CameraSubject = state.originalSubject
-                    end
-                end)
-
-                print("[Spectate] Kamera dikembalikan ke karakter sendiri.")
+                stopSpectate()
             end
         },
         ["mutesound"] = {
