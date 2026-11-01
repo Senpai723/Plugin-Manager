@@ -1,7 +1,7 @@
--- Mobile Click Inspector & JSON Exporter (Optimized for Mobile)
+-- Mobile Click Inspector & JSON Exporter (Optimized with Map Nameing)
 local Plugin = {
     PluginName = 'Mobile Click Inspector',
-    PluginDescription = 'Simple touch inspector & JSON exporter optimized for mobile devices.',
+    PluginDescription = 'Simple touch inspector & JSON exporter optimized for mobile devices with automatic map naming.',
     Commands = {},
 }
 
@@ -10,6 +10,7 @@ local Workspace = game:GetService('Workspace')
 local UserInputService = game:GetService('UserInputService')
 local HttpService = game:GetService('HttpService')
 local CoreGui = game:GetService('CoreGui')
+local MarketplaceService = game:GetService('MarketplaceService')
 local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
 
@@ -17,6 +18,19 @@ local SINGLETON_KEY = '__IY_MOBILE_INSPECTOR'
 if _G[SINGLETON_KEY] then
     pcall(function() _G[SINGLETON_KEY]:Destroy() end)
     _G[SINGLETON_KEY] = nil
+end
+
+-- Ambil nama map saat ini secara aman
+local function getMapName()
+    local success, info = pcall(function()
+        return MarketplaceService:GetProductInfo(game.PlaceId)
+    end)
+    if success and info and info.Name then
+        -- Bersihkan karakter aneh yang tidak boleh ada di nama file Windows/Android
+        local cleanName = info.Name:gsub('[%z\1-\31<>:"/\\|?*]', '_')
+        return cleanName
+    end
+    return "Place_" .. tostring(game.PlaceId)
 end
 
 local Controller = {}
@@ -36,7 +50,6 @@ local function getFullPath(object)
     return ok and path or (object.Name or "Unknown")
 end
 
--- Fungsi sederhana untuk serialize instance ke tabel/JSON
 local function serializeInstance(object)
     if not object or typeof(object) ~= "Instance" then return nil end
     local data = {
@@ -47,7 +60,6 @@ local function serializeInstance(object)
         Children = {}
     }
 
-    -- Ambil beberapa properti penting jika ada
     pcall(function()
         if object:IsA("BasePart") then
             data.Properties.Position = {object.Position.X, object.Position.Y, object.Position.Z}
@@ -59,7 +71,6 @@ local function serializeInstance(object)
         end
     end)
 
-    -- Ambil children (anak/komponen di dalam seperti TouchInterest, BillboardGui, dll)
     local ok, children = pcall(function() return object:GetChildren() end)
     if ok then
         for _, child in ipairs(children) do
@@ -82,7 +93,6 @@ function Controller.new()
 
     _G[SINGLETON_KEY] = self
 
-    -- UI Utama
     local gui = make('ScreenGui', {
         Name = 'MobileInspectorGui',
         IgnoreGuiInset = true,
@@ -96,7 +106,6 @@ function Controller.new()
     end
     self.Gui = gui
 
-    -- Main Frame
     local frame = make('Frame', {
         Size = UDim2.new(0, 300, 0, 360),
         Position = UDim2.new(0.5, -150, 0.4, -180),
@@ -108,7 +117,6 @@ function Controller.new()
     make('UICorner', {CornerRadius = UDim.new(0, 8)}, frame)
     self.Window = frame
 
-    -- TopBar
     local topBar = make('Frame', {
         Size = UDim2.new(1, 0, 0, 30),
         BackgroundColor3 = Color3.fromRGB(45, 45, 45),
@@ -127,7 +135,6 @@ function Controller.new()
         TextXAlignment = Enum.TextXAlignment.Left,
     }, topBar)
 
-    -- Tombol Minimize (-)
     local minBtn = make('TextButton', {
         Size = UDim2.new(0, 22, 0, 22),
         Position = UDim2.new(1, -52, 0, 4),
@@ -139,7 +146,6 @@ function Controller.new()
     }, topBar)
     make('UICorner', {CornerRadius = UDim.new(0, 4)}, minBtn)
 
-    -- Tombol Close (X)
     local closeBtn = make('TextButton', {
         Size = UDim2.new(0, 22, 0, 22),
         Position = UDim2.new(1, -26, 0, 4),
@@ -151,7 +157,6 @@ function Controller.new()
     }, topBar)
     make('UICorner', {CornerRadius = UDim.new(0, 4)}, closeBtn)
 
-    -- Content Area
     local content = make('ScrollingFrame', {
         Size = UDim2.new(1, -16, 1, -40),
         Position = UDim2.new(0, 8, 0, 35),
@@ -163,7 +168,6 @@ function Controller.new()
     }, frame)
     make('UIListLayout', {SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 6)}, content)
 
-    -- Label Status Instruksi
     make('TextLabel', {
         Size = UDim2.new(1, 0, 0, 24),
         BackgroundTransparency = 1,
@@ -174,7 +178,6 @@ function Controller.new()
         TextXAlignment = Enum.TextXAlignment.Left,
     }, content)
 
-    -- Kotak Info Nama & Kelas
     local infoBox = make('TextBox', {
         Size = UDim2.new(1, 0, 0, 60),
         BackgroundColor3 = Color3.fromRGB(20, 20, 20),
@@ -191,7 +194,6 @@ function Controller.new()
     make('UICorner', {CornerRadius = UDim.new(0, 4)}, infoBox)
     make('UIPadding', {PaddingLeft = UDim.new(0,5), PaddingRight = UDim.new(0,5), PaddingTop = UDim.new(0,5)}, infoBox)
 
-    -- Kotak Path Lengkap
     local pathBox = make('TextBox', {
         Size = UDim2.new(1, 0, 0, 70),
         BackgroundColor3 = Color3.fromRGB(20, 20, 20),
@@ -208,7 +210,6 @@ function Controller.new()
     make('UICorner', {CornerRadius = UDim.new(0, 4)}, pathBox)
     make('UIPadding', {PaddingLeft = UDim.new(0,5), PaddingRight = UDim.new(0,5), PaddingTop = UDim.new(0,5)}, pathBox)
 
-    -- Tombol Copy Path
     local copyBtn = make('TextButton', {
         Size = UDim2.new(1, 0, 0, 28),
         BackgroundColor3 = Color3.fromRGB(50, 120, 220),
@@ -219,7 +220,6 @@ function Controller.new()
     }, content)
     make('UICorner', {CornerRadius = UDim.new(0, 4)}, copyBtn)
 
-    -- Tombol Export JSON
     local exportBtn = make('TextButton', {
         Size = UDim2.new(1, 0, 0, 28),
         BackgroundColor3 = Color3.fromRGB(0, 150, 90),
@@ -230,7 +230,6 @@ function Controller.new()
     }, content)
     make('UICorner', {CornerRadius = UDim.new(0, 4)}, exportBtn)
 
-    -- Status Export
     local exportStatus = make('TextLabel', {
         Size = UDim2.new(1, 0, 0, 40),
         BackgroundTransparency = 1,
@@ -243,7 +242,6 @@ function Controller.new()
         TextYAlignment = Enum.TextYAlignment.Top,
     }, content)
 
-    -- Logika Tap/Sentuh Layar HP (Mobile Raycast)
     table.insert(self.Connections, UserInputService.TouchTapInWorld:Connect(function(position, processed)
         if processed or not self.Active then return end
         
@@ -262,7 +260,6 @@ function Controller.new()
             local p = getFullPath(hitPart)
             pathBox.Text = "Path: " .. p
 
-            -- Scan children di dalamnya
             local childList = {}
             for _, child in ipairs(hitPart:GetChildren()) do
                 table.insert(childList, child.Name .. " (" .. child.ClassName .. ")")
@@ -277,7 +274,6 @@ function Controller.new()
         end
     end))
 
-    -- Tombol Copy Action
     copyBtn.MouseButton1Click:Connect(function()
         if self.SelectedObject then
             local p = getFullPath(self.SelectedObject)
@@ -288,7 +284,6 @@ function Controller.new()
         end
     end)
 
-    -- Tombol Export JSON Action
     exportBtn.MouseButton1Click:Connect(function()
         if not self.SelectedObject then
             exportStatus.Text = "Error: Belum ada objek yang dipilih!"
@@ -301,10 +296,15 @@ function Controller.new()
                 makefolder(folderName)
             end
 
+            local mapName = getMapName()
+            local partName = self.SelectedObject.Name
+            local timeSuffix = os.date("%H%M%S") -- Format jam/menit/detik biar lebih pendek & jelas
+            
             local data = serializeInstance(self.SelectedObject)
             local jsonStr = HttpService:JSONEncode(data)
             
-            local fileName = folderName .. "/" .. self.SelectedObject.Name .. "_" .. os.time() .. ".json"
+            -- Format Nama File: NamaMap_NamaPart_Waktu.json
+            local fileName = string.format("%s/%s_%s_%s.json", folderName, mapName, partName, timeSuffix)
             writefile(fileName, jsonStr)
             exportStatus.Text = "Saved to: " .. fileName
         end)
@@ -314,7 +314,6 @@ function Controller.new()
         end
     end)
 
-    -- Minimize Toggle Logic
     local minimized = false
     minBtn.MouseButton1Click:Connect(function()
         minimized = not minimized
@@ -329,7 +328,6 @@ function Controller.new()
         end
     end)
 
-    -- Close Logic
     closeBtn.MouseButton1Click:Connect(function()
         self:Destroy()
     end)
@@ -350,7 +348,7 @@ end
 
 Plugin.Commands.mobileinspector = {
     ListName = 'mobileinspector / mobinsp',
-    Description = 'Open mobile-friendly click inspector and JSON exporter.',
+    Description = 'Open mobile-friendly click inspector with map-based JSON export.',
     Aliases = {'mobinsp'},
     Function = function()
         Controller.new()
