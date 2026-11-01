@@ -9,7 +9,7 @@ local Camera = Workspace.CurrentCamera
 _G.__SpectateState = _G.__SpectateState or {
     isSpectating = false,
     spectateTarget = nil,
-    spectateConnection = nil,
+    originalSubject = nil,
     originalCameraType = nil
 }
 
@@ -31,7 +31,7 @@ local ALLOWED_KEYWORDS = {
 }
 
 local function isAllowedSound(sound)
-    if not sound or not sound:IsA("Sound") then return false end
+    if not sound or not sound:IsA("Sound") then return end
     local name = string.lower(sound.Name or "")
     for _, kw in ipairs(ALLOWED_KEYWORDS) do
         if string.find(name, kw, 1, true) then return true end
@@ -64,7 +64,7 @@ local Plugin = {
     ["Commands"] = {
         ["spectate"] = {
             ["ListName"] = "spectate [nama_player]",
-            ["Description"] = "Melihat dan mendengarkan player target dari kejauhan",
+            ["Description"] = "Melihat dan mendengarkan player target dari kejauhan secara 3D bebas",
             ["Aliases"] = {"spec", "view"},
             ["Function"] = function(args, speaker)
                 local targetName = args[1]
@@ -95,21 +95,13 @@ local Plugin = {
                 state.spectateTarget = foundTarget
                 state.isSpectating = true
                 state.originalCameraType = Camera.CameraType
+                state.originalSubject = Camera.CameraSubject
 
-                Camera.CameraType = Enum.CameraType.Scriptable
-
-                if state.spectateConnection then state.spectateConnection:Disconnect() end
-
-                -- Loop untuk mengunci kamera ke kepala/karakter target secara real-time
-                state.spectateConnection = RunService.RenderStepped:Connect(function()
-                    if state.isSpectating and state.spectateTarget and state.spectateTarget.Character then
-                        local char = state.spectateTarget.Character
-                        local humanoidRootPart = char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Head")
-                        if humanoidRootPart then
-                            pcall(function()
-                                Camera.CFrame = humanoidRootPart.CFrame + Vector3.new(0, 3, -5) -- Posisikan kamera sedikit di belakang/atas target
-                            end)
-                        end
+                pcall(function()
+                    if foundTarget.Character and foundTarget.Character:FindFirstChild("Humanoid") then
+                        -- Menggunakan CameraSubject bawaan Roblox agar kamera jadi 3D orbit bebas diputar
+                        Camera.CameraSubject = foundTarget.Character.Humanoid
+                        Camera.CameraType = Enum.CameraType.Custom
                     end
                 end)
 
@@ -124,16 +116,13 @@ local Plugin = {
                 state.isSpectating = false
                 state.spectateTarget = nil
                 
-                if state.spectateConnection then
-                    state.spectateConnection:Disconnect()
-                    state.spectateConnection = nil
-                end
-                
                 -- Kembalikan kamera ke karakter lokal
                 pcall(function()
                     Camera.CameraType = Enum.CameraType.Custom
                     if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
                         Camera.CameraSubject = LocalPlayer.Character.Humanoid
+                    elseif state.originalSubject then
+                        Camera.CameraSubject = state.originalSubject
                     end
                 end)
 
