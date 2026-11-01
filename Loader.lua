@@ -10,7 +10,7 @@ return {
                 { Name = "CDESP", Desc = "Masukan 1 nama objek untuk filter, kosongkan kolom untuk mendeteksi semua Objek", Cmd = "clickdetectoresp", UnCmd = "unclickdetectoresp", NeedInput = true },
                 { Name = "DESP", Desc = "Masukan 1 nama objek untuk filter, kosongkan kolom untuk mendeteksi semua Objek", Cmd = "dooresp", UnCmd = "undooresp", NeedInput = true },
                 { Name = "ITESP", Desc = "Masukan 1 nama objek untuk filter, kosongkan kolom untuk mendeteksi semua Objek", Cmd = "itemtouchesp", UnCmd = "untouchinterestesp", NeedInput = true },
-               -- { Name = "ITEM ESP", Desc = "Memunculkan Box dan Nama ESP Item dengan interact Custom", Cmd = "droppeditemesp", UnCmd = "undropesp" },
+                { Name = "LOOT", Desc = "Memunculkan Box dan Nama ESP Item dengan interact Custom", Cmd = "loot", UnCmd = "unloot", NeedInput = true },
                 { Name = "TESP", Desc = "Memunculkan ESP Trigger / Scene Event", Cmd = "touchinterestesp", UnCmd = "untouchinterestesp" }
             }
         },
