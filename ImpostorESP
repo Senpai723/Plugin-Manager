@@ -6,7 +6,6 @@ local function startImpostorESP()
 
     if not LocalPlayer then return end
 
-    -- Cek apakah sudah berjalan sebelumnya
     if LocalPlayer:FindFirstChild("IMPOSTOR_ESP_RUNNING") then
         print("ImpostorESP sudah aktif!")
         return
@@ -16,74 +15,64 @@ local function startImpostorESP()
     marker.Name = "IMPOSTOR_ESP_RUNNING"
     marker.Parent = LocalPlayer
 
-    print("Loading ImpostorESP (With Bot & NPC Support)...")
+    print("Loading ImpostorESP v3 (Bot Folder & Status Scanner)...")
 
-    local CREW_COLOR = Color3.fromRGB(0, 255, 0)      -- Hijau (Crew / Warga / Bot Biasa)
-    local IMPOSTOR_COLOR = Color3.fromRGB(255, 0, 0)   -- Merah (Impostor / Killer / Bot Impostor)
+    local CREW_COLOR = Color3.fromRGB(0, 255, 0)      -- Hijau (Crew / Warga)
+    local IMPOSTOR_COLOR = Color3.fromRGB(255, 0, 0)   -- Merah (Impostor / Killer)
 
-    -- Logika Penentuan Role (Support Player & Bot/NPC)
-    local function getRoleColor(model, player)
-        -- 1. Jika ini Player Sungguhan
+    local function checkIsImpostor(targetObject, player)
+        -- 1. Cek jika Player
         if player then
             if player.Team then
                 local tName = player.Team.Name:lower()
-                if string.find(tName, "impostor") 
-                    or string.find(tName, "murderer") 
-                    or string.find(tName, "traitor") 
-                    or string.find(tName, "killer") then
-                    return IMPOSTOR_COLOR
+                if string.find(tName, "impostor") or string.find(tName, "murderer") or string.find(tName, "traitor") or string.find(tName, "killer") then
+                    return true
                 end
             end
-
             local roleAttr = player:GetAttribute("Role") or player:GetAttribute("Team") or player:GetAttribute("Status")
-            if typeof(roleAttr) == "string" then
-                local r = roleAttr:lower()
-                if string.find(r, "impostor") or string.find(r, "murderer") or string.find(r, "traitor") or string.find(r, "killer") then
-                    return IMPOSTOR_COLOR
-                end
-            end
-
-            if player:GetAttribute("IsImpostor") == true 
-                or player:GetAttribute("Impostor") == true 
-                or player:GetAttribute("IsMurderer") == true then
-                return IMPOSTOR_COLOR
+            if typeof(roleAttr) == "string" and (string.find(roleAttr:lower(), "impostor") or string.find(roleAttr:lower(), "murderer") or string.find(roleAttr:lower(), "killer")) then
+                return true
             end
         end
 
-        -- 2. Jika ini Bot / NPC Model di Workspace
-        if model then
-            -- Cek Attribute bawaan Model Bot
-            local botRole = model:GetAttribute("Role") or model:GetAttribute("Team") or model:GetAttribute("Status")
-            if typeof(botRole) == "string" then
-                local r = botRole:lower()
-                if string.find(r, "impostor") or string.find(r, "murderer") or string.find(r, "traitor") or string.find(r, "killer") then
-                    return IMPOSTOR_COLOR
+        -- 2. Cek Model Bot (Berdasarkan struktur Dex: Workspace -> Bots -> Bot_Name -> Humanoid -> Status)
+        if targetObject and targetObject:IsA("Model") then
+            local humanoid = targetObject:FindFirstChildOfClass("Humanoid")
+            if humanoid then
+                -- Cek Objek "Status" di dalam Humanoid (bisa Value object atau Attribute)
+                local statusObj = humanoid:FindFirstChild("Status")
+                if statusObj then
+                    local valText = ""
+                    if statusObj:IsA("StringValue") or statusObj:IsA("ValueBase") then
+                        valText = tostring(statusObj.Value):lower()
+                    end
+                    if string.find(valText, "impostor") or string.find(valText, "murderer") or string.find(valText, "killer") or string.find(valText, "traitor") then
+                        return true
+                    end
+                end
+
+                -- Cek Attribute Status/Role di Humanoid atau Model
+                local attrStatus = humanoid:GetAttribute("Status") or humanoid:GetAttribute("Role") or targetObject:GetAttribute("Status") or targetObject:GetAttribute("Role")
+                if typeof(attrStatus) == "string" then
+                    local s = attrStatus:lower()
+                    if string.find(s, "impostor") or string.find(s, "murderer") or string.find(s, "killer") then
+                        return true
+                    end
                 end
             end
 
-            if model:GetAttribute("IsImpostor") == true 
-                or model:GetAttribute("Impostor") == true 
-                or model:GetAttribute("IsMurderer") == true then
-                return IMPOSTOR_COLOR
-            end
-
-            -- Cek Nama Model Bot (misal: "Bot_Impostor" atau "ImpostorBot")
-            local modelName = model.Name:lower()
-            if string.find(modelName, "impostor") 
-                or string.find(modelName, "murderer") 
-                or string.find(modelName, "traitor") 
-                or string.find(modelName, "killer") then
-                return IMPOSTOR_COLOR
+            -- Cek Nama Model Bot
+            local mName = targetObject.Name:lower()
+            if string.find(mName, "impostor") or string.find(mName, "murderer") or string.find(mName, "killer") then
+                return true
             end
         end
 
-        return CREW_COLOR
+        return false
     end
 
     local function applyESP(character, player)
         if not character or not character.Parent then return end
-
-        -- Skip karakter milik player sendiri
         if LocalPlayer.Character and character == LocalPlayer.Character then return end
 
         local humanoid = character:FindFirstChildOfClass("Humanoid")
@@ -95,7 +84,8 @@ local function startImpostorESP()
             return
         end
 
-        local color = getRoleColor(character, player)
+        local isImpo = checkIsImpostor(character, player)
+        local color = isImpo and IMPOSTOR_COLOR or CREW_COLOR
 
         -- Highlight Badan
         local hl = character:FindFirstChild("Imp_HL")
@@ -140,13 +130,13 @@ local function startImpostorESP()
             bg.Enabled = true
             local label = bg:FindFirstChild("NameLabel")
             if label then
-                label.Text = player and (player.DisplayName or player.Name) or character.Name
+                local displayName = player and (player.DisplayName or player.Name) or character.Name
+                label.Text = displayName
                 label.TextColor3 = color
             end
         end
     end
 
-    -- Loop Scanner untuk Player & Bot/NPC
     local heartbeatConn
     heartbeatConn = RunService.Heartbeat:Connect(function()
         if not marker.Parent then
@@ -154,19 +144,27 @@ local function startImpostorESP()
             return
         end
 
-        -- 1. Scan Players
+        -- 1. Scan Player biasa
         for _, player in ipairs(Players:GetPlayers()) do
             if player ~= LocalPlayer and player.Character then
                 applyESP(player.Character, player)
             end
         end
 
-        -- 2. Scan Workspace for Bots / NPCs
+        -- 2. Scan Folder "Bots" di Workspace (Sesuai penampakan Dex lu)
+        local botsFolder = Workspace:FindFirstChild("Bots")
+        if botsFolder then
+            for _, botModel in ipairs(botsFolder:GetChildren()) do
+                if botModel:IsA("Model") then
+                    applyESP(botModel, nil)
+                end
+            end
+        end
+
+        -- Backup: Scan umum kalau bot ada di luar folder Bots tapi punya Humanoid
         for _, obj in ipairs(Workspace:GetChildren()) do
             if obj:IsA("Model") and obj:FindFirstChildOfClass("Humanoid") then
-                local player = Players:GetPlayerFromCharacter(obj)
-                if not player then
-                    -- Ini adalah Bot / NPC
+                if not Players:GetPlayerFromCharacter(obj) and obj.Name ~= "Bots" then
                     applyESP(obj, nil)
                 end
             end
@@ -181,12 +179,9 @@ local function stopImpostorESP()
 
     if LocalPlayer then
         local marker = LocalPlayer:FindFirstChild("IMPOSTOR_ESP_RUNNING")
-        if marker then
-            marker:Destroy()
-        end
+        if marker then marker:Destroy() end
     end
 
-    -- Clear ESP Player & Bot
     for _, obj in ipairs(Workspace:GetDescendants()) do
         if obj:IsA("Model") then
             local hl = obj:FindFirstChild("Imp_HL")
@@ -195,17 +190,16 @@ local function stopImpostorESP()
             if bg then bg:Destroy() end
         end
     end
-
     print("ImpostorESP dimatikan.")
 end
 
 local Plugin = {
-    ["PluginName"] = "ImpostorESP v2",
-    ["PluginDescription"] = "Among Us Role ESP for Players and Bots (Green for Crew, Red for Impostor).",
+    ["PluginName"] = "ImpostorESP v3",
+    ["PluginDescription"] = "Among Us Role ESP for Players and Workspace.Bots folder.",
     ["Commands"] = {
         ["imposon"] = {
             ["ListName"] = "imposon",
-            ["Description"] = "Menyalakan Role ESP Player + Bot (Impostor Merah, Crew Hijau).",
+            ["Description"] = "Menyalakan Role ESP (Support Bots Folder & Status).",
             ["Aliases"] = {"imposon"},
             ["Function"] = function(args, speaker)
                 startImpostorESP()
