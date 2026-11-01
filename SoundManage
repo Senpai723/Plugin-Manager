@@ -3,12 +3,14 @@ local RunService = game:GetService("RunService")
 local SoundService = game:GetService("SoundService")
 local Workspace = game:GetService("Workspace")
 local LocalPlayer = Players.LocalPlayer
+local Camera = Workspace.CurrentCamera
 
--- GLOBAL STATE UNTUK VOICE SPY & MUTE SOUND
-_G.__VoiceSpyState = _G.__VoiceSpyState or {
-    isSpying = false,
-    spyTarget = nil,
-    spyConnection = nil
+-- GLOBAL STATE UNTUK SPECTATE & MUTE SOUND
+_G.__SpectateState = _G.__SpectateState or {
+    isSpectating = false,
+    spectateTarget = nil,
+    spectateConnection = nil,
+    originalCameraType = nil
 }
 
 _G.__VoiceSpyMuteState = _G.__VoiceSpyMuteState or {
@@ -18,7 +20,7 @@ _G.__VoiceSpyMuteState = _G.__VoiceSpyMuteState or {
     addedConn = nil
 }
 
-local state = _G.__VoiceSpyState
+local state = _G.__SpectateState
 local muteState = _G.__VoiceSpyMuteState
 
 -- DAFTAR WHITELIST SUARA YANG BOLEH DIBUNYIKAN
@@ -47,7 +49,6 @@ local function applyMute(sound)
 
     sound.Volume = 0
 
-    -- Cegah suara diubah volumenya kembali secara paksa oleh game/map
     if not muteState.connections[sound] then
         muteState.connections[sound] = sound:GetPropertyChangedSignal("Volume"):Connect(function()
             if muteState.enabled and sound.Parent and not isAllowedSound(sound) then
@@ -58,17 +59,17 @@ local function applyMute(sound)
 end
 
 local Plugin = {
-    ["PluginName"] = "VoiceSpy & MuteManager",
-    ["PluginDescription"] = "Menguping Voice Chat jarak jauh dan mengelola suara map secara total",
+    ["PluginName"] = "Spectate & MuteManager",
+    ["PluginDescription"] = "Spectate player target untuk memantau & mendengar suara, serta kelola suara map",
     ["Commands"] = {
-        ["voicespy"] = {
-            ["ListName"] = "voicespy [nama_player]",
-            ["Description"] = "Mengarahkan pendengaran suara ke player target",
-            ["Aliases"] = {"vspy"},
+        ["spectate"] = {
+            ["ListName"] = "spectate [nama_player]",
+            ["Description"] = "Melihat dan mendengarkan player target dari kejauhan",
+            ["Aliases"] = {"spec", "view"},
             ["Function"] = function(args, speaker)
                 local targetName = args[1]
                 if not targetName or targetName == "" then
-                    print("[VoiceSpy] Masukkan nama player target!")
+                    print("[Spectate] Masukkan nama player target!")
                     return
                 end
 
@@ -87,49 +88,56 @@ local Plugin = {
                 end
 
                 if not foundTarget then
-                    print("[VoiceSpy] Player '" .. tostring(targetName) .. "' tidak ditemukan!")
+                    print("[Spectate] Player '" .. tostring(targetName) .. "' tidak ditemukan!")
                     return
                 end
 
-                state.spyTarget = foundTarget
-                state.isSpying = true
+                state.spectateTarget = foundTarget
+                state.isSpectating = true
+                state.originalCameraType = Camera.CameraType
 
-                if state.spyConnection then state.spyConnection:Disconnect() end
+                Camera.CameraType = Enum.CameraType.Scriptable
 
-                -- METODE LISTENER AMAN: Memindahkan fokus pendengaran suara Roblox ke kepala target
-                state.spyConnection = RunService.RenderStepped:Connect(function()
-                    if state.isSpying and state.spyTarget and state.spyTarget.Character then
-                        local head = state.spyTarget.Character:FindFirstChild("Head")
-                        if head then
+                if state.spectateConnection then state.spectateConnection:Disconnect() end
+
+                -- Loop untuk mengunci kamera ke kepala/karakter target secara real-time
+                state.spectateConnection = RunService.RenderStepped:Connect(function()
+                    if state.isSpectating and state.spectateTarget and state.spectateTarget.Character then
+                        local char = state.spectateTarget.Character
+                        local humanoidRootPart = char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Head")
+                        if humanoidRootPart then
                             pcall(function()
-                                SoundService:SetListener(Enum.ListenerType.CFrame, head.CFrame)
+                                Camera.CFrame = humanoidRootPart.CFrame + Vector3.new(0, 3, -5) -- Posisikan kamera sedikit di belakang/atas target
                             end)
                         end
                     end
                 end)
 
-                print("[VoiceSpy] Berhasil menguping suara: " .. foundTarget.Name)
+                print("[Spectate] Sedang melihat player: " .. foundTarget.Name)
             end
         },
-        ["unvoicespy"] = {
-            ["ListName"] = "unvoicespy",
-            ["Description"] = "Mengembalikan pendengaran suara ke normal",
-            ["Aliases"] = {"unvspy"},
+        ["unspectate"] = {
+            ["ListName"] = "unspectate",
+            ["Description"] = "Keluar dari mode spectate dan kembali ke karakter sendiri",
+            ["Aliases"] = {"unspec", "backview"},
             ["Function"] = function(args, speaker)
-                state.isSpying = false
-                state.spyTarget = nil
+                state.isSpectating = false
+                state.spectateTarget = nil
                 
-                if state.spyConnection then
-                    state.spyConnection:Disconnect()
-                    state.spyConnection = nil
+                if state.spectateConnection then
+                    state.spectateConnection:Disconnect()
+                    state.spectateConnection = nil
                 end
                 
-                -- Kembalikan pendengaran ke kamera/karakter sendiri
+                -- Kembalikan kamera ke karakter lokal
                 pcall(function()
-                    SoundService:SetListener(Enum.ListenerType.Camera, Workspace.CurrentCamera)
+                    Camera.CameraType = Enum.CameraType.Custom
+                    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+                        Camera.CameraSubject = LocalPlayer.Character.Humanoid
+                    end
                 end)
 
-                print("[VoiceSpy] Pendengaran dikembalikan normal.")
+                print("[Spectate] Kamera dikembalikan ke karakter sendiri.")
             end
         },
         ["mutesound"] = {
@@ -139,13 +147,11 @@ local Plugin = {
             ["Function"] = function(args, speaker)
                 muteState.enabled = true
 
-                -- Bersihkan koneksi lama jika ada
                 if muteState.addedConn then
                     muteState.addedConn:Disconnect()
                     muteState.addedConn = nil
                 end
 
-                -- Mute semua suara yang sudah ada di dalam game saat ini
                 for _, obj in ipairs(Workspace:GetDescendants()) do
                     if obj:IsA("Sound") then applyMute(obj) end
                 end
@@ -153,7 +159,6 @@ local Plugin = {
                     if obj:IsA("Sound") then applyMute(obj) end
                 end
 
-                -- Pantau suara baru secara real-time (mencegah jumpscare / suara map baru)
                 muteState.addedConn = Workspace.DescendantAdded:Connect(function(obj)
                     if muteState.enabled and obj:IsA("Sound") then
                         task.defer(function() applyMute(obj) end)
@@ -175,14 +180,12 @@ local Plugin = {
                     muteState.addedConn = nil
                 end
 
-                -- Kembalikan volume suara ke semula
                 for sound, origVol in pairs(muteState.mutedSounds) do
                     if sound and sound.Parent and sound:IsA("Sound") and origVol then
                         sound.Volume = origVol
                     end
                 end
 
-                -- Putuskan semua sinyal pemantau volume
                 for _, conn in pairs(muteState.connections) do
                     pcall(function() conn:Disconnect() end)
                 end
