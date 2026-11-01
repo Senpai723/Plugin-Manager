@@ -137,6 +137,13 @@ return {
             }
         },
         {
+            Name = "Click Inspector",
+            Desc = "Untuk Mengetahui Jalur Path Parent-Cild sebuah Part",
+            Cmd = "clickinspector",
+            UnCmd = "unclickinspector",
+            RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Tools/clickinspector.iy"
+        },
+        {
             Name = "Anti AFK",
             Desc = "Anti Mental Mental Kleb 20 menit",
             Cmd = "antiafk",
