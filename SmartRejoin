@@ -11,8 +11,8 @@ local Players = game:GetService("Players")
 local TeleportService = game:GetService("TeleportService")
 local LocalPlayer = Players.LocalPlayer
 
--- Status Default: Aktif
-local autoRejoinActive = true
+-- Status Default: Nonaktif
+local autoRejoinActive = false
 
 --==================================================
 -- TELEPORT ERROR LISTENERS
