@@ -293,6 +293,7 @@ local function parseCPIdentity(obj)
     return nVal, descText, validPart, priorityScore
 end
 
+
 --==================================================
 -- AUTO-SAVE SYSTEM & VISITED TRACKER
 --==================================================
