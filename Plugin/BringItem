@@ -1,5 +1,5 @@
 -- ================================================================
--- PRECISE GRABBER: INSTANT MOVEMENT UNLOCK (MOMENTUM FIX)
+-- PRECISE GRABBER: MAX 10 ITEMS + INSTANT MOVE UNLOCK
 -- ================================================================
 
 local Players = game:GetService("Players")
@@ -69,8 +69,9 @@ getgenv().ExecutePreciseGrab = function(keyword)
         return
     end
 
-    local targetLimit = math.min(#validItems, 7)
-    print("[Grab] Ditemukan item, memproses " .. targetLimit .. " buah...")
+    -- Batas maksimal dinaikkan menjadi 10 item
+    local targetLimit = math.min(#validItems, 10)
+    print("[Grab] Ditemukan item, memproses hingga " .. targetLimit .. " buah...")
 
     local collected = 0
 
@@ -159,7 +160,7 @@ title.Size = UDim2.new(1, -30, 1, 0)
 title.Position = UDim2.new(0, 8, 0, 0)
 title.BackgroundTransparency = 1
 title.Font = Enum.Font.GothamBold
-title.Text = "🎯 Precise Grabber (Instant Move)"
+title.Text = "🎯 Precise Grabber (Max 10)"
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.TextSize = 12
 title.TextXAlignment = Enum.TextXAlignment.Left
@@ -210,4 +211,4 @@ textBox.FocusLost:Connect(function(enter)
     end
 end)
 
-print("[Precise Grabber] Skrip pembersih momentum siap!")
+print("[Precise Grabber Max 10] Skrip siap digunakan!")
