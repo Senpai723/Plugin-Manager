@@ -1,5 +1,5 @@
 <h1 align="center">
-	Plugin Master
+	Plugin Manager
 </h1>
 
 <p align="center">
@@ -10,10 +10,10 @@
 	<a href="https://discord.com/users/Tryofp">
 		<img alt="Discord" src="https://img.shields.io/discord/1014040973027844106?color=%235865F2&logo=discord&logoColor=%23DCDDDE&style=flat-square">
 	</a>
-	<a href="https://github.com/Infinite-Store/Infinite-Store/issues">
+	<a href="https://github.com/Senpai723/Plugin-Manager/issues">
 		<img alt="Issues" src="https://img.shields.io/github/issues/Senpai723/Plugin-Manager?color=0088ff&style=flat-square"/>
 	</a>
-	<a href="https://github.com/Infinite-Store/Infinite-Store/pulls">
+	<a href="https://github.com/Senpai723/Plugin-Manager/pulls">
 		<img alt="Pulls" src="https://img.shields.io/github/issues-pr/Senpai723/Plugin-Manager?color=0088ff&style=flat-square"/>
 	</a>
 	<a href="https://github.com/Senpai723/Plugin-Manager/blob/main/LICENSE">
