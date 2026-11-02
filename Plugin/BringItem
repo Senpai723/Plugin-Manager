@@ -1,11 +1,16 @@
 -- ================================================================
--- INDEPENDENT AUTO-COLLECT PROMPT / CLICK SCRIPT
+-- INDEPENDENT REMOTE-BASED MAGNET / GRAB SCRIPT
 -- ================================================================
 
 local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 local CoreGui = game:GetService("CoreGui")
 local LocalPlayer = Players.LocalPlayer
+
+-- Ambil jalur remote asli game dari data Remote Spy lu
+local StoreRemotes = ReplicatedStorage:WaitForChild("StoreRemotes")
+local GrabRequest = StoreRemotes:WaitForChild("GrabRequest")
 
 -- Kamus terjemahan bilingual (Indo <-> Eng)
 local TRANSLATION_MAP = {
@@ -32,17 +37,23 @@ local function lower(val)
 end
 
 -- ----------------------------------------------------------------
--- LOGIKA UTAMA AUTO-COLLECT (TRIGGER PROMPT/CLICK DARI JAUH)
+-- LOGIKA UTAMA: MENGIRIM GRAB REQUEST KE SERVER GAME
 -- ----------------------------------------------------------------
-getgenv().AutoCollectItems = function(keyword)
+getgenv().RemoteGrabItems = function(keyword)
     local searchKeyword = lower(keyword)
     if searchKeyword == "" then
-        warn("[Auto Collect] Keyword kosong!")
+        warn("[Remote Grab] Keyword kosong!")
+        return 0
+    end
+
+    if not GrabRequest then
+        warn("[Remote Grab] Remote GrabRequest tidak ditemukan di game ini!")
         return 0
     end
 
     local translatedKeyword = TRANSLATION_MAP[searchKeyword]
     local count = 0
+    local triggeredNames = {}
 
     -- Scan semua objek di dalam Workspace
     for _, obj in ipairs(Workspace:GetDescendants()) do
@@ -50,51 +61,39 @@ getgenv().AutoCollectItems = function(keyword)
         
         -- Pastikan hanya mengambil dari dalam folder Items dan bukan struktur map
         if string.find(fullName, "items") and not string.find(fullName, "placezone") and not string.find(fullName, "tempinvis") then
+            local name = lower(obj.Name)
             
-            -- Cari ProximityPrompt atau ClickDetector di dalam objek/model item tersebut
-            local prompt = obj:FindFirstChildOfClass("ProximityPrompt") or obj:FindFirstChildWhichIsA("ProximityPrompt", true)
-            local detector = obj:FindFirstChildOfClass("ClickDetector") or obj:FindFirstChildWhichIsA("ClickDetector", true)
-            
-            if prompt or detector then
-                local targetName = lower(obj.Name)
-                local promptText = prompt and (lower(prompt.ObjectText) .. " " .. lower(prompt.ActionText)) or ""
-                
-                -- Cek kecocokan nama item atau teks pada prompt
-                if string.find(targetName, searchKeyword, 1, true) or 
-                   (translatedKeyword and string.find(targetName, translatedKeyword, 1, true)) or
-                   string.find(promptText, searchKeyword, 1, true) or
-                   (translatedKeyword and string.find(promptText, translatedKeyword, 1, true)) then
+            -- Cocokkan nama item dengan keyword atau terjemahan
+            if string.find(name, searchKeyword, 1, true) or (translatedKeyword and string.find(name, translatedKeyword, 1, true)) then
+                -- Cegah spamming remote ke objek kembar yang sama persis dalam satu detik
+                if not triggeredNames[obj.Name] then
+                    triggeredNames[obj.Name] = true
                     
                     pcall(function()
-                        if prompt then
-                            -- Men-trigger ProximityPrompt game secara otomatis dari jauh
-                            fireproximityprompt(prompt)
-                            count += 1
-                        elseif detector then
-                            -- Men-trigger ClickDetector game secara otomatis dari jauh
-                            fireclickdetector(detector)
-                            count += 1
-                        end
+                        -- Fire RemoteEvent GrabRequest asli milik game
+                        -- Argumen disesuaikan dengan pola dari tangkapan Remote Spy lu
+                        GrabRequest:FireServer(obj.Name, 1, math.random(10000, 99999))
+                        count += 1
                     end)
                 end
             end
         end
     end
 
-    print("[Auto Collect] Berhasil mentrigger " .. count .. " item dengan keyword: '" .. keyword .. "'")
+    print("[Remote Grab] Berhasil mengirim " .. count + 0 .. " request grab untuk keyword: '" .. keyword .. "'")
     return count
 end
 
 -- ----------------------------------------------------------------
 -- INDEPENDENT FLOATING GUI UI
 -- ----------------------------------------------------------------
-local existingGui = CoreGui:FindFirstChild("AutoCollectGui") or LocalPlayer:WaitForChild("PlayerGui"):FindFirstChild("AutoCollectGui")
+local existingGui = CoreGui:FindFirstChild("RemoteGrabGui") or LocalPlayer:WaitForChild("PlayerGui"):FindFirstChild("RemoteGrabGui")
 if existingGui then
     existingGui:Destroy()
 end
 
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "AutoCollectGui"
+screenGui.Name = "RemoteGrabGui"
 screenGui.ResetOnSpawn = false
 
 pcall(function() screenGui.Parent = CoreGui end)
@@ -124,7 +123,7 @@ title.Size = UDim2.new(1, -30, 1, 0)
 title.Position = UDim2.new(0, 8, 0, 0)
 title.BackgroundTransparency = 1
 title.Font = Enum.Font.GothamBold
-title.Text = "⚡ Auto-Collect Item"
+title.Text = "⚡ Remote Grabber"
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.TextSize = 12
 title.TextXAlignment = Enum.TextXAlignment.Left
@@ -162,31 +161,31 @@ textBox.ClearTextOnFocus = false
 textBox.Parent = mainFrame
 Instance.new("UICorner", textBox).CornerRadius = UDim.new(0, 6)
 
--- Tombol Collect
-local collectBtn = Instance.new("TextButton")
-collectBtn.Size = UDim2.new(1, -16, 0, 30)
-collectBtn.Position = UDim2.new(0, 8, 0, 72)
-collectBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 90)
-collectBtn.BorderSizePixel = 0
-collectBtn.Font = Enum.Font.GothamBold
-collectBtn.Text = "COLLECT ITEMS"
-collectBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-collectBtn.TextSize = 11
-collectBtn.Parent = mainFrame
-Instance.new("UICorner", collectBtn).CornerRadius = UDim.new(0, 6)
+-- Tombol Grab
+local grabBtn = Instance.new("TextButton")
+grabBtn.Size = UDim2.new(1, -16, 0, 30)
+grabBtn.Position = UDim2.new(0, 8, 0, 72)
+grabBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 90)
+grabBtn.BorderSizePixel = 0
+grabBtn.Font = Enum.Font.GothamBold
+grabBtn.Text = "REMOTE GRAB"
+grabBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+grabBtn.TextSize = 11
+grabBtn.Parent = mainFrame
+Instance.new("UICorner", grabBtn).CornerRadius = UDim.new(0, 6)
 
 -- Event Click / Enter
-collectBtn.MouseButton1Click:Connect(function()
+grabBtn.MouseButton1Click:Connect(function()
     local itemInput = textBox.Text
     if itemInput ~= "" then
-        getgenv().AutoCollectItems(itemInput)
+        getgenv().RemoteGrabItems(itemInput)
     end
 end)
 
 textBox.FocusLost:Connect(function(enterPressed)
     if enterPressed and textBox.Text ~= "" then
-        getgenv().AutoCollectItems(textBox.Text)
+        getgenv().RemoteGrabItems(textBox.Text)
     end
 end)
 
-print("[Auto Collect] Skrip berhasil dimuat!")
+print("[Remote Grab] Skrip berhasil dimuat menggunakan sistem game asli!")
