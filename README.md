@@ -21,7 +21,7 @@
 	</a>
 </p>
 
-(Beware of fake discords, the only official discord is on this README)
+(Hati hati terhadap penipuan akun discord, akun asli saya hanya ada di README))
 
 ## Usage
 
