@@ -1,5 +1,5 @@
 -- ================================================================
--- PRECISE GRABBER: FIXED MOBILE CAMERA & CONTROL RESTORE
+-- PRECISE GRABBER: FIXED & CLEAN SCRIPT (NO SYNTAX ERROR)
 -- ================================================================
 
 local Players = game:GetService("Players")
@@ -49,8 +49,6 @@ getgenv().ExecutePreciseGrab = function(keyword)
     end
 
     local originalCFrame = rootPart.CFrame
-    local originalCamType = Camera.CameraType
-    local originalCamSubject = Camera.CameraSubject
     local translatedKeyword = TRANSLATION_MAP[searchKeyword]
     local itemsFolder = Workspace:FindFirstChild("Items") or Workspace
 
@@ -102,7 +100,7 @@ getgenv().ExecutePreciseGrab = function(keyword)
 
     local collected = 0
 
-    // 2. EKSEKUSI TELEPORT, AIM KAMERA KE BAWAH, & KLIK
+    -- 2. EKSEKUSI TELEPORT, AIM KAMERA KE BAWAH, & KLIK
     for i = 1, targetLimit do
         local itemData = validItems[i]
         if not itemData then break end
