@@ -1,5 +1,5 @@
 -- ================================================================
--- PRECISE GRABBER: MULTI-KEYWORD FLEXIBLE MATCH (FIX 1 ITEM)
+-- PRECISE GRABBER: STRICT PHRASE + SAFE SERVER COOLDOWN (MAX 10)
 -- ================================================================
 
 local Players = game:GetService("Players")
@@ -32,12 +32,6 @@ getgenv().ExecutePreciseGrab = function(keyword)
     local originalCFrame = rootPart.CFrame
     local itemsFolder = Workspace:FindFirstChild("Items") or Workspace
 
-    -- Pecah keyword berdasarkan spasi supaya bisa mendeteksi tiap kata (misal: "dark", "chocolate", "bar")
-    local keywords = {}
-    for word in string.gmatch(searchKeyword, "%S+") do
-        table.insert(keywords, word)
-    end
-
     local validItems = {}
 
     for _, obj in ipairs(itemsFolder:GetDescendants()) do
@@ -47,16 +41,8 @@ getgenv().ExecutePreciseGrab = function(keyword)
             local parentName = obj.Parent and lower(obj.Parent.Name) or ""
             local combinedName = objName .. " " .. parentName
 
-            -- Cek apakah minimal ada satu kata dari keyword yang cocok dengan nama objek
-            local isMatch = false
-            for _, kw in ipairs(keywords) do
-                if string.find(combinedName, kw, 1, true) then
-                    isMatch = true
-                    break
-                end
-            end
-
-            if isMatch then
+            -- KEMBALI KE PENCARIAN FRASA UTUH (Harus sesuai persis dengan ketikan)
+            if string.find(combinedName, searchKeyword, 1, true) then
                 local targetPart = nil
                 if obj:IsA("BasePart") then
                     if obj.Size.Magnitude < 15 and obj.Transparency < 1 then
@@ -80,17 +66,17 @@ getgenv().ExecutePreciseGrab = function(keyword)
     end)
 
     if #validItems == 0 then
-        print("[Grab] Item dengan keyword '" .. keyword .. "' tidak ditemukan di map!")
+        print("[Grab] Item dengan frasa '" .. keyword .. "' tidak ditemukan di map!")
         return
     end
 
-    -- Ambil sampai batas maksimal 10 item sekaligus
+    -- Ambil hingga batas maksimal 10 item
     local targetLimit = math.min(#validItems, 10)
     print("[Grab] Ditemukan " .. #validItems .. " item. Memproses " .. targetLimit .. " item terdekat...")
 
     local collected = 0
 
-    -- EKSEKUSI TELEPORT & TOUCH ITEM BERURUTAN
+    -- EKSEKUSI TELEPORT & TOUCH ITEM DENGAN JEDA AMAN SERVER (0.4 DETIK)
     for i = 1, targetLimit do
         local itemData = validItems[i]
         if not itemData then break end
@@ -120,7 +106,8 @@ getgenv().ExecutePreciseGrab = function(keyword)
 
                 collected += 1
             end)
-            task.wait(0.2)
+            -- Jeda dinaikkan jadi 0.4 detik agar server game tidak mendeteksi spam/cooldown
+            task.wait(0.4)
         end
     end
 
@@ -135,7 +122,7 @@ getgenv().ExecutePreciseGrab = function(keyword)
         humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
     end)
 
-    print("[Grab] Selesai! Berhasil mengambil " .. collected .. " item sekaligus.")
+    print("[Grab] Selesai! Berhasil mengambil " .. collected .. " item tanpa terhalang cooldown.")
 end
 
 -- ----------------------------------------------------------------
@@ -170,7 +157,7 @@ title.Size = UDim2.new(1, -30, 1, 0)
 title.Position = UDim2.new(0, 8, 0, 0)
 title.BackgroundTransparency = 1
 title.Font = Enum.Font.GothamBold
-title.Text = "🎯 Precise Grabber (Flexible)"
+title.Text = "🎯 Precise Grabber (Stable)"
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.TextSize = 12
 title.TextXAlignment = Enum.TextXAlignment.Left
@@ -191,7 +178,7 @@ textBox.Size = UDim2.new(1, -16, 0, 30)
 textBox.Position = UDim2.new(0, 8, 0, 36)
 textBox.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 textBox.Font = Enum.Font.Gotham
-textBox.PlaceholderText = "Ketik keyword (cth: chocolate)..."
+textBox.PlaceholderText = "Ketik nama (cth: dark chocolate bar)..."
 textBox.Text = ""
 textBox.TextColor3 = Color3.fromRGB(255, 255, 255)
 textBox.PlaceholderColor3 = Color3.fromRGB(140, 140, 140)
@@ -221,4 +208,4 @@ textBox.FocusLost:Connect(function(enter)
     end
 end)
 
-print("[Precise Grabber Flexible] Skrip siap digunakan!")
+print("[Precise Grabber Stable] Skrip siap di-test!")
