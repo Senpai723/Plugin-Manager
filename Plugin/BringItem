@@ -1,5 +1,5 @@
 -- ================================================================
--- INDEPENDENT FLOATING GUI: AIM, TELEPORT & TAP GRABBER
+-- FINAL SMOOTH AIM-DOWN & TAP GRABBER
 -- ================================================================
 
 local Players = game:GetService("Players")
@@ -32,7 +32,7 @@ local function lower(val)
     return string.lower(tostring(val or ""))
 end
 
-getgenv().ExecuteAimGrab = function(keyword)
+getgenv().ExecutePreciseGrab = function(keyword)
     local searchKeyword = lower(keyword)
     if searchKeyword == "" then
         print("[Grab] Keyword kosong!")
@@ -50,10 +50,10 @@ getgenv().ExecuteAimGrab = function(keyword)
     local originalCamType = Camera.CameraType
     local translatedKeyword = TRANSLATION_MAP[searchKeyword]
     local collected = 0
-    local maxCount = 10 -- Batas aman maksimal 10 item sekali jalan
+    local maxCount = 10 -- Batas aman maksimal 10 item per eksekusi
     local itemsFolder = Workspace:FindFirstChild("Items") or Workspace
 
-    print("[Grab] Memulai proses untuk keyword: " .. searchKeyword)
+    print("[Grab] Memulai loop pengambilan untuk: " .. searchKeyword)
 
     for _, obj in ipairs(itemsFolder:GetDescendants()) do
         if collected >= maxCount then break end
@@ -74,20 +74,22 @@ getgenv().ExecuteAimGrab = function(keyword)
                     pcall(function()
                         local itemPos = targetPart.Position
                         
-                        -- 1. Teleport pas di depan item
-                        rootPart.CFrame = CFrame.new(itemPos + Vector3.new(0, 1, 3), itemPos)
+                        -- 1. Teleport karakter tepat di sebelah item
+                        rootPart.CFrame = CFrame.new(itemPos + Vector3.new(0, 0.5, 1.5), itemPos)
                         
-                        -- 2. Paksa kamera menghadap pas ke arah item
+                        -- 2. Alihkan kamera tepat di atas item, menghadap ke bawah (nunduk ke arah item)
                         Camera.CameraType = Enum.CameraType.Scriptable
-                        Camera.CFrame = CFrame.new(Camera.CFrame.Position, itemPos)
-                        task.wait(0.1)
+                        Camera.CFrame = CFrame.lookAt(itemPos + Vector3.new(0, 4, 2), itemPos)
+                        
+                        task.wait(0.15) -- Jeda sebentar agar posisi stabil
 
-                        -- 3. Simulasi Tap layar di titik tengah kursor
+                        -- 3. Simulasi Tap / Klik di tengah layar (posisi item pas di crosshair)
                         local vp = Camera.ViewportSize
                         VirtualInputManager:SendMouseButtonEvent(vp.X/2, vp.Y/2, 0, true, game, 0)
                         task.wait(0.05)
                         VirtualInputManager:SendMouseButtonEvent(vp.X/2, vp.Y/2, 0, false, game, 0)
 
+                        -- 4. Tambahan touch event untuk memastikan sistem game merespon
                         if targetPart:IsA("BasePart") then
                             firetouchinterest(rootPart, targetPart, 0)
                             task.wait(0.05)
@@ -95,31 +97,34 @@ getgenv().ExecuteAimGrab = function(keyword)
                         end
 
                         collected += 1
+                        print("[Grab] Berhasil mengambil item ke-" .. collected)
                     end)
-                    task.wait(0.3)
+
+                    -- Jeda perulangan (repeat) agar prosesnya natural dan tidak nge-lag
+                    task.wait(0.4)
                 end
             end
         end
     end
 
-    -- Kembalikan posisi player dan kamera ke semula
+    -- Kembalikan kamera dan posisi player ke semula setelah selesai repeat
     pcall(function()
         Camera.CameraType = originalCamType
         rootPart.CFrame = originalCFrame
     end)
 
-    print("[Grab] Selesai! Berhasil mengambil " .. collected .. " item.")
+    print("[Grab] Selesai! Total " .. collected .. " item berhasil diproses.")
 end
 
 -- ----------------------------------------------------------------
--- PEMBUATAN FLOATING GUI DI LAYAR
+-- GUI INTERFACE
 -- ----------------------------------------------------------------
 local playerGui = LocalPlayer:WaitForChild("PlayerGui")
-local existing = playerGui:FindFirstChild("AimGrabGui") or CoreGui:FindFirstChild("AimGrabGui")
+local existing = playerGui:FindFirstChild("PreciseGrabGui") or CoreGui:FindFirstChild("PreciseGrabGui")
 if existing then existing:Destroy() end
 
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "AimGrabGui"
+screenGui.Name = "PreciseGrabGui"
 screenGui.ResetOnSpawn = false
 pcall(function() screenGui.Parent = CoreGui end)
 if not screenGui.Parent then screenGui.Parent = playerGui end
@@ -143,7 +148,7 @@ title.Size = UDim2.new(1, -30, 1, 0)
 title.Position = UDim2.new(0, 8, 0, 0)
 title.BackgroundTransparency = 1
 title.Font = Enum.Font.GothamBold
-title.Text = "🎯 Aim & Tap Grabber"
+title.Text = "🎯 Precise Grabber"
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.TextSize = 12
 title.TextXAlignment = Enum.TextXAlignment.Left
@@ -177,21 +182,21 @@ btn.Size = UDim2.new(1, -16, 0, 30)
 btn.Position = UDim2.new(0, 8, 0, 72)
 btn.BackgroundColor3 = Color3.fromRGB(0, 150, 90)
 btn.Font = Enum.Font.GothamBold
-btn.Text = "EXECUTE AIM GRAB"
+btn.Text = "START PRECISE GRAB"
 btn.TextColor3 = Color3.fromRGB(255, 255, 255)
 btn.TextSize = 11
 Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
 
 btn.MouseButton1Click:Connect(function()
     if textBox.Text ~= "" then
-        getgenv().ExecuteAimGrab(textBox.Text)
+        getgenv().ExecutePreciseGrab(textBox.Text)
     end
 end)
 
 textBox.FocusLost:Connect(function(enter)
     if enter and textBox.Text ~= "" then
-        getgenv().ExecuteAimGrab(textBox.Text)
+        getgenv().ExecutePreciseGrab(textBox.Text)
     end
 end)
 
-print("[Aim Grabber] GUI mandiri berhasil dimuat!")
+print("[Precise Grabber] Skrip berhasil dimuat!")
