@@ -1,13 +1,11 @@
 -- ================================================================
--- FIXED REMOTE GRABBER SCRIPT (MOBILE FRIENDLY)
+-- INFINITE YIELD PLUGIN: EXACT REMOTE SPY GRABBER
 -- ================================================================
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
-local LocalPlayer = Players.LocalPlayer
 
--- Ambil jalur remote asli game
 local StoreRemotes = ReplicatedStorage:WaitForChild("StoreRemotes", 5)
 local GrabRequest = StoreRemotes and StoreRemotes:WaitForChild("GrabRequest", 5)
 
@@ -35,147 +33,68 @@ local function lower(val)
     return string.lower(tostring(val or ""))
 end
 
--- Fungsi Utama Remote Grab
-getgenv().RemoteGrabItems = function(keyword)
+local function executeExactGrab(keyword)
     local searchKeyword = lower(keyword)
     if searchKeyword == "" then
-        warn("[Remote Grab] Keyword kosong!")
-        return 0
+        print("[Grab] Masukkan keyword item!")
+        return
     end
 
     if not GrabRequest then
-        warn("[Remote Grab] Remote GrabRequest tidak ditemukan!")
-        return 0
+        print("[Grab] Remote GrabRequest tidak ditemukan!")
+        return
     end
 
     local translatedKeyword = TRANSLATION_MAP[searchKeyword]
     local count = 0
-    local triggeredNames = {}
+    local itemsFolder = Workspace:FindFirstChild("Items") or Workspace
 
-    for _, obj in ipairs(Workspace:GetDescendants()) do
+    for _, obj in ipairs(itemsFolder:GetDescendants()) do
         local fullName = lower(obj:GetFullName())
         
-        if string.find(fullName, "items") and not string.find(fullName, "placezone") and not string.find(fullName, "tempinvis") then
+        if not string.find(fullName, "placezone") and not string.find(fullName, "tempinvis") then
             local name = lower(obj.Name)
             
             if string.find(name, searchKeyword, 1, true) or (translatedKeyword and string.find(name, translatedKeyword, 1, true)) then
-                if not triggeredNames[obj.Name] then
-                    triggeredNames[obj.Name] = true
-                    
-                    pcall(function()
-                        GrabRequest:FireServer(obj.Name, 1, math.random(10000, 99999))
-                        count += 1
-                    end)
+                
+                -- Ambil nama asli objek (Model atau Part utama)
+                local targetName = obj.Name
+                if obj:IsA("BasePart") and obj.Parent and obj.Parent ~= itemsFolder and obj.Parent:IsA("Model") then
+                    targetName = obj.Parent.Name
                 end
+
+                pcall(function()
+                    -- Sesuai persis dengan format Remote Spy lu: (NamaItem, 1, AngkaAcak)
+                    local randomToken = math.random(100000, 999999)
+                    GrabRequest:FireServer(targetName, 1, randomToken)
+                    count += 1
+                end)
+                
+                -- Beri jeda sikit atau batasi agar tidak spam berlebih
+                task.wait(0.05)
+                break -- Ambil satu per satu dulu biar stabil
             end
         end
     end
 
-    print("[Remote Grab] Berhasil mengambil " .. count .. " item untuk keyword: '" .. keyword .. "'")
-    return count
+    print("[Remote Grab] Berhasil mengirim request grab untuk: " .. keyword)
 end
 
--- ----------------------------------------------------------------
--- GUI PEMBUATAN (DIPAKSA MASUK KE PLAYERGUI)
--- ----------------------------------------------------------------
-local playerGui = LocalPlayer:WaitForChild("PlayerGui")
-local existingGui = playerGui:FindFirstChild("RemoteGrabGui")
-if existingGui then
-    existingGui:Destroy()
-end
+-- Plugin Struct Infinite Yield
+local Plugin = {
+    ["PluginName"] = "Exact Remote Grabber",
+    ["PluginDescription"] = "Grab item menggunakan format argumen asli dari Remote Spy",
+    ["Commands"] = {
+        ["rgrab"] = {
+            ["ListName"] = "rgrab <item>",
+            ["Description"] = "Tarik item sesuai remote spy (Contoh: ;rgrab telur)",
+            ["Aliases"] = {"grabitem"},
+            ["Function"] = function(args, speaker)
+                local keyword = table.concat(args, " ")
+                executeExactGrab(keyword)
+            end
+        }
+    }
+}
 
-local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "RemoteGrabGui"
-screenGui.ResetOnSpawn = false
-screenGui.Parent = playerGui
-
-local mainFrame = Instance.new("Frame")
-mainFrame.Name = "MainFrame"
-mainFrame.Size = UDim2.new(0, 240, 0, 110)
-mainFrame.Position = UDim2.new(0.5, -120, 0.3, 0)
-mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-mainFrame.BorderSizePixel = 0
-mainFrame.Active = true
-mainFrame.Draggable = true
-mainFrame.Parent = screenGui
-Instance.new("UICorner", mainFrame).CornerRadius = UDim.new(0, 8)
-
--- TopBar
-local topBar = Instance.new("Frame")
-topBar.Size = UDim2.new(1, 0, 0, 28)
-topBar.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-topBar.BorderSizePixel = 0
-topBar.Parent = mainFrame
-Instance.new("UICorner", topBar).CornerRadius = UDim.new(0, 8)
-
-local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1, -30, 1, 0)
-title.Position = UDim2.new(0, 8, 0, 0)
-title.BackgroundTransparency = 1
-title.Font = Enum.Font.GothamBold
-title.Text = "⚡ Remote Grabber"
-title.TextColor3 = Color3.fromRGB(255, 255, 255)
-title.TextSize = 12
-title.TextXAlignment = Enum.TextXAlignment.Left
-title.Parent = topBar
-
-local closeBtn = Instance.new("TextButton")
-closeBtn.Size = UDim2.new(0, 20, 0, 20)
-closeBtn.Position = UDim2.new(1, -24, 0, 4)
-closeBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-closeBtn.BorderSizePixel = 0
-closeBtn.Font = Enum.Font.GothamBold
-closeBtn.Text = "X"
-closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-closeBtn.TextSize = 11
-closeBtn.Parent = topBar
-Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 4)
-
-closeBtn.MouseButton1Click:Connect(function()
-    screenGui:Destroy()
-end)
-
--- Input Box
-local textBox = Instance.new("TextBox")
-textBox.Size = UDim2.new(1, -16, 0, 30)
-textBox.Position = UDim2.new(0, 8, 0, 36)
-textBox.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-textBox.BorderSizePixel = 0
-textBox.Font = Enum.Font.Gotham
-textBox.PlaceholderText = "Ketik item (contoh: telur / egg)..."
-textBox.Text = ""
-textBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-textBox.PlaceholderColor3 = Color3.fromRGB(140, 140, 140)
-textBox.TextSize = 11
-textBox.ClearTextOnFocus = false
-textBox.Parent = mainFrame
-Instance.new("UICorner", textBox).CornerRadius = UDim.new(0, 6)
-
--- Tombol Grab
-local grabBtn = Instance.new("TextButton")
-grabBtn.Size = UDim2.new(1, -16, 0, 30)
-grabBtn.Position = UDim2.new(0, 8, 0, 72)
-grabBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 90)
-grabBtn.BorderSizePixel = 0
-grabBtn.Font = Enum.Font.GothamBold
-grabBtn.Text = "REMOTE GRAB"
-grabBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-grabBtn.TextSize = 11
-grabBtn.Parent = mainFrame
-Instance.new("UICorner", grabBtn).CornerRadius = UDim.new(0, 6)
-
--- Event Click / Enter
-grabBtn.MouseButton1Click:Connect(function()
-    local itemInput = textBox.Text
-    if itemInput ~= "" then
-        getgenv().RemoteGrabItems(itemInput)
-    end
-end)
-
-textBox.FocusLost:Connect(function(enterPressed)
-    if enterPressed and textBox.Text ~= "" then
-        getgenv().RemoteGrabItems(textBox.Text)
-    end
-end)
-
-print("[Remote Grab] GUI berhasil dimuat ke PlayerGui!")
+return Plugin
