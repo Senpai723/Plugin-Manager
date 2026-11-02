@@ -1,5 +1,5 @@
 -- ================================================================
--- PRECISE GRABBER ULTIMATE FIX (AUTO LIMIT & CLEAN UNLOCK)
+-- PRECISE GRABBER: MOBILE UI SAFE (NO CAMERA LOCK)
 -- ================================================================
 
 local Players = game:GetService("Players")
@@ -52,7 +52,7 @@ getgenv().ExecutePreciseGrab = function(keyword)
     local translatedKeyword = TRANSLATION_MAP[searchKeyword]
     local itemsFolder = Workspace:FindFirstChild("Items") or Workspace
 
-    -- 1. KUMPULKAN HANYA ITEM YANG VALID DAN PUNYA POSISI NYATA
+    -- 1. KUMPULKAN HANYA ITEM YANG VALID
     local validItems = {}
 
     for _, obj in ipairs(itemsFolder:GetDescendants()) do
@@ -91,17 +91,16 @@ getgenv().ExecutePreciseGrab = function(keyword)
     end)
 
     if #validItems == 0 then
-        print("[Grab] Item dengan keyword '" .. keyword .. "' tidak ditemukan di map!")
+        print("[Grab] Item '" .. keyword .. "' tidak ditemukan di map!")
         return
     end
 
-    -- Batasi maksimal pengambilan sesuai jumlah item yang beneran ada di map (maksimal 7 atau sisa item)
     local targetLimit = math.min(#validItems, 7)
-    print("[Grab] Ditemukan " .. #validItems .. " item. Memproses " .. targetLimit .. " item terdekat...")
+    print("[Grab] Memproses " .. targetLimit .. " item...")
 
     local collected = 0
 
-    -- 2. EKSEKUSI TELEPORT & GRAB SESUAI JUMLAH NYATA
+    -- 2. EKSEKUSI TELEPORT & TOUCH TANPA MENGGANGGU KONTROL HP
     for i = 1, targetLimit do
         local itemData = validItems[i]
         if not itemData then break end
@@ -112,14 +111,10 @@ getgenv().ExecutePreciseGrab = function(keyword)
                 local itemPos = targetPart.Position
                 
                 -- Teleport pas di sebelah item
-                rootPart.CFrame = CFrame.new(itemPos + Vector3.new(0, 0.5, 1.5), itemPos)
-                
-                -- Kamera nunduk pas ke item
-                Camera.CameraType = Enum.CameraType.Scriptable
-                Camera.CFrame = CFrame.lookAt(itemPos + Vector3.new(0, 3, 2), itemPos)
-                task.wait(0.1)
+                rootPart.CFrame = CFrame.new(itemPos + Vector3.new(0, 0.5, 1.5))
+                task.wait(0.08)
 
-                -- Simulasi klik / tap layar di tengah
+                -- Simulasi klik / touch langsung ke item
                 local vp = Camera.ViewportSize
                 VirtualInputManager:SendMouseButtonEvent(vp.X/2, vp.Y/2, 0, true, game, 0)
                 task.wait(0.03)
@@ -133,22 +128,17 @@ getgenv().ExecutePreciseGrab = function(keyword)
 
                 collected += 1
             end)
-            task.wait(0.25)
+            task.wait(0.2)
         end
     end
 
-    -- 3. PEMULIHAN MUTLAK (DIJAMIN KONTROL LANGSUNG NORMAL TANPA DELAY)
+    -- 3. KEMBALI KE POSISI AWAL (KONTROL HP AMAN 100%)
     pcall(function()
-        -- Kembalikan posisi player ke asal
         rootPart.CFrame = originalCFrame
-        
-        -- Reset total kamera dan kontrol karakter
-        Camera.CameraType = Enum.CameraType.Custom
-        Camera.CameraSubject = humanoid
         humanoid.PlatformStand = false
     end)
 
-    print("[Grab] Selesai! Berhasil mengambil " .. collected .. " item. Kontrol & kamera kembali normal.")
+    print("[Grab] Selesai! Berhasil mengambil " .. collected .. " item. Kontrol HP langsung normal.")
 end
 
 -- ----------------------------------------------------------------
@@ -183,7 +173,7 @@ title.Size = UDim2.new(1, -30, 1, 0)
 title.Position = UDim2.new(0, 8, 0, 0)
 title.BackgroundTransparency = 1
 title.Font = Enum.Font.GothamBold
-title.Text = "🎯 Precise Grabber (Ultimate)"
+title.Text = "🎯 Precise Grabber (Mobile Safe)"
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.TextSize = 12
 title.TextXAlignment = Enum.TextXAlignment.Left
@@ -204,7 +194,7 @@ textBox.Size = UDim2.new(1, -16, 0, 30)
 textBox.Position = UDim2.new(0, 8, 0, 36)
 textBox.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 textBox.Font = Enum.Font.Gotham
-textBox.PlaceholderText = "Ketik item (contoh: kue minecraft)..."
+textBox.PlaceholderText = "Ketik item (contoh: apple pie)..."
 textBox.Text = ""
 textBox.TextColor3 = Color3.fromRGB(255, 255, 255)
 textBox.PlaceholderColor3 = Color3.fromRGB(140, 140, 140)
@@ -234,4 +224,4 @@ textBox.FocusLost:Connect(function(enter)
     end
 end)
 
-print("[Precise Grabber Ultimate] Skrip siap di-test!")
+print("[Precise Grabber Mobile Safe] Skrip siap di-test!")
