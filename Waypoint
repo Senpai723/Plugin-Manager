@@ -206,24 +206,28 @@ local function parseCPIdentity(obj)
         curr = curr.Parent
     end
 
-    local summitKeywords = {"summit", "peak", "finish", "puncak", "winpad", "reset"}
+    -- ==================================================
+    -- 1. DETEKSI SUMMIT (Pengecekan Mutlak Tanpa Batasan Folder)
+    -- ==================================================
+    local summitKeywords = {"summit", "peak", "finish", "puncak", "winpad"}
     local isSummit = false
     
     for _, kw in ipairs(summitKeywords) do
         if string.find(lowerName, kw, 1, true) or string.find(lowerParent, kw, 1, true) then
-            if kw == "reset" then
-                local fullInstancePath = string.lower(getInstancePath(obj))
-                if string.find(fullInstancePath, "checkpoint") or string.find(fullInstancePath, "obby") or string.find(fullInstancePath, "gunung") then
-                    isSummit = true
-                    break
-                end
-            else
-                isSummit = true
-                break
-            end
+            isSummit = true
+            break
         end
     end
 
+    -- Khusus untuk kata "reset", pastikan berada di folder map/obby agar tidak salah tangkap
+    if string.find(lowerName, "reset", 1, true) or string.find(lowerParent, "reset", 1, true) then
+        local fullInstancePath = string.lower(getInstancePath(obj))
+        if string.find(fullInstancePath, "checkpoint") or string.find(fullInstancePath, "obby") or string.find(fullInstancePath, "gunung") then
+            isSummit = true
+        end
+    end
+
+    -- Cek juga teks pada BillboardGui/SurfaceGui jika ada
     local guiText = ""
     local hasGui = validPart:FindFirstChildOfClass("BillboardGui") or validPart:FindFirstChildOfClass("SurfaceGui")
     if not hasGui and validPart.Parent and validPart.Parent:IsA("Model") then
