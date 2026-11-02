@@ -1,14 +1,14 @@
 -- ================================================================
--- INFINITE YIELD PLUGIN: AIM CAMERA & TAP GRABBER
+-- INDEPENDENT FLOATING GUI: AIM, TELEPORT & TAP GRABBER
 -- ================================================================
 
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
+local CoreGui = game:GetService("CoreGui")
 local VirtualInputManager = game:GetService("VirtualInputManager")
 local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
 
--- Kamus terjemahan bilingual
 local TRANSLATION_MAP = {
     ["telur"] = "egg",
     ["egg"] = "telur",
@@ -32,17 +32,15 @@ local function lower(val)
     return string.lower(tostring(val or ""))
 end
 
-local function executeAimAndTapGrab(keyword, maxCount)
+getgenv().ExecuteAimGrab = function(keyword)
     local searchKeyword = lower(keyword)
     if searchKeyword == "" then
-        print("[Grab] Masukkan nama itemnya, bro!")
+        print("[Grab] Keyword kosong!")
         return
     end
 
-    maxCount = tonumber(maxCount) or 1
     local character = LocalPlayer.Character
     local rootPart = character and character:FindFirstChild("HumanoidRootPart")
-    
     if not rootPart then
         print("[Grab] Karakter tidak ditemukan!")
         return
@@ -52,14 +50,13 @@ local function executeAimAndTapGrab(keyword, maxCount)
     local originalCamType = Camera.CameraType
     local translatedKeyword = TRANSLATION_MAP[searchKeyword]
     local collected = 0
+    local maxCount = 10 -- Batas aman maksimal 10 item sekali jalan
     local itemsFolder = Workspace:FindFirstChild("Items") or Workspace
 
-    print(string.format("[Grab] Memulai Aim-Grab '%s' sebanyak %d item...", searchKeyword, maxCount))
+    print("[Grab] Memulai proses untuk keyword: " .. searchKeyword)
 
     for _, obj in ipairs(itemsFolder:GetDescendants()) do
-        if collected >= maxCount then 
-            break 
-        end
+        if collected >= maxCount then break end
 
         local fullName = lower(obj:GetFullName())
         if not string.find(fullName, "placezone") and not string.find(fullName, "tempinvis") then
@@ -67,7 +64,6 @@ local function executeAimAndTapGrab(keyword, maxCount)
 
             if string.find(name, searchKeyword, 1, true) or (translatedKeyword and string.find(name, translatedKeyword, 1, true)) then
                 local targetPart = nil
-
                 if obj:IsA("BasePart") then
                     targetPart = obj
                 elseif obj:IsA("Model") then
@@ -78,26 +74,20 @@ local function executeAimAndTapGrab(keyword, maxCount)
                     pcall(function()
                         local itemPos = targetPart.Position
                         
-                        -- 1. Teleport karakter ke depan item (berjarak 3 stud)
-                        local standPos = itemPos + Vector3.new(0, 1, 3)
-                        rootPart.CFrame = CFrame.new(standPos, itemPos)
+                        -- 1. Teleport pas di depan item
+                        rootPart.CFrame = CFrame.new(itemPos + Vector3.new(0, 1, 3), itemPos)
                         
-                        -- 2. Paksa Kamera untuk MENENGOK/MENGHADAP tepat ke titik tengah item
+                        -- 2. Paksa kamera menghadap pas ke arah item
                         Camera.CameraType = Enum.CameraType.Scriptable
                         Camera.CFrame = CFrame.new(Camera.CFrame.Position, itemPos)
-                        
-                        task.wait(0.15) -- Jeda mikro agar Raycast game mendeteksi item di tengah kursor
+                        task.wait(0.1)
 
-                        -- 3. Simulasi Tap / Click Layar di tengah (Crosshair)
-                        local viewportSize = Camera.ViewportSize
-                        local centerX = viewportSize.X / 2
-                        local centerY = viewportSize.Y / 2
-                        
-                        VirtualInputManager:SendMouseButtonEvent(centerX, centerY, 0, true, game, 0)
+                        -- 3. Simulasi Tap layar di titik tengah kursor
+                        local vp = Camera.ViewportSize
+                        VirtualInputManager:SendMouseButtonEvent(vp.X/2, vp.Y/2, 0, true, game, 0)
                         task.wait(0.05)
-                        VirtualInputManager:SendMouseButtonEvent(centerX, centerY, 0, false, game, 0)
+                        VirtualInputManager:SendMouseButtonEvent(vp.X/2, vp.Y/2, 0, false, game, 0)
 
-                        -- Fallback Touch Interest jika game pakai gabungan touch
                         if targetPart:IsA("BasePart") then
                             firetouchinterest(rootPart, targetPart, 0)
                             task.wait(0.05)
@@ -105,41 +95,103 @@ local function executeAimAndTapGrab(keyword, maxCount)
                         end
 
                         collected += 1
-                        print(string.format("[Grab] Berhasil Aim & Tap item ke-%d", collected))
                     end)
-
-                    -- Jeda agar animasi/sistem server sempat memindahkan item ke tangan
-                    task.wait(0.4)
+                    task.wait(0.3)
                 end
             end
         end
     end
 
-    -- Balikkan Kamera & Posisi Karakter ke tempat semula
+    -- Kembalikan posisi player dan kamera ke semula
     pcall(function()
         Camera.CameraType = originalCamType
         rootPart.CFrame = originalCFrame
     end)
 
-    print(string.format("[Grab] Selesai! Total %d item berhasil di-grab.", collected))
+    print("[Grab] Selesai! Berhasil mengambil " .. collected .. " item.")
 end
 
--- Plugin Struct Infinite Yield
-local Plugin = {
-    ["PluginName"] = "Aim Camera & Tap Grabber",
-    ["PluginDescription"] = "Mengarahkan kamera pas ke item lalu men-tap layar otomatis.",
-    ["Commands"] = {
-        ["rgrab"] = {
-            ["ListName"] = "rgrab <item> [jumlah]",
-            ["Description"] = "Contoh: ;rgrab telur 5 atau ;rgrab kue 2",
-            ["Aliases"] = {"aimgrab"},
-            ["Function"] = function(args, speaker)
-                local keyword = args[1] or ""
-                local count = args[2] or 1
-                executeAimAndTapGrab(keyword, count)
-            end
-        }
-    }
-}
+-- ----------------------------------------------------------------
+-- PEMBUATAN FLOATING GUI DI LAYAR
+-- ----------------------------------------------------------------
+local playerGui = LocalPlayer:WaitForChild("PlayerGui")
+local existing = playerGui:FindFirstChild("AimGrabGui") or CoreGui:FindFirstChild("AimGrabGui")
+if existing then existing:Destroy() end
 
-return Plugin
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "AimGrabGui"
+screenGui.ResetOnSpawn = false
+pcall(function() screenGui.Parent = CoreGui end)
+if not screenGui.Parent then screenGui.Parent = playerGui end
+
+local mainFrame = Instance.new("Frame", screenGui)
+mainFrame.Size = UDim2.new(0, 240, 0, 110)
+mainFrame.Position = UDim2.new(0.5, -120, 0.3, 0)
+mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+mainFrame.BorderSizePixel = 0
+mainFrame.Active = true
+mainFrame.Draggable = true
+Instance.new("UICorner", mainFrame).CornerRadius = UDim.new(0, 8)
+
+local topBar = Instance.new("Frame", mainFrame)
+topBar.Size = UDim2.new(1, 0, 0, 28)
+topBar.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+Instance.new("UICorner", topBar).CornerRadius = UDim.new(0, 8)
+
+local title = Instance.new("TextLabel", topBar)
+title.Size = UDim2.new(1, -30, 1, 0)
+title.Position = UDim2.new(0, 8, 0, 0)
+title.BackgroundTransparency = 1
+title.Font = Enum.Font.GothamBold
+title.Text = "🎯 Aim & Tap Grabber"
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.TextSize = 12
+title.TextXAlignment = Enum.TextXAlignment.Left
+
+local closeBtn = Instance.new("TextButton", topBar)
+closeBtn.Size = UDim2.new(0, 20, 0, 20)
+closeBtn.Position = UDim2.new(1, -24, 0, 4)
+closeBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+closeBtn.Font = Enum.Font.GothamBold
+closeBtn.Text = "X"
+closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+closeBtn.TextSize = 11
+Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 4)
+closeBtn.MouseButton1Click:Connect(function() screenGui:Destroy() end)
+
+local textBox = Instance.new("TextBox", mainFrame)
+textBox.Size = UDim2.new(1, -16, 0, 30)
+textBox.Position = UDim2.new(0, 8, 0, 36)
+textBox.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+textBox.Font = Enum.Font.Gotham
+textBox.PlaceholderText = "Ketik item (contoh: telur / kue)..."
+textBox.Text = ""
+textBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+textBox.PlaceholderColor3 = Color3.fromRGB(140, 140, 140)
+textBox.TextSize = 11
+textBox.ClearTextOnFocus = false
+Instance.new("UICorner", textBox).CornerRadius = UDim.new(0, 6)
+
+local btn = Instance.new("TextButton", mainFrame)
+btn.Size = UDim2.new(1, -16, 0, 30)
+btn.Position = UDim2.new(0, 8, 0, 72)
+btn.BackgroundColor3 = Color3.fromRGB(0, 150, 90)
+btn.Font = Enum.Font.GothamBold
+btn.Text = "EXECUTE AIM GRAB"
+btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+btn.TextSize = 11
+Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+
+btn.MouseButton1Click:Connect(function()
+    if textBox.Text ~= "" then
+        getgenv().ExecuteAimGrab(textBox.Text)
+    end
+end)
+
+textBox.FocusLost:Connect(function(enter)
+    if enter and textBox.Text ~= "" then
+        getgenv().ExecuteAimGrab(textBox.Text)
+    end
+end)
+
+print("[Aim Grabber] GUI mandiri berhasil dimuat!")
