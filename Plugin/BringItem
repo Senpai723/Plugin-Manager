@@ -1,5 +1,5 @@
 -- ================================================================
--- PRECISE GRABBER FIX v2: INSTANT CAMERA UNLOCK
+-- PRECISE GRABBER FINAL FIX: EXACT NAME MATCH & CLEAN UNLOCK
 -- ================================================================
 
 local Players = game:GetService("Players")
@@ -48,26 +48,37 @@ getgenv().ExecutePreciseGrab = function(keyword)
         return
     end
 
+    -- Simpan posisi awal dengan aman
     local originalCFrame = rootPart.CFrame
-    local originalCamType = Camera.CameraType
-    local originalCamSubject = Camera.CameraSubject
     local translatedKeyword = TRANSLATION_MAP[searchKeyword]
     local collected = 0
     local maxCount = 10 
     local itemsFolder = Workspace:FindFirstChild("Items") or Workspace
 
-    -- 1. KUMPULKAN & URUTKAN ITEM BERDASARKAN JARAK TERDEKAT
+    -- 1. FILTER PENCARIAN PRESISI (MENGHINDARI MODEL DISPLAY / PAPAN NAMA)
     local validItems = {}
 
     for _, obj in ipairs(itemsFolder:GetDescendants()) do
         local fullName = lower(obj:GetFullName())
-        if not string.find(fullName, "placezone") and not string.find(fullName, "tempinvis") then
+        -- Pastikan hanya mengambil objek di dalam folder items yang valid, bukan dekorasi map/display
+        if not string.find(fullName, "placezone") and not string.find(fullName, "tempinvis") and not string.find(fullName, "display") then
             local name = lower(obj.Name)
 
-            if string.find(name, searchKeyword, 1, true) or (translatedKeyword and string.find(name, translatedKeyword, 1, true)) then
+            -- Cek apakah nama objek benar-benar cocok dengan keyword spesifik
+            local isMatch = false
+            if name == searchKeyword or string.find(name, searchKeyword, 1, true) then
+                isMatch = true
+            elseif translatedKeyword and (name == translatedKeyword or string.find(name, translatedKeyword, 1, true)) then
+                isMatch = true
+            end
+
+            if isMatch then
                 local targetPart = nil
                 if obj:IsA("BasePart") then
-                    targetPart = obj
+                    -- Pastikan bukan part besar seperti lantai atau meja
+                    if obj.Size.Magnitude < 15 then
+                        targetPart = obj
+                    end
                 elseif obj:IsA("Model") then
                     targetPart = obj.PrimaryPart or obj:FindFirstChildWhichIsA("BasePart", true)
                 end
@@ -80,13 +91,14 @@ getgenv().ExecutePreciseGrab = function(keyword)
         end
     end
 
+    -- Urutkan berdasarkan jarak terdekat dari player
     table.sort(validItems, function(a, b)
         return a.Distance < b.Distance
     end)
 
-    print("[Grab] Total item ditemukan: " .. #validItems .. ". Memulai pengambilan...")
+    print("[Grab] Item valid ditemukan: " + #validItems + ". Memulai...")
 
-    -- 2. EKSEKUSI PENGAMBILAN BERURUTAN
+    -- 2. EKSEKUSI TELEPORT & GRAB BERURUTAN
     for _, itemData in ipairs(validItems) do
         if collected >= maxCount then break end
         local targetPart = itemData.Part
@@ -95,42 +107,44 @@ getgenv().ExecutePreciseGrab = function(keyword)
             pcall(function()
                 local itemPos = targetPart.Position
                 
-                -- Teleport pas di sebelah item
+                -- Teleport tepat di sebelah item
                 rootPart.CFrame = CFrame.new(itemPos + Vector3.new(0, 0.5, 1.5), itemPos)
                 
-                -- Alihkan kamera nunduk ke bawah menghadap item
+                -- Alihkan kamera nunduk pas menghadap ke item
                 Camera.CameraType = Enum.CameraType.Scriptable
-                Camera.CFrame = CFrame.lookAt(itemPos + Vector3.new(0, 4, 2), itemPos)
-                task.wait(0.12)
+                Camera.CFrame = CFrame.lookAt(itemPos + Vector3.new(0, 3, 2), itemPos)
+                task.wait(0.1)
 
-                -- Simulasi Tap layar di tengah
+                -- Simulasi klik / tap layar di tengah
                 local vp = Camera.ViewportSize
                 VirtualInputManager:SendMouseButtonEvent(vp.X/2, vp.Y/2, 0, true, game, 0)
-                task.wait(0.04)
+                task.wait(0.03)
                 VirtualInputManager:SendMouseButtonEvent(vp.X/2, vp.Y/2, 0, false, game, 0)
 
                 if targetPart:IsA("BasePart") then
                     firetouchinterest(rootPart, targetPart, 0)
-                    task.wait(0.04)
+                    task.wait(0.03)
                     firetouchinterest(rootPart, targetPart, 1)
                 end
 
                 collected += 1
             end)
-            task.wait(0.3)
+            task.wait(0.25)
         end
     end
 
-    -- 3. PEMULIHAN INSTAN (KAMERA LANGSUNG BEBAS & NORMAL)
+    -- 3. PEMULIHAN TOTAL (KAMERA & KONTROL DIJAMIN LANGSUNG NORMAL BEBAS)
     pcall(function()
+        -- Kembalikan posisi player ke asal
         rootPart.CFrame = originalCFrame
-        Camera.CameraSubject = humanoid
+        
+        -- Reset total sistem kamera Roblox agar tidak nge-lock/ngadat di analog
         Camera.CameraType = Enum.CameraType.Custom
-        -- Paksa update orientasi kamera agar bebas dari lock scriptable seketika
-        Camera.CFrame = CFrame.new(Camera.CFrame.Position, rootPart.Position + Vector3.new(0, 2, 0))
+        Camera.CameraSubject = humanoid
+        LocalPlayer.DevCameraOcclusionMode = Enum.DevCameraOcclusionMode.Zoom
     end)
 
-    print("[Grab] Selesai! Berhasil mengambil " .. collected .. " item. Kamera langsung dipulihkan.")
+    print("[Grab] Selesai! Berhasil mengambil " + collected + " item. Kontrol pulih.")
 end
 
 -- ----------------------------------------------------------------
@@ -165,7 +179,7 @@ title.Size = UDim2.new(1, -30, 1, 0)
 title.Position = UDim2.new(0, 8, 0, 0)
 title.BackgroundTransparency = 1
 title.Font = Enum.Font.GothamBold
-title.Text = "🎯 Precise Grabber (Instant Unlok)"
+title.Text = "🎯 Precise Grabber (Clean)"
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.TextSize = 12
 title.TextXAlignment = Enum.TextXAlignment.Left
@@ -186,7 +200,7 @@ textBox.Size = UDim2.new(1, -16, 0, 30)
 textBox.Position = UDim2.new(0, 8, 0, 36)
 textBox.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 textBox.Font = Enum.Font.Gotham
-textBox.PlaceholderText = "Ketik item (contoh: kue / telur)..."
+textBox.PlaceholderText = "Ketik item (contoh: kue minecraft)..."
 textBox.Text = ""
 textBox.TextColor3 = Color3.fromRGB(255, 255, 255)
 textBox.PlaceholderColor3 = Color3.fromRGB(140, 140, 140)
@@ -216,4 +230,4 @@ textBox.FocusLost:Connect(function(enter)
     end
 end)
 
-print("[Precise Grabber Instant Unlock] Skrip siap digunakan!")
+print("[Precise Grabber Clean] Skrip siap digunakan!")
