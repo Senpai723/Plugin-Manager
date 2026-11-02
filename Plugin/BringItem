@@ -1,5 +1,5 @@
 -- ================================================================
--- INDEPENDENT ITEM MAGNET / BRING ITEM SCRIPT (FIXED VERSION)
+-- INDEPENDENT ITEM MAGNET / BRING ITEM SCRIPT (FINAL FIX)
 -- ================================================================
 
 local Players = game:GetService("Players")
@@ -32,7 +32,7 @@ local function lower(val)
 end
 
 -- ----------------------------------------------------------------
--- LOGIKA UTAMA BRING ITEM (DENGAN FILTER ANCHOR & STRUKTUR MAP)
+-- LOGIKA UTAMA BRING ITEM (FOKUS PADA FOLDER ITEMS)
 -- ----------------------------------------------------------------
 getgenv().BringItems = function(keyword)
     local character = LocalPlayer.Character
@@ -52,25 +52,18 @@ getgenv().BringItems = function(keyword)
     local translatedKeyword = TRANSLATION_MAP[searchKeyword]
     local count = 0
 
+    -- Cari semua objek di dalam Workspace
     for _, obj in ipairs(Workspace:GetDescendants()) do
         if obj:IsA("Model") or obj:IsA("BasePart") then
-            -- 1. Abaikan player
-            local isPlayer = false
-            for _, player in ipairs(Players:GetPlayers()) do
-                if player.Character and obj:IsDescendantOf(player.Character) then
-                    isPlayer = true
-                    break
-                end
-            end
+            -- 1. Pastikan objek tersebut berada di dalam folder "Items" (tempat loot spawnan game)
+            local fullName = lower(obj:GetFullName())
+            if string.find(fullName, "items") then
+                
+                -- 2. Pastikan bukan bagian map seperti PlaceZone atau TempInvisPart
+                if not string.find(fullName, "placezone") and not string.find(fullName, "tempinvis") then
+                    local name = lower(obj.Name)
 
-            if not isPlayer then
-                local name = lower(obj.Name)
-                local fullName = lower(obj:GetFullName())
-
-                -- 2. Abaikan struktur map/tempat taruh seperti PlaceZone, TempInvisPart, dll.
-                if not string.find(fullName, "placezone") and not string.find(fullName, "tempinvis") and not string.find(fullName, "shelves") then
-                    
-                    -- 3. Cocokkan nama item atau terjemahannya
+                    -- 3. Cocokkan nama item dengan keyword atau kamus terjemahan
                     if string.find(name, searchKeyword, 1, true) or (translatedKeyword and string.find(name, translatedKeyword, 1, true)) then
                         local targetPart = nil
                         
@@ -80,10 +73,10 @@ getgenv().BringItems = function(keyword)
                             targetPart = obj.PrimaryPart or obj:FindFirstChildWhichIsA("BasePart", true)
                         end
 
-                        -- 4. SYARAT UTAMA: Harus di Workspace dan TIDAK ANCHORED (artinya item fisik/loot asli)
-                        if targetPart and targetPart:IsDescendantOf(Workspace) and not targetPart.Anchored then
+                        -- 4. Pindahkan posisinya meskipun Anchored, karena sudah dipastikan dari folder Items
+                        if targetPart and targetPart:IsDescendantOf(Workspace) then
                             pcall(function()
-                                -- Pindahkan tepat di depan bawah kaki player agar tidak melayang tinggi
+                                -- Posisikan rapi di depan bawah kaki player
                                 targetPart.CFrame = rootPart.CFrame * CFrame.new(0, -2, -3)
                                 count += 1
                             end)
@@ -94,7 +87,7 @@ getgenv().BringItems = function(keyword)
         end
     end
 
-    print("[Bring Item] Berhasil menarik " .. count .. " item fisik dengan keyword: '" .. keyword .. "'")
+    print("[Bring Item] Berhasil menarik " .. count .. " item dari folder Items dengan keyword: '" .. keyword .. "'")
     return count
 end
 
@@ -137,7 +130,7 @@ title.Size = UDim2.new(1, -30, 1, 0)
 title.Position = UDim2.new(0, 8, 0, 0)
 title.BackgroundTransparency = 1
 title.Font = Enum.Font.GothamBold
-title.Text = "🧲 Item Bringer (Fix)"
+title.Text = "🧲 Item Bringer (Final)"
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.TextSize = 12
 title.TextXAlignment = Enum.TextXAlignment.Left
@@ -202,4 +195,4 @@ textBox.FocusLost:Connect(function(enterPressed)
     end
 end)
 
-print("[Bring Item Fixed] Script berhasil dimuat tanpa menarik objek map!")
+print("[Bring Item Final] Skrip berhasil dimuat dan fokus ke folder Items!")
