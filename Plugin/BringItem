@@ -1,16 +1,12 @@
 -- ================================================================
--- INFINITE YIELD PLUGIN: INSTANT TELEPORT + REMOTE GRABBER
+-- INFINITE YIELD PLUGIN: TELEPORT & CUSTOM CLICK GRABBER
 -- ================================================================
 
 local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 local LocalPlayer = Players.LocalPlayer
 
-local StoreRemotes = ReplicatedStorage:WaitForChild("StoreRemotes", 5)
-local GrabRequest = StoreRemotes and StoreRemotes:WaitForChild("GrabRequest", 5)
-
--- Kamus terjemahan bilingual (Indo <-> Eng)
+-- Kamus terjemahan bilingual
 local TRANSLATION_MAP = {
     ["telur"] = "egg",
     ["egg"] = "telur",
@@ -34,87 +30,96 @@ local function lower(val)
     return string.lower(tostring(val or ""))
 end
 
-local function executeTeleportGrab(keyword)
+local function executeTeleportAndClickGrab(keyword, maxCount)
     local searchKeyword = lower(keyword)
     if searchKeyword == "" then
-        print("[Grab] Masukkan keyword item!")
+        print("[Grab] Masukkan nama itemnya, bro!")
         return
     end
 
-    if not GrabRequest then
-        print("[Grab] Remote GrabRequest tidak ditemukan!")
-        return
-    end
-
+    maxCount = tonumber(maxCount) or 5 -- Default ambil 5 item kalau jumlah tidak diisi
     local character = LocalPlayer.Character
     local rootPart = character and character:FindFirstChild("HumanoidRootPart")
+    
     if not rootPart then
         print("[Grab] Karakter tidak ditemukan!")
         return
     end
 
-    -- Simpan posisi awal player biar bisa balik lagi setelah selesai
     local originalCFrame = rootPart.CFrame
-
     local translatedKeyword = TRANSLATION_MAP[searchKeyword]
-    local count = 0
+    local collected = 0
     local itemsFolder = Workspace:FindFirstChild("Items") or Workspace
 
+    print(sprintf("[Grab] Memulai pengambilan '%s' sebanyak maksimal %d item...", searchKeyword, maxCount))
+
     for _, obj in ipairs(itemsFolder:GetDescendants()) do
+        if collected >= maxCount then 
+            break 
+        end
+
         local fullName = lower(obj:GetFullName())
-        
         if not string.find(fullName, "placezone") and not string.find(fullName, "tempinvis") then
             local name = lower(obj.Name)
-            
+
             if string.find(name, searchKeyword, 1, true) or (translatedKeyword and string.find(name, translatedKeyword, 1, true)) then
-                
                 local targetPart = nil
-                local targetName = obj.Name
 
                 if obj:IsA("BasePart") then
                     targetPart = obj
                 elseif obj:IsA("Model") then
                     targetPart = obj.PrimaryPart or obj:FindFirstChildWhichIsA("BasePart", true)
-                    targetName = obj.Name
                 end
 
                 if targetPart and targetPart:IsDescendantOf(Workspace) then
                     pcall(function()
-                        -- 1. Teleport player sesaat ke atas item untuk mengelabui validasi jarak server
-                        rootPart.CFrame = targetPart.CFrame + Vector3.new(0, 3, 0)
-                        task.wait(0.04) -- Jeda mikro agar server merekam posisi
+                        -- 1. Teleport pas ke atas objek itemnya
+                        rootPart.CFrame = targetPart.CFrame + Vector3.new(0, 2, 0)
+                        
+                        -- 2. Simulasi menyentuh / klik objek (memicu event custom game)
+                        if targetPart:IsA("BasePart") then
+                            firetouchinterest(rootPart, targetPart, 0)
+                            task.wait(0.1)
+                            firetouchinterest(rootPart, targetPart, 1)
+                        end
 
-                        -- 2. Tembak remote GrabRequest sesuai format Remote Spy
-                        local randomToken = math.random(100000, 999999)
-                        GrabRequest:FireServer(targetName, 1, randomToken)
-                        count += 1
+                        collected += 1
+                        print(sprintf("[Grab] Berhasil mengambil item ke-%d", collected))
                     end)
-                    task.wait(0.06)
+
+                    -- 3. Jeda 1 detik sesuai permintaan bro agar aman & tidak terlalu cepat
+                    task.wait(1.0)
                 end
             end
         end
     end
 
-    -- Kembalikan posisi player ke tempat semula dengan mulus
+    -- Kembalikan posisi player ke tempat asal dengan mulus setelah selesai
     pcall(function()
         rootPart.CFrame = originalCFrame
     end)
 
-    print("[Remote Grab] Selesai! Berhasil memproses " .. count .. " item untuk keyword: " .. keyword)
+    print(sprintf("[Grab] Selesai! Total %d item berhasil diproses.", collected))
+end
+
+-- Helper kecil untuk format print string
+function sprintf(str, ...)
+    return string.format(str, ...)
 end
 
 -- Plugin Struct Infinite Yield
 local Plugin = {
-    ["PluginName"] = "Instant Teleport Remote Grabber",
-    ["PluginDescription"] = "Teleport kilat ke item lalu tembak GrabRequest untuk bypass validasi jarak server",
+    ["PluginName"] = "Teleport Touch Grabber",
+    ["PluginDescription"] = "Teleport berjedanya 1 detik per item sambil mentrigger sentuhan custom.",
     ["Commands"] = {
         ["rgrab"] = {
-            ["ListName"] = "rgrab <item>",
-            ["Description"] = "Tarik item instan (Contoh: ;rgrab telur)",
-            ["Aliases"] = {"grabitem"},
+            ["ListName"] = "rgrab <item> <jumlah>",
+            ["Description"] = "Contoh: ;rgrab telur 5 (Teleport & ambil berjedanya 1 detik)",
+            ["Aliases"] = {"grabitems"},
             ["Function"] = function(args, speaker)
-                local keyword = table.concat(args, " ")
-                executeTeleportGrab(keyword)
+                local keyword = args[1] or ""
+                local count = args[2] or 5
+                executeTeleportAndClickGrab(keyword, count)
             end
         }
     }
