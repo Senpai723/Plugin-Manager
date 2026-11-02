@@ -181,55 +181,6 @@ local function getValidCheckpointPart(obj)
     return nil
 end
 
-
-local function parseCPIdentity(obj)
-    local validPart = getValidCheckpointPart(obj)
-    if not validPart then return nil, nil, nil, 0 end
-
-    local name = obj.Name
-    local lowerName = string.lower(name)
-    local parentName = obj.Parent and obj.Parent.Name or ""
-    local lowerParent = string.lower(parentName)
-
-    if lowerName == "text" or lowerParent == "text" or lowerName == "field" or lowerParent == "field" or lowerName == "base" or lowerParent == "base" or isBlacklisted(lowerName) or isBlacklisted(lowerParent) then 
-        return nil, nil, nil, 0 
-    end
-    if string.find(lowerName, "teleport", 1, true) or string.find(lowerName, "tp", 1, true) or string.find(lowerName, "tele", 1, true) then 
-        return nil, nil, nil, 0 
-    end
-
-    local folderContext = ""
-    local curr = validPart.Parent
-    while curr and curr ~= Workspace do
-        local lowerFolder = string.lower(curr.Name)
-        if string.find(lowerFolder, "gunung") or string.find(lowerFolder, "jalur") or string.find(lowerFolder, "track") or string.find(lowerFolder, "path") or string.find(lowerFolder, "route") then
-            folderContext = curr.Name
-            break
-        end
-        curr = curr.Parent
-    end
-
-    -- ==================================================
-    -- 1. DETEKSI SUMMIT (Murni mendeteksi kata summit atau SummitPart)
-    -- ==================================================
-    if string.find(lowerName, "summit", 1, true) or string.find(lowerParent, "summit", 1, true) or string.find(lowerName, "peak", 1, true) or string.find(lowerName, "finish", 1, true) or string.find(lowerName, "puncak", 1, true) then
-        local summitDesc = name
-        if folderContext ~= "" then
-            summitDesc = folderContext .. " - " .. name
-        end
-        return "SUMMIT", summitDesc, validPart, 10
-    end
-
-    -- Deteksi khusus "Reset" jika berada di jalur checkpoint/obby
-    local summitKeywords = {"reset"}
-    for _, kw in ipairs(summitKeywords) do
-        if string.find(lowerName, kw, 1, true) or string.find(lowerParent, kw, 1, true) then
-            local fullInstancePath = string.lower(getInstancePath(obj))
-            if string.find(fullInstancePath, "checkpoint") or string.find(fullInstancePath, "obby") or string.find(fullInstancePath, "gunung") then
-                local summitDesc = name
-                if folderContext ~= "" then
-                    summitDesc = folderContext .. " - " .. name
-                end
 local function parseCPIdentity(obj)
     local validPart = getValidCheckpointPart(obj)
     if not validPart then return nil, nil, nil, 0 end
