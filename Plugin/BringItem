@@ -1,5 +1,5 @@
 -- ================================================================
--- PRECISE GRABBER FIX: NEAREST SORT & CAMERA UNLOCK
+-- PRECISE GRABBER FIX v2: INSTANT CAMERA UNLOCK
 -- ================================================================
 
 local Players = game:GetService("Players")
@@ -41,19 +41,22 @@ getgenv().ExecutePreciseGrab = function(keyword)
 
     local character = LocalPlayer.Character
     local rootPart = character and character:FindFirstChild("HumanoidRootPart")
-    if not rootPart then
-        print("[Grab] Karakter tidak ditemukan!")
+    local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+    
+    if not rootPart or not humanoid then
+        print("[Grab] Karakter / Humanoid tidak ditemukan!")
         return
     end
 
     local originalCFrame = rootPart.CFrame
     local originalCamType = Camera.CameraType
+    local originalCamSubject = Camera.CameraSubject
     local translatedKeyword = TRANSLATION_MAP[searchKeyword]
     local collected = 0
     local maxCount = 10 
     local itemsFolder = Workspace:FindFirstChild("Items") or Workspace
 
-    -- 1. KUMPULKAN DAN URUTKAN ITEM BERDASARKAN JARAK TERDEKAT (NEAREST FIRST)
+    -- 1. KUMPULKAN & URUTKAN ITEM BERDASARKAN JARAK TERDEKAT
     local validItems = {}
 
     for _, obj in ipairs(itemsFolder:GetDescendants()) do
@@ -77,7 +80,6 @@ getgenv().ExecutePreciseGrab = function(keyword)
         end
     end
 
-    -- Urutkan dari item yang paling dekat dengan player biar nggak loncat-loncat jauh
     table.sort(validItems, function(a, b)
         return a.Distance < b.Distance
     end)
@@ -119,14 +121,16 @@ getgenv().ExecutePreciseGrab = function(keyword)
         end
     end
 
-    -- 3. WAJIB: KEMBALIKAN KAMERA & POSISI PLAYER KE SEMULA SECARA AMAN
+    -- 3. PEMULIHAN INSTAN (KAMERA LANGSUNG BEBAS & NORMAL)
     pcall(function()
-        Camera.CameraType = Enum.CameraType.Custom -- Membuka kunci kamera agar bisa digerakkan normal lagi!
-        Camera.CameraSubject = character:FindFirstChildOfClass("Humanoid")
         rootPart.CFrame = originalCFrame
+        Camera.CameraSubject = humanoid
+        Camera.CameraType = Enum.CameraType.Custom
+        -- Paksa update orientasi kamera agar bebas dari lock scriptable seketika
+        Camera.CFrame = CFrame.new(Camera.CFrame.Position, rootPart.Position + Vector3.new(0, 2, 0))
     end)
 
-    print("[Grab] Selesai! Berhasil mengambil " .. collected .. " item. Kamera dipulihkan.")
+    print("[Grab] Selesai! Berhasil mengambil " .. collected .. " item. Kamera langsung dipulihkan.")
 end
 
 -- ----------------------------------------------------------------
@@ -161,7 +165,7 @@ title.Size = UDim2.new(1, -30, 1, 0)
 title.Position = UDim2.new(0, 8, 0, 0)
 title.BackgroundTransparency = 1
 title.Font = Enum.Font.GothamBold
-title.Text = "🎯 Precise Grabber (Fix)"
+title.Text = "🎯 Precise Grabber (Instant Unlok)"
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.TextSize = 12
 title.TextXAlignment = Enum.TextXAlignment.Left
@@ -212,4 +216,4 @@ textBox.FocusLost:Connect(function(enter)
     end
 end)
 
-print("[Precise Grabber Fix] Skrip berhasil dimuat!")
+print("[Precise Grabber Instant Unlock] Skrip siap digunakan!")
