@@ -5,7 +5,7 @@ return {
             Desc = "Memunculkan ESP Objek berdasarkan Promot, Touch, Click, Pintu atau Trigger",
             RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Interactable",
             SubFeatures = {
-                { Name = "ITP", Desc = "Memunculkan window berisikan list objek yang bisa diteleport", Cmd = "itp", UnCmd = "itp" },
+                { Name = "ITP", Desc = "Memunculkan window berisikan list objek yang bisa diteleport", Cmd = "itp", UnCmd = "" },
                 { Name = "PPESP", Desc = "Masukan 1 nama objek untuk filter, kosongkan kolom untuk mendeteksi semua Objek", Cmd = "proximityesp", UnCmd = "unproximityesp", NeedInput = true },
                 { Name = "CDESP", Desc = "Masukan 1 nama objek untuk filter, kosongkan kolom untuk mendeteksi semua Objek", Cmd = "clickdetectoresp", UnCmd = "unclickdetectoresp", NeedInput = true },
                 { Name = "DESP", Desc = "Masukan 1 nama objek untuk filter, kosongkan kolom untuk mendeteksi semua Objek", Cmd = "dooresp", UnCmd = "undooresp", NeedInput = true },
@@ -29,8 +29,8 @@ return {
             Desc = "Waypoint & Teleport",
             RawUrl = "",
             SubFeatures = {
-                { Name = "Radar Checkpoint", Desc = "Menampilkan Checkpoint yang belum di sentuh", Cmd = "scp", UnCmd = "scp_close", RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Waypoint" },
-                { Name = "CP & Waypoint", Desc = "Menampilkan Checkpoint atau Waypoint", Cmd = "cpn", UnCmd = "cpn_close", RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Waypoint" },
+                { Name = "Radar Checkpoint", Desc = "Menampilkan Checkpoint yang belum di sentuh", Cmd = "scp", UnCmd = "", RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Waypoint" },
+                { Name = "CP & Waypoint", Desc = "Menampilkan Checkpoint atau Waypoint", Cmd = "cpn", UnCmd = "", RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Waypoint" },
                 { Name = "Teleport to Player", Desc = "Teleport ke player dengan 1 klik", Cmd = "tp", UnCmd = "", RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/PlayerTeleport" }
             }
         },
@@ -42,6 +42,16 @@ return {
                 { Name = "Spectator", Desc = "Menonton dan menguping target dari jauh", Cmd = "spectate", UnCmd = "unspectate", NeedInput = true, RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/SoundManage" },
                 { Name = "Mute Sound", Desc = "Membisukan suara Latar Belakang Map", Cmd = "mutesound", UnCmd = "unmutesound", RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/SoundManage" },
                 { Name = "Play Music", Desc = "Mendengarkan musik", Cmd = "playmusic", UnCmd = "stopmusic", NeedInput = true, RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/MusicTimeML" }
+            }
+        },
+        {
+            Name = "FUN",
+            Desc = "Fitur Tambahan",
+            RawUrl = "",
+            SubFeatures = {
+                { Name = "Teleport to Item", Desc = "Teleport Ke item yang di pilih dan kembali ketitik awal", Cmd = "rgrab", UnCmd = "", RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Plugin/BringItem" },
+                { Name = "Inpector", Desc = "Menemukan sebuah jalur path parent-child sebuah Part", Cmd = "mobileinspector", UnCmd = "unmobileinspector", RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Tools/clickinspector" },
+                { Name = "Anti AFK", Desc = "Membuat karakter tidak terpental saat Afk 20 menit di Map", Cmd = "antiafk", UnCmd = "unantiafk", RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Tools/AntiAFK" },
             }
         },
         {
@@ -133,23 +143,8 @@ return {
                 { Name = "Anchor ( Hanya Visual )", Desc = "Untuk menghentikan Part yang bergoyang", Cmd = "anchor", UnCmd = "unanchor", RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Tools/AntiEffect" },
                 { Name = "Anti Shake", Desc = "Untuk menghentikan Kamera yang bergoyang", Cmd = "antishake", UnCmd = "unshake", RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Tools/AntiEffect" },
                 { Name = "Anti Wind ( Client Side )", Desc = "Untuk menghentikan Angin yang menggeser karakter", Cmd = "antiwind", UnCmd = "unwind", RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Tools/AntiEffect" },
-                { Name = "Bring Item", Desc = "Menarik item yang dipilih ke dekat Player", Cmd = "rgrab", UnCmd = "", RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Plugin/BringItem" },
                 { Name = "Anti Trigger", Desc = "Untuk mematikan Trigger dalam map", Cmd = "antitrigger", UnCmd = "untrigger", RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Tools/AntiEffect" }
             }
-        },
-        {
-            Name = "Click Inspector",
-            Desc = "Untuk Mengetahui Jalur Path Parent-Cild sebuah Part",
-            Cmd = "mobileinspector",
-            UnCmd = "unmobileinspector",
-            RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Tools/clickinspector.iy"
-        },
-        {
-            Name = "Anti AFK",
-            Desc = "Anti Mental Mental Kleb 20 menit",
-            Cmd = "antiafk",
-            UnCmd = "unantiafk",
-            RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Tools/AntiAFK"
         }
     },
 
