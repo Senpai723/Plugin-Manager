@@ -1,5 +1,5 @@
 -- ================================================================
--- PRECISE GRABBER: MAX 10 ITEMS + INSTANT MOVE UNLOCK
+-- PRECISE GRABBER: MULTI-KEYWORD FLEXIBLE MATCH (FIX 1 ITEM)
 -- ================================================================
 
 local Players = game:GetService("Players")
@@ -32,7 +32,12 @@ getgenv().ExecutePreciseGrab = function(keyword)
     local originalCFrame = rootPart.CFrame
     local itemsFolder = Workspace:FindFirstChild("Items") or Workspace
 
-    -- KUMPULKAN ITEM LANGSUNG DARI WORKSPACE (MENDUKUNG SPASI PENUH)
+    -- Pecah keyword berdasarkan spasi supaya bisa mendeteksi tiap kata (misal: "dark", "chocolate", "bar")
+    local keywords = {}
+    for word in string.gmatch(searchKeyword, "%S+") do
+        table.insert(keywords, word)
+    end
+
     local validItems = {}
 
     for _, obj in ipairs(itemsFolder:GetDescendants()) do
@@ -40,8 +45,18 @@ getgenv().ExecutePreciseGrab = function(keyword)
         if not string.find(fullName, "placezone") and not string.find(fullName, "tempinvis") and not string.find(fullName, "display") then
             local objName = lower(obj.Name)
             local parentName = obj.Parent and lower(obj.Parent.Name) or ""
+            local combinedName = objName .. " " .. parentName
 
-            if string.find(objName, searchKeyword, 1, true) or string.find(parentName, searchKeyword, 1, true) then
+            -- Cek apakah minimal ada satu kata dari keyword yang cocok dengan nama objek
+            local isMatch = false
+            for _, kw in ipairs(keywords) do
+                if string.find(combinedName, kw, 1, true) then
+                    isMatch = true
+                    break
+                end
+            end
+
+            if isMatch then
                 local targetPart = nil
                 if obj:IsA("BasePart") then
                     if obj.Size.Magnitude < 15 and obj.Transparency < 1 then
@@ -65,17 +80,17 @@ getgenv().ExecutePreciseGrab = function(keyword)
     end)
 
     if #validItems == 0 then
-        print("[Grab] Item dengan nama '" .. keyword .. "' tidak ditemukan di map!")
+        print("[Grab] Item dengan keyword '" .. keyword .. "' tidak ditemukan di map!")
         return
     end
 
-    -- Batas maksimal dinaikkan menjadi 10 item
+    -- Ambil sampai batas maksimal 10 item sekaligus
     local targetLimit = math.min(#validItems, 10)
-    print("[Grab] Ditemukan item, memproses hingga " .. targetLimit .. " buah...")
+    print("[Grab] Ditemukan " .. #validItems .. " item. Memproses " .. targetLimit .. " item terdekat...")
 
     local collected = 0
 
-    -- EKSEKUSI TELEPORT & TOUCH ITEM
+    -- EKSEKUSI TELEPORT & TOUCH ITEM BERURUTAN
     for i = 1, targetLimit do
         local itemData = validItems[i]
         if not itemData then break end
@@ -111,21 +126,16 @@ getgenv().ExecutePreciseGrab = function(keyword)
 
     -- PEMULIHAN TOTAL: BERSIHKAN MOMENTUM & UNLOCK KONTROL SEKETIKA
     pcall(function()
-        -- Hentikan seluruh kecepatan/momentum fisik agar karakter tidak 'licin' atau 'nyangkut'
         rootPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
         rootPart.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
-        
-        -- Kembalikan posisi awal
         rootPart.CFrame = originalCFrame
-        
-        -- Reset total kamera dan status gerak karakter
         Camera.CameraType = Enum.CameraType.Custom
         Camera.CameraSubject = humanoid
         humanoid.PlatformStand = false
         humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
     end)
 
-    print("[Grab] Selesai! Berhasil mengambil " .. collected .. " item. Kontrol langsung normal.")
+    print("[Grab] Selesai! Berhasil mengambil " .. collected .. " item sekaligus.")
 end
 
 -- ----------------------------------------------------------------
@@ -160,7 +170,7 @@ title.Size = UDim2.new(1, -30, 1, 0)
 title.Position = UDim2.new(0, 8, 0, 0)
 title.BackgroundTransparency = 1
 title.Font = Enum.Font.GothamBold
-title.Text = "🎯 Precise Grabber (Max 10)"
+title.Text = "🎯 Precise Grabber (Flexible)"
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.TextSize = 12
 title.TextXAlignment = Enum.TextXAlignment.Left
@@ -181,7 +191,7 @@ textBox.Size = UDim2.new(1, -16, 0, 30)
 textBox.Position = UDim2.new(0, 8, 0, 36)
 textBox.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 textBox.Font = Enum.Font.Gotham
-textBox.PlaceholderText = "Ketik nama (cth: apple pie)..."
+textBox.PlaceholderText = "Ketik keyword (cth: chocolate)..."
 textBox.Text = ""
 textBox.TextColor3 = Color3.fromRGB(255, 255, 255)
 textBox.PlaceholderColor3 = Color3.fromRGB(140, 140, 140)
@@ -211,4 +221,4 @@ textBox.FocusLost:Connect(function(enter)
     end
 end)
 
-print("[Precise Grabber Max 10] Skrip siap digunakan!")
+print("[Precise Grabber Flexible] Skrip siap digunakan!")
