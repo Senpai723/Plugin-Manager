@@ -632,7 +632,7 @@ return function(speaker)
     end
 
     local configOk, configErr = xpcall(function()
-        local configUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Loader.lua"
+        local configUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Loader.lua"
         local source = game:HttpGet(configUrl)
         local chunk = loadstring(source)
         local data = chunk()
