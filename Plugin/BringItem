@@ -1,10 +1,11 @@
 -- ================================================================
--- INFINITE YIELD PLUGIN: EXACT REMOTE SPY GRABBER
+-- INFINITE YIELD PLUGIN: INSTANT TELEPORT + REMOTE GRABBER
 -- ================================================================
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
+local LocalPlayer = Players.LocalPlayer
 
 local StoreRemotes = ReplicatedStorage:WaitForChild("StoreRemotes", 5)
 local GrabRequest = StoreRemotes and StoreRemotes:WaitForChild("GrabRequest", 5)
@@ -33,7 +34,7 @@ local function lower(val)
     return string.lower(tostring(val or ""))
 end
 
-local function executeExactGrab(keyword)
+local function executeTeleportGrab(keyword)
     local searchKeyword = lower(keyword)
     if searchKeyword == "" then
         print("[Grab] Masukkan keyword item!")
@@ -44,6 +45,16 @@ local function executeExactGrab(keyword)
         print("[Grab] Remote GrabRequest tidak ditemukan!")
         return
     end
+
+    local character = LocalPlayer.Character
+    local rootPart = character and character:FindFirstChild("HumanoidRootPart")
+    if not rootPart then
+        print("[Grab] Karakter tidak ditemukan!")
+        return
+    end
+
+    -- Simpan posisi awal player biar bisa balik lagi setelah selesai
+    local originalCFrame = rootPart.CFrame
 
     local translatedKeyword = TRANSLATION_MAP[searchKeyword]
     local count = 0
@@ -57,41 +68,53 @@ local function executeExactGrab(keyword)
             
             if string.find(name, searchKeyword, 1, true) or (translatedKeyword and string.find(name, translatedKeyword, 1, true)) then
                 
-                -- Ambil nama asli objek (Model atau Part utama)
+                local targetPart = nil
                 local targetName = obj.Name
-                if obj:IsA("BasePart") and obj.Parent and obj.Parent ~= itemsFolder and obj.Parent:IsA("Model") then
-                    targetName = obj.Parent.Name
+
+                if obj:IsA("BasePart") then
+                    targetPart = obj
+                elseif obj:IsA("Model") then
+                    targetPart = obj.PrimaryPart or obj:FindFirstChildWhichIsA("BasePart", true)
+                    targetName = obj.Name
                 end
 
-                pcall(function()
-                    -- Sesuai persis dengan format Remote Spy lu: (NamaItem, 1, AngkaAcak)
-                    local randomToken = math.random(100000, 999999)
-                    GrabRequest:FireServer(targetName, 1, randomToken)
-                    count += 1
-                end)
-                
-                -- Beri jeda sikit atau batasi agar tidak spam berlebih
-                task.wait(0.05)
-                break -- Ambil satu per satu dulu biar stabil
+                if targetPart and targetPart:IsDescendantOf(Workspace) then
+                    pcall(function()
+                        -- 1. Teleport player sesaat ke atas item untuk mengelabui validasi jarak server
+                        rootPart.CFrame = targetPart.CFrame + Vector3.new(0, 3, 0)
+                        task.wait(0.04) -- Jeda mikro agar server merekam posisi
+
+                        -- 2. Tembak remote GrabRequest sesuai format Remote Spy
+                        local randomToken = math.random(100000, 999999)
+                        GrabRequest:FireServer(targetName, 1, randomToken)
+                        count += 1
+                    end)
+                    task.wait(0.06)
+                end
             end
         end
     end
 
-    print("[Remote Grab] Berhasil mengirim request grab untuk: " .. keyword)
+    -- Kembalikan posisi player ke tempat semula dengan mulus
+    pcall(function()
+        rootPart.CFrame = originalCFrame
+    end)
+
+    print("[Remote Grab] Selesai! Berhasil memproses " .. count .. " item untuk keyword: " .. keyword)
 end
 
 -- Plugin Struct Infinite Yield
 local Plugin = {
-    ["PluginName"] = "Exact Remote Grabber",
-    ["PluginDescription"] = "Grab item menggunakan format argumen asli dari Remote Spy",
+    ["PluginName"] = "Instant Teleport Remote Grabber",
+    ["PluginDescription"] = "Teleport kilat ke item lalu tembak GrabRequest untuk bypass validasi jarak server",
     ["Commands"] = {
         ["rgrab"] = {
             ["ListName"] = "rgrab <item>",
-            ["Description"] = "Tarik item sesuai remote spy (Contoh: ;rgrab telur)",
+            ["Description"] = "Tarik item instan (Contoh: ;rgrab telur)",
             ["Aliases"] = {"grabitem"},
             ["Function"] = function(args, speaker)
                 local keyword = table.concat(args, " ")
-                executeExactGrab(keyword)
+                executeTeleportGrab(keyword)
             end
         }
     }
