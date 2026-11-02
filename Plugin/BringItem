@@ -1,5 +1,5 @@
 -- ================================================================
--- PRECISE GRABBER: ORIGINAL WORKING GUI + INSTANT CAMERA RELEASE
+-- PRECISE GRABBER: DIRECT WORKSPACE NAME MATCH (SPACE SUPPORT)
 -- ================================================================
 
 local Players = game:GetService("Players")
@@ -8,25 +8,6 @@ local CoreGui = game:GetService("CoreGui")
 local VirtualInputManager = game:GetService("VirtualInputManager")
 local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
-
-local TRANSLATION_MAP = {
-    ["telur"] = "egg",
-    ["egg"] = "telur",
-    ["cangkir"] = "cup",
-    ["cup"] = "cangkir",
-    ["roti"] = "bread",
-    ["bread"] = "roti",
-    ["kue"] = "cake",
-    ["cake"] = "kue",
-    ["susu"] = "milk",
-    ["milk"] = "susu",
-    ["keju"] = "cheese",
-    ["cheese"] = "keju",
-    ["kopi"] = "coffee",
-    ["coffee"] = "kopi",
-    ["teh"] = "tea",
-    ["tea"] = "teh"
-}
 
 local function lower(val)
     return string.lower(tostring(val or ""))
@@ -49,28 +30,22 @@ getgenv().ExecutePreciseGrab = function(keyword)
     end
 
     local originalCFrame = rootPart.CFrame
-    local translatedKeyword = TRANSLATION_MAP[searchKeyword]
     local itemsFolder = Workspace:FindFirstChild("Items") or Workspace
 
-    -- Kumpulkan item valid
+    -- KUMPULKAN ITEM LANGSUNG DARI WORKSPACE (MENDUKUNG SPASI & NAMA ASLI)
     local validItems = {}
 
     for _, obj in ipairs(itemsFolder:GetDescendants()) do
         local fullName = lower(obj:GetFullName())
         if not string.find(fullName, "placezone") and not string.find(fullName, "tempinvis") and not string.find(fullName, "display") then
-            local name = lower(obj.Name)
+            local objName = lower(obj.Name)
+            local parentName = obj.Parent and lower(obj.Parent.Name) or ""
 
-            local isMatch = false
-            if name == searchKeyword or string.find(name, searchKeyword, 1, true) then
-                isMatch = true
-            elseif translatedKeyword and (name == translatedKeyword or string.find(name, translatedKeyword, 1, true)) then
-                isMatch = true
-            end
-
-            if isMatch then
+            -- Cocokkan langsung dengan nama objek atau nama model foldernya (mendukung spasi penuh)
+            if string.find(objName, searchKeyword, 1, true) or string.find(parentName, searchKeyword, 1, true) then
                 local targetPart = nil
                 if obj:IsA("BasePart") then
-                    if obj.Size.Magnitude < 12 and obj.Transparency < 1 then
+                    if obj.Size.Magnitude < 15 and obj.Transparency < 1 then
                         targetPart = obj
                     end
                 elseif obj:IsA("Model") then
@@ -85,19 +60,22 @@ getgenv().ExecutePreciseGrab = function(keyword)
         end
     end
 
+    -- Urutkan dari item yang paling dekat dengan player
     table.sort(validItems, function(a, b)
         return a.Distance < b.Distance
     end)
 
     if #validItems == 0 then
-        print("[Grab] Item '" .. keyword .. "' tidak ditemukan di map!")
+        print("[Grab] Item dengan nama '" .. keyword .. "' tidak ditemukan di map!")
         return
     end
 
     local targetLimit = math.min(#validItems, 7)
+    print("[Grab] Ditemukan item, memproses " .. targetLimit .. " buah...")
+
     local collected = 0
 
-    -- Eksekusi Teleport & Aim Kamera
+    -- EKSEKUSI TELEPORT & TOUCH ITEM
     for i = 1, targetLimit do
         local itemData = validItems[i]
         if not itemData then break end
@@ -107,6 +85,7 @@ getgenv().ExecutePreciseGrab = function(keyword)
             pcall(function()
                 local itemPos = targetPart.Position
                 
+                -- Teleport pas di sebelah item
                 rootPart.CFrame = CFrame.lookAt(itemPos + Vector3.new(0, 0.5, 1.5), itemPos)
                 
                 Camera.CameraType = Enum.CameraType.Scriptable
@@ -130,22 +109,19 @@ getgenv().ExecutePreciseGrab = function(keyword)
         end
     end
 
-    -- PEMULIHAN MUTLAK (DIJAMIN KONTROL LANGSUNG NORMAL TANPA DELAY)
+    -- PEMULIHAN KONTROL & POSISI AWAL (DIJAMIN LANGSUNG NORMAL TANPA DELAY)
     pcall(function()
         Camera.CameraType = Enum.CameraType.Custom
         Camera.CameraSubject = humanoid
         rootPart.CFrame = originalCFrame
-        
-        -- Memaksa pembersihan status input sentuh agar analog & tombol lompat langsung muncul
-        local vim = game:GetService("VirtualInputManager")
-        vim:SendKeyEvent(false, Enum.KeyCode.Unknown, false, game)
+        humanoid.PlatformStand = false
     end)
 
     print("[Grab] Selesai! Berhasil mengambil " .. collected .. " item.")
 end
 
 -- ----------------------------------------------------------------
--- GUI INTERFACE (VERSI ASLI YANG PASTI MUNCUL)
+-- GUI INTERFACE
 -- ----------------------------------------------------------------
 local playerGui = LocalPlayer:WaitForChild("PlayerGui")
 local existing = playerGui:FindFirstChild("PreciseGrabGui") or CoreGui:FindFirstChild("PreciseGrabGui")
@@ -176,7 +152,7 @@ title.Size = UDim2.new(1, -30, 1, 0)
 title.Position = UDim2.new(0, 8, 0, 0)
 title.BackgroundTransparency = 1
 title.Font = Enum.Font.GothamBold
-title.Text = "🎯 Precise Grabber"
+title.Text = "🎯 Precise Grabber (Workspace Match)"
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.TextSize = 12
 title.TextXAlignment = Enum.TextXAlignment.Left
@@ -197,7 +173,7 @@ textBox.Size = UDim2.new(1, -16, 0, 30)
 textBox.Position = UDim2.new(0, 8, 0, 36)
 textBox.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 textBox.Font = Enum.Font.Gotham
-textBox.PlaceholderText = "Ketik item (contoh: apple pie)..."
+textBox.PlaceholderText = "Ketik nama (cth: Soda Bottle)..."
 textBox.Text = ""
 textBox.TextColor3 = Color3.fromRGB(255, 255, 255)
 textBox.PlaceholderColor3 = Color3.fromRGB(140, 140, 140)
@@ -227,4 +203,4 @@ textBox.FocusLost:Connect(function(enter)
     end
 end)
 
-print("[Precise Grabber] Skrip asli dimuat!")
+print("[Precise Grabber Workspace Match] Skrip siap digunakan!")
