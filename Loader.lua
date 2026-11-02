@@ -133,7 +133,7 @@ return {
                 { Name = "Anchor ( Hanya Visual )", Desc = "Untuk menghentikan Part yang bergoyang", Cmd = "anchor", UnCmd = "unanchor", RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Tools/AntiEffect" },
                 { Name = "Anti Shake", Desc = "Untuk menghentikan Kamera yang bergoyang", Cmd = "antishake", UnCmd = "unshake", RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Tools/AntiEffect" },
                 { Name = "Anti Wind ( Client Side )", Desc = "Untuk menghentikan Angin yang menggeser karakter", Cmd = "antiwind", UnCmd = "unwind", RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Tools/AntiEffect" },
-                { Name = "Bring Item", Desc = "Menarik item yang dipilih ke dekat Player", Cmd = "bringitems", UnCmd = "", RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Plugin/BringItem" },
+                { Name = "Bring Item", Desc = "Menarik item yang dipilih ke dekat Player", Cmd = "remotegrabitems", UnCmd = "", RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Plugin/BringItem" },
                 { Name = "Anti Trigger", Desc = "Untuk mematikan Trigger dalam map", Cmd = "antitrigger", UnCmd = "untrigger", RawUrl = "https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/Tools/AntiEffect" }
             }
         },
