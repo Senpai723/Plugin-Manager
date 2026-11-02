@@ -1,16 +1,15 @@
 -- ================================================================
--- INDEPENDENT REMOTE-BASED MAGNET / GRAB SCRIPT
+-- FIXED REMOTE GRABBER SCRIPT (MOBILE FRIENDLY)
 -- ================================================================
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
-local CoreGui = game:GetService("CoreGui")
 local LocalPlayer = Players.LocalPlayer
 
--- Ambil jalur remote asli game dari data Remote Spy lu
-local StoreRemotes = ReplicatedStorage:WaitForChild("StoreRemotes")
-local GrabRequest = StoreRemotes:WaitForChild("GrabRequest")
+-- Ambil jalur remote asli game
+local StoreRemotes = ReplicatedStorage:WaitForChild("StoreRemotes", 5)
+local GrabRequest = StoreRemotes and StoreRemotes:WaitForChild("GrabRequest", 5)
 
 -- Kamus terjemahan bilingual (Indo <-> Eng)
 local TRANSLATION_MAP = {
@@ -36,9 +35,7 @@ local function lower(val)
     return string.lower(tostring(val or ""))
 end
 
--- ----------------------------------------------------------------
--- LOGIKA UTAMA: MENGIRIM GRAB REQUEST KE SERVER GAME
--- ----------------------------------------------------------------
+-- Fungsi Utama Remote Grab
 getgenv().RemoteGrabItems = function(keyword)
     local searchKeyword = lower(keyword)
     if searchKeyword == "" then
@@ -47,7 +44,7 @@ getgenv().RemoteGrabItems = function(keyword)
     end
 
     if not GrabRequest then
-        warn("[Remote Grab] Remote GrabRequest tidak ditemukan di game ini!")
+        warn("[Remote Grab] Remote GrabRequest tidak ditemukan!")
         return 0
     end
 
@@ -55,23 +52,17 @@ getgenv().RemoteGrabItems = function(keyword)
     local count = 0
     local triggeredNames = {}
 
-    -- Scan semua objek di dalam Workspace
     for _, obj in ipairs(Workspace:GetDescendants()) do
         local fullName = lower(obj:GetFullName())
         
-        -- Pastikan hanya mengambil dari dalam folder Items dan bukan struktur map
         if string.find(fullName, "items") and not string.find(fullName, "placezone") and not string.find(fullName, "tempinvis") then
             local name = lower(obj.Name)
             
-            -- Cocokkan nama item dengan keyword atau terjemahan
             if string.find(name, searchKeyword, 1, true) or (translatedKeyword and string.find(name, translatedKeyword, 1, true)) then
-                -- Cegah spamming remote ke objek kembar yang sama persis dalam satu detik
                 if not triggeredNames[obj.Name] then
                     triggeredNames[obj.Name] = true
                     
                     pcall(function()
-                        -- Fire RemoteEvent GrabRequest asli milik game
-                        -- Argumen disesuaikan dengan pola dari tangkapan Remote Spy lu
                         GrabRequest:FireServer(obj.Name, 1, math.random(10000, 99999))
                         count += 1
                     end)
@@ -80,14 +71,15 @@ getgenv().RemoteGrabItems = function(keyword)
         end
     end
 
-    print("[Remote Grab] Berhasil mengirim " .. count + 0 .. " request grab untuk keyword: '" .. keyword .. "'")
+    print("[Remote Grab] Berhasil mengambil " .. count .. " item untuk keyword: '" .. keyword .. "'")
     return count
 end
 
 -- ----------------------------------------------------------------
--- INDEPENDENT FLOATING GUI UI
+-- GUI PEMBUATAN (DIPAKSA MASUK KE PLAYERGUI)
 -- ----------------------------------------------------------------
-local existingGui = CoreGui:FindFirstChild("RemoteGrabGui") or LocalPlayer:WaitForChild("PlayerGui"):FindFirstChild("RemoteGrabGui")
+local playerGui = LocalPlayer:WaitForChild("PlayerGui")
+local existingGui = playerGui:FindFirstChild("RemoteGrabGui")
 if existingGui then
     existingGui:Destroy()
 end
@@ -95,9 +87,7 @@ end
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "RemoteGrabGui"
 screenGui.ResetOnSpawn = false
-
-pcall(function() screenGui.Parent = CoreGui end)
-if not screenGui.Parent then screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui") end
+screenGui.Parent = playerGui
 
 local mainFrame = Instance.new("Frame")
 mainFrame.Name = "MainFrame"
@@ -188,4 +178,4 @@ textBox.FocusLost:Connect(function(enterPressed)
     end
 end)
 
-print("[Remote Grab] Skrip berhasil dimuat menggunakan sistem game asli!")
+print("[Remote Grab] GUI berhasil dimuat ke PlayerGui!")
