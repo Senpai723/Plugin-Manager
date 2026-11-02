@@ -1,5 +1,5 @@
 -- ================================================================
--- INDEPENDENT ITEM MAGNET / BRING ITEM SCRIPT (FINAL FIX)
+-- INDEPENDENT ITEM MAGNET / BRING ITEM SCRIPT (SPREAD FIX)
 -- ================================================================
 
 local Players = game:GetService("Players")
@@ -32,7 +32,7 @@ local function lower(val)
 end
 
 -- ----------------------------------------------------------------
--- LOGIKA UTAMA BRING ITEM (FOKUS PADA FOLDER ITEMS)
+-- LOGIKA UTAMA BRING ITEM (DENGAN SPREAD / PENYEBARAN POSISI)
 -- ----------------------------------------------------------------
 getgenv().BringItems = function(keyword)
     local character = LocalPlayer.Character
@@ -52,18 +52,13 @@ getgenv().BringItems = function(keyword)
     local translatedKeyword = TRANSLATION_MAP[searchKeyword]
     local count = 0
 
-    -- Cari semua objek di dalam Workspace
     for _, obj in ipairs(Workspace:GetDescendants()) do
         if obj:IsA("Model") or obj:IsA("BasePart") then
-            -- 1. Pastikan objek tersebut berada di dalam folder "Items" (tempat loot spawnan game)
             local fullName = lower(obj:GetFullName())
             if string.find(fullName, "items") then
-                
-                -- 2. Pastikan bukan bagian map seperti PlaceZone atau TempInvisPart
                 if not string.find(fullName, "placezone") and not string.find(fullName, "tempinvis") then
                     local name = lower(obj.Name)
 
-                    -- 3. Cocokkan nama item dengan keyword atau kamus terjemahan
                     if string.find(name, searchKeyword, 1, true) or (translatedKeyword and string.find(name, translatedKeyword, 1, true)) then
                         local targetPart = nil
                         
@@ -73,11 +68,13 @@ getgenv().BringItems = function(keyword)
                             targetPart = obj.PrimaryPart or obj:FindFirstChildWhichIsA("BasePart", true)
                         end
 
-                        -- 4. Pindahkan posisinya meskipun Anchored, karena sudah dipastikan dari folder Items
                         if targetPart and targetPart:IsDescendantOf(Workspace) then
                             pcall(function()
-                                -- Posisikan rapi di depan bawah kaki player
-                                targetPart.CFrame = rootPart.CFrame * CFrame.new(0, -2, -3)
+                                -- Berikan jarak acak (spread) agar item tidak menumpuk di satu titik
+                                local randomX = math.random(-3, 3) -- Menyebar ke kiri/kanan sejauh 3 stud
+                                local randomZ = math.random(-4, -1) -- Menyebar di depan player
+                                
+                                targetPart.CFrame = rootPart.CFrame * CFrame.new(randomX, -2, randomZ)
                                 count += 1
                             end)
                         end
@@ -87,7 +84,7 @@ getgenv().BringItems = function(keyword)
         end
     end
 
-    print("[Bring Item] Berhasil menarik " .. count .. " item dari folder Items dengan keyword: '" .. keyword .. "'")
+    print("[Bring Item] Berhasil menarik dan menyebarkan " .. count .. " item dengan keyword: '" .. keyword .. "'")
     return count
 end
 
@@ -130,7 +127,7 @@ title.Size = UDim2.new(1, -30, 1, 0)
 title.Position = UDim2.new(0, 8, 0, 0)
 title.BackgroundTransparency = 1
 title.Font = Enum.Font.GothamBold
-title.Text = "🧲 Item Bringer (Final)"
+title.Text = "🧲 Item Bringer (Spread)"
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.TextSize = 12
 title.TextXAlignment = Enum.TextXAlignment.Left
@@ -195,4 +192,4 @@ textBox.FocusLost:Connect(function(enterPressed)
     end
 end)
 
-print("[Bring Item Final] Skrip berhasil dimuat dan fokus ke folder Items!")
+print("[Bring Item Spread] Skrip berhasil dimuat dengan efek sebar!")
