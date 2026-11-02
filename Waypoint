@@ -157,6 +157,7 @@ local function getValidCheckpointPart(obj)
     if not obj or not (obj:IsA("BasePart") or obj:IsA("MeshPart") or obj:IsA("UnionOperation") or obj:IsA("Model")) then return nil end
     if isBlacklisted(obj.Name) then return nil end
 
+    -- Deteksi TouchInterest atau TouchTransmitter secara fleksibel
     local hasTouch = obj:FindFirstChild("TouchInterest") or obj:FindFirstChildOfClass("TouchTransmitter")
     if hasTouch then return obj end
 
@@ -209,7 +210,7 @@ local function parseCPIdentity(obj)
     -- ==================================================
     -- 1. DETEKSI SUMMIT (Pengecekan Mutlak Tanpa Batasan Folder)
     -- ==================================================
-    local summitKeywords = {"summit", "peak", "finish", "puncak", "winpad"}
+        local summitKeywords = {"summit", "peak", "finish", "puncak", "winpad"}
     local isSummit = false
     
     for _, kw in ipairs(summitKeywords) do
@@ -219,31 +220,9 @@ local function parseCPIdentity(obj)
         end
     end
 
-    -- Khusus untuk kata "reset", pastikan berada di folder map/obby agar tidak salah tangkap
-    if string.find(lowerName, "reset", 1, true) or string.find(lowerParent, "reset", 1, true) then
-        local fullInstancePath = string.lower(getInstancePath(obj))
-        if string.find(fullInstancePath, "checkpoint") or string.find(fullInstancePath, "obby") or string.find(fullInstancePath, "gunung") then
-            isSummit = true
-        end
-    end
-
-    -- Cek juga teks pada BillboardGui/SurfaceGui jika ada
-    local guiText = ""
-    local hasGui = validPart:FindFirstChildOfClass("BillboardGui") or validPart:FindFirstChildOfClass("SurfaceGui")
-    if not hasGui and validPart.Parent and validPart.Parent:IsA("Model") then
-        hasGui = validPart.Parent:FindFirstChildOfClass("BillboardGui") or validPart.Parent:FindFirstChildOfClass("SurfaceGui")
-    end
-    if hasGui then
-        local textLabel = hasGui:FindFirstChildOfClass("TextLabel")
-        if textLabel and textLabel.Text ~= "" then
-            guiText = string.lower(textLabel.Text)
-            for _, kw in ipairs(summitKeywords) do
-                if string.find(guiText, kw, 1, true) then
-                    isSummit = true
-                    break
-                end
-            end
-        end
+    -- Pengecekan mutlak jika nama objek mengandung kata summit (seperti SummitPart)
+    if string.find(lowerName, "summit", 1, true) then
+        isSummit = true
     end
 
     if isSummit then
@@ -253,6 +232,7 @@ local function parseCPIdentity(obj)
         end
         return "SUMMIT", summitDesc, validPart, 10
     end
+
 
     local combined = lowerParent .. " " .. lowerName .. " " .. guiText
 
