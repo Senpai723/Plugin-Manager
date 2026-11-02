@@ -1,5 +1,5 @@
 -- ================================================================
--- INDEPENDENT ITEM MAGNET / BRING ITEM SCRIPT
+-- INDEPENDENT ITEM MAGNET / BRING ITEM SCRIPT (FIXED VERSION)
 -- ================================================================
 
 local Players = game:GetService("Players")
@@ -32,7 +32,7 @@ local function lower(val)
 end
 
 -- ----------------------------------------------------------------
--- LOGIKA UTAMA BRING ITEM
+-- LOGIKA UTAMA BRING ITEM (DENGAN FILTER ANCHOR & STRUKTUR MAP)
 -- ----------------------------------------------------------------
 getgenv().BringItems = function(keyword)
     local character = LocalPlayer.Character
@@ -54,7 +54,7 @@ getgenv().BringItems = function(keyword)
 
     for _, obj in ipairs(Workspace:GetDescendants()) do
         if obj:IsA("Model") or obj:IsA("BasePart") then
-            -- Jangan tarik karakter player sendiri atau player lain
+            -- 1. Abaikan player
             local isPlayer = false
             for _, player in ipairs(Players:GetPlayers()) do
                 if player.Character and obj:IsDescendantOf(player.Character) then
@@ -65,30 +65,36 @@ getgenv().BringItems = function(keyword)
 
             if not isPlayer then
                 local name = lower(obj.Name)
-                
-                -- Cek pencocokan nama asli atau terjemahan
-                if string.find(name, searchKeyword, 1, true) or (translatedKeyword and string.find(name, translatedKeyword, 1, true)) then
-                    local targetPart = nil
-                    
-                    if obj:IsA("BasePart") then
-                        targetPart = obj
-                    elseif obj:IsA("Model") then
-                        targetPart = obj.PrimaryPart or obj:FindFirstChildWhichIsA("BasePart", true)
-                    end
+                local fullName = lower(obj:GetFullName())
 
-                    if targetPart and targetPart:IsDescendantOf(Workspace) then
-                        pcall(function()
-                            -- Pindahkan item tepat 2 stud di depan/atas badan
-                            targetPart.CFrame = rootPart.CFrame + Vector3.new(0, 2, 0)
-                            count += 1
-                        end)
+                -- 2. Abaikan struktur map/tempat taruh seperti PlaceZone, TempInvisPart, dll.
+                if not string.find(fullName, "placezone") and not string.find(fullName, "tempinvis") and not string.find(fullName, "shelves") then
+                    
+                    -- 3. Cocokkan nama item atau terjemahannya
+                    if string.find(name, searchKeyword, 1, true) or (translatedKeyword and string.find(name, translatedKeyword, 1, true)) then
+                        local targetPart = nil
+                        
+                        if obj:IsA("BasePart") then
+                            targetPart = obj
+                        elseif obj:IsA("Model") then
+                            targetPart = obj.PrimaryPart or obj:FindFirstChildWhichIsA("BasePart", true)
+                        end
+
+                        -- 4. SYARAT UTAMA: Harus di Workspace dan TIDAK ANCHORED (artinya item fisik/loot asli)
+                        if targetPart and targetPart:IsDescendantOf(Workspace) and not targetPart.Anchored then
+                            pcall(function()
+                                -- Pindahkan tepat di depan bawah kaki player agar tidak melayang tinggi
+                                targetPart.CFrame = rootPart.CFrame * CFrame.new(0, -2, -3)
+                                count += 1
+                            end)
+                        end
                     end
                 end
             end
         end
     end
 
-    print("[Bring Item] Berhasil menarik " .. count .. " item dengan keyword: '" .. keyword .. "'")
+    print("[Bring Item] Berhasil menarik " .. count .. " item fisik dengan keyword: '" .. keyword .. "'")
     return count
 end
 
@@ -131,7 +137,7 @@ title.Size = UDim2.new(1, -30, 1, 0)
 title.Position = UDim2.new(0, 8, 0, 0)
 title.BackgroundTransparency = 1
 title.Font = Enum.Font.GothamBold
-title.Text = "🧲 Item Bringer"
+title.Text = "🧲 Item Bringer (Fix)"
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.TextSize = 12
 title.TextXAlignment = Enum.TextXAlignment.Left
@@ -160,7 +166,7 @@ textBox.Position = UDim2.new(0, 8, 0, 36)
 textBox.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 textBox.BorderSizePixel = 0
 textBox.Font = Enum.Font.Gotham
-textBox.PlaceholderText = "Ketik item (contoh: kue / egg)..."
+textBox.PlaceholderText = "Ketik item (contoh: telur / egg)..."
 textBox.Text = ""
 textBox.TextColor3 = Color3.fromRGB(255, 255, 255)
 textBox.PlaceholderColor3 = Color3.fromRGB(140, 140, 140)
@@ -196,4 +202,4 @@ textBox.FocusLost:Connect(function(enterPressed)
     end
 end)
 
-print("[Bring Item] Script berhasil di-execute secara independen!")
+print("[Bring Item Fixed] Script berhasil dimuat tanpa menarik objek map!")
