@@ -1,5 +1,5 @@
 -- ================================================================
--- PRECISE GRABBER: DIRECT WORKSPACE NAME MATCH (SPACE SUPPORT)
+-- PRECISE GRABBER: INSTANT MOVEMENT UNLOCK (MOMENTUM FIX)
 -- ================================================================
 
 local Players = game:GetService("Players")
@@ -32,7 +32,7 @@ getgenv().ExecutePreciseGrab = function(keyword)
     local originalCFrame = rootPart.CFrame
     local itemsFolder = Workspace:FindFirstChild("Items") or Workspace
 
-    -- KUMPULKAN ITEM LANGSUNG DARI WORKSPACE (MENDUKUNG SPASI & NAMA ASLI)
+    -- KUMPULKAN ITEM LANGSUNG DARI WORKSPACE (MENDUKUNG SPASI PENUH)
     local validItems = {}
 
     for _, obj in ipairs(itemsFolder:GetDescendants()) do
@@ -41,7 +41,6 @@ getgenv().ExecutePreciseGrab = function(keyword)
             local objName = lower(obj.Name)
             local parentName = obj.Parent and lower(obj.Parent.Name) or ""
 
-            -- Cocokkan langsung dengan nama objek atau nama model foldernya (mendukung spasi penuh)
             if string.find(objName, searchKeyword, 1, true) or string.find(parentName, searchKeyword, 1, true) then
                 local targetPart = nil
                 if obj:IsA("BasePart") then
@@ -109,15 +108,23 @@ getgenv().ExecutePreciseGrab = function(keyword)
         end
     end
 
-    -- PEMULIHAN KONTROL & POSISI AWAL (DIJAMIN LANGSUNG NORMAL TANPA DELAY)
+    -- PEMULIHAN TOTAL: BERSIHKAN MOMENTUM & UNLOCK KONTROL SEKETIKA
     pcall(function()
+        -- Hentikan seluruh kecepatan/momentum fisik agar karakter tidak 'licin' atau 'nyangkut'
+        rootPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+        rootPart.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+        
+        -- Kembalikan posisi awal
+        rootPart.CFrame = originalCFrame
+        
+        -- Reset total kamera dan status gerak karakter
         Camera.CameraType = Enum.CameraType.Custom
         Camera.CameraSubject = humanoid
-        rootPart.CFrame = originalCFrame
         humanoid.PlatformStand = false
+        humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
     end)
 
-    print("[Grab] Selesai! Berhasil mengambil " .. collected .. " item.")
+    print("[Grab] Selesai! Berhasil mengambil " .. collected .. " item. Kontrol langsung normal.")
 end
 
 -- ----------------------------------------------------------------
@@ -152,7 +159,7 @@ title.Size = UDim2.new(1, -30, 1, 0)
 title.Position = UDim2.new(0, 8, 0, 0)
 title.BackgroundTransparency = 1
 title.Font = Enum.Font.GothamBold
-title.Text = "🎯 Precise Grabber (Workspace Match)"
+title.Text = "🎯 Precise Grabber (Instant Move)"
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.TextSize = 12
 title.TextXAlignment = Enum.TextXAlignment.Left
@@ -173,7 +180,7 @@ textBox.Size = UDim2.new(1, -16, 0, 30)
 textBox.Position = UDim2.new(0, 8, 0, 36)
 textBox.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 textBox.Font = Enum.Font.Gotham
-textBox.PlaceholderText = "Ketik nama (cth: Soda Bottle)..."
+textBox.PlaceholderText = "Ketik nama (cth: apple pie)..."
 textBox.Text = ""
 textBox.TextColor3 = Color3.fromRGB(255, 255, 255)
 textBox.PlaceholderColor3 = Color3.fromRGB(140, 140, 140)
@@ -203,4 +210,4 @@ textBox.FocusLost:Connect(function(enter)
     end
 end)
 
-print("[Precise Grabber Workspace Match] Skrip siap digunakan!")
+print("[Precise Grabber] Skrip pembersih momentum siap!")
