@@ -1,12 +1,12 @@
 -- ================================================================
--- INFINITE YIELD PLUGIN: TELEPORT & CUSTOM CLICK GRABBER
+-- INFINITE YIELD PLUGIN: LIMITED ITEM BRINGER (MAX 10 ITEMS)
 -- ================================================================
 
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 local LocalPlayer = Players.LocalPlayer
 
--- Kamus terjemahan bilingual
+-- Kamus terjemahan bilingual (Indo <-> Eng)
 local TRANSLATION_MAP = {
     ["telur"] = "egg",
     ["egg"] = "telur",
@@ -30,96 +30,83 @@ local function lower(val)
     return string.lower(tostring(val or ""))
 end
 
-local function executeTeleportAndClickGrab(keyword, maxCount)
-    local searchKeyword = lower(keyword)
-    if searchKeyword == "" then
-        print("[Grab] Masukkan nama itemnya, bro!")
-        return
-    end
-
-    maxCount = tonumber(maxCount) or 5 -- Default ambil 5 item kalau jumlah tidak diisi
+-- ----------------------------------------------------------------
+-- LOGIKA BRING ITEM (DIBATASI MAKSIMAL 10 ITEM)
+-- ----------------------------------------------------------------
+local function executeBringLimit(keyword)
     local character = LocalPlayer.Character
     local rootPart = character and character:FindFirstChild("HumanoidRootPart")
     
     if not rootPart then
-        print("[Grab] Karakter tidak ditemukan!")
-        return
+        print("[Bring Item] Karakter tidak ditemukan!")
+        return 0
     end
 
-    local originalCFrame = rootPart.CFrame
+    local searchKeyword = lower(keyword)
+    if searchKeyword == "" then
+        print("[Bring Item] Keyword kosong! Contoh: ;rgrab telur")
+        return 0
+    end
+
     local translatedKeyword = TRANSLATION_MAP[searchKeyword]
-    local collected = 0
-    local itemsFolder = Workspace:FindFirstChild("Items") or Workspace
+    local count = 0
+    local maxLimit = 10 -- Batas maksimal 10 item agar server tidak bug/kewalahan
 
-    print(sprintf("[Grab] Memulai pengambilan '%s' sebanyak maksimal %d item...", searchKeyword, maxCount))
-
-    for _, obj in ipairs(itemsFolder:GetDescendants()) do
-        if collected >= maxCount then 
-            break 
+    for _, obj in ipairs(Workspace:GetDescendants()) do
+        -- Hentikan pencarian jika sudah mencapai batas 10 item
+        if count >= maxLimit then
+            break
         end
 
-        local fullName = lower(obj:GetFullName())
-        if not string.find(fullName, "placezone") and not string.find(fullName, "tempinvis") then
-            local name = lower(obj.Name)
+        if obj:IsA("Model") or obj:IsA("BasePart") then
+            local fullName = lower(obj:GetFullName())
+            if string.find(fullName, "items") then
+                if not string.find(fullName, "placezone") and not string.find(fullName, "tempinvis") then
+                    local name = lower(obj.Name)
 
-            if string.find(name, searchKeyword, 1, true) or (translatedKeyword and string.find(name, translatedKeyword, 1, true)) then
-                local targetPart = nil
-
-                if obj:IsA("BasePart") then
-                    targetPart = obj
-                elseif obj:IsA("Model") then
-                    targetPart = obj.PrimaryPart or obj:FindFirstChildWhichIsA("BasePart", true)
-                end
-
-                if targetPart and targetPart:IsDescendantOf(Workspace) then
-                    pcall(function()
-                        -- 1. Teleport pas ke atas objek itemnya
-                        rootPart.CFrame = targetPart.CFrame + Vector3.new(0, 2, 0)
+                    if string.find(name, searchKeyword, 1, true) or (translatedKeyword and string.find(name, translatedKeyword, 1, true)) then
+                        local targetPart = nil
                         
-                        -- 2. Simulasi menyentuh / klik objek (memicu event custom game)
-                        if targetPart:IsA("BasePart") then
-                            firetouchinterest(rootPart, targetPart, 0)
-                            task.wait(0.1)
-                            firetouchinterest(rootPart, targetPart, 1)
+                        if obj:IsA("BasePart") then
+                            targetPart = obj
+                        elseif obj:IsA("Model") then
+                            targetPart = obj.PrimaryPart or obj:FindFirstChildWhichIsA("BasePart", true)
                         end
 
-                        collected += 1
-                        print(sprintf("[Grab] Berhasil mengambil item ke-%d", collected))
-                    end)
-
-                    -- 3. Jeda 1 detik sesuai permintaan bro agar aman & tidak terlalu cepat
-                    task.wait(1.0)
+                        if targetPart and targetPart:IsDescendantOf(Workspace) then
+                            pcall(function()
+                                -- Penyebaran posisi (spread) di depan player
+                                local randomX = math.random(-3, 3)
+                                local randomZ = math.random(-4, -1)
+                                
+                                targetPart.CFrame = rootPart.CFrame * CFrame.new(randomX, -2, randomZ)
+                                count += 1
+                            end)
+                        end
+                    end
                 end
             end
         end
     end
 
-    -- Kembalikan posisi player ke tempat asal dengan mulus setelah selesai
-    pcall(function()
-        rootPart.CFrame = originalCFrame
-    end)
-
-    print(sprintf("[Grab] Selesai! Total %d item berhasil diproses.", collected))
+    print(string.format("[Bring Item] Berhasil menarik %d item (max 10) dengan keyword: '%s'", count, keyword))
+    return count
 end
 
--- Helper kecil untuk format print string
-function sprintf(str, ...)
-    return string.format(str, ...)
-end
-
--- Plugin Struct Infinite Yield
+-- ----------------------------------------------------------------
+-- STRUKTUR PLUGIN INFINITE YIELD
+-- ----------------------------------------------------------------
 local Plugin = {
-    ["PluginName"] = "Teleport Touch Grabber",
-    ["PluginDescription"] = "Teleport berjedanya 1 detik per item sambil mentrigger sentuhan custom.",
+    ["PluginName"] = "Bring Item Spread (Max 10)",
+    ["PluginDescription"] = "Menarik item ke depan player maksimal 10 buah dengan efek sebar",
     ["Commands"] = {
         ["rgrab"] = {
-            ["ListName"] = "rgrab <item> <jumlah>",
-            ["Description"] = "Contoh: ;rgrab telur 5 (Teleport & ambil berjedanya 1 detik)",
-            ["Aliases"] = {"grabitems"},
+            ["ListName"] = "rgrab <namaitem>",
+            ["Description"] = "Tarik maksimal 10 item (Contoh: ;rgrab telur)",
+            ["Aliases"] = {"bringitem", "grab"},
             ["Function"] = function(args, speaker)
-                local keyword = args[1] or ""
-                local count = args[2] or 5
-                executeTeleportAndClickGrab(keyword, count)
+                local keyword = table.concat(args, " ")
+                executeBringLimit(keyword)
             end
         }
     }
