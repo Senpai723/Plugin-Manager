@@ -1,8 +1,13 @@
+-- ================================================================
+-- INDEPENDENT ITEM MAGNET / BRING ITEM SCRIPT
+-- ================================================================
+
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
+local CoreGui = game:GetService("CoreGui")
 local LocalPlayer = Players.LocalPlayer
 
--- Kamus terjemahan sederhana (sama seperti sebelumnya)
+-- Kamus terjemahan bilingual (Indo <-> Eng)
 local TRANSLATION_MAP = {
     ["telur"] = "egg",
     ["egg"] = "telur",
@@ -11,58 +16,184 @@ local TRANSLATION_MAP = {
     ["roti"] = "bread",
     ["bread"] = "roti",
     ["kue"] = "cake",
-    ["cake"] = "kue"
+    ["cake"] = "kue",
+    ["susu"] = "milk",
+    ["milk"] = "susu",
+    ["keju"] = "cheese",
+    ["cheese"] = "keju",
+    ["kopi"] = "coffee",
+    ["coffee"] = "kopi",
+    ["teh"] = "tea",
+    ["tea"] = "teh"
 }
 
 local function lower(val)
     return string.lower(tostring(val or ""))
 end
 
--- Fungsi untuk menarik item berdasarkan keyword
-local function bringItems(keyword)
+-- ----------------------------------------------------------------
+-- LOGIKA UTAMA BRING ITEM
+-- ----------------------------------------------------------------
+getgenv().BringItems = function(keyword)
     local character = LocalPlayer.Character
     local rootPart = character and character:FindFirstChild("HumanoidRootPart")
     
     if not rootPart then
-        print("Karakter tidak ditemukan!")
-        return
+        warn("[Bring Item] Karakter tidak ditemukan!")
+        return 0
     end
 
     local searchKeyword = lower(keyword)
+    if searchKeyword == "" then
+        warn("[Bring Item] Keyword kosong!")
+        return 0
+    end
+
     local translatedKeyword = TRANSLATION_MAP[searchKeyword]
     local count = 0
 
-    -- Scan semua objek di Workspace
     for _, obj in ipairs(Workspace:GetDescendants()) do
         if obj:IsA("Model") or obj:IsA("BasePart") then
-            local name = lower(obj.Name)
-            
-            -- Cek apakah nama objek cocok dengan keyword atau terjemahannya
-            if (searchKeyword == "" or string.find(name, searchKeyword, 1, true) or (translatedKeyword and string.find(name, translatedKeyword, 1, true))) then
-                local targetPart = nil
-                
-                if obj:IsA("BasePart") then
-                    targetPart = obj
-                elseif obj:IsA("Model") then
-                    targetPart = obj.PrimaryPart or obj:FindFirstChildWhichIsA("BasePart", true)
+            -- Jangan tarik karakter player sendiri atau player lain
+            local isPlayer = false
+            for _, player in ipairs(Players:GetPlayers()) do
+                if player.Character and obj:IsDescendantOf(player.Character) then
+                    isPlayer = true
+                    break
                 end
+            end
 
-                if targetPart and targetPart:IsDescendantOf(Workspace) then
-                    -- Pindahkan posisi item ke depan karakter lu (sedikit di atas atau pas di rootpart)
-                    pcall(function()
-                        targetPart.CFrame = rootPart.CFrame + Vector3.new(0, 2, 0)
-                        count += 1
-                    end)
+            if not isPlayer then
+                local name = lower(obj.Name)
+                
+                -- Cek pencocokan nama asli atau terjemahan
+                if string.find(name, searchKeyword, 1, true) or (translatedKeyword and string.find(name, translatedKeyword, 1, true)) then
+                    local targetPart = nil
+                    
+                    if obj:IsA("BasePart") then
+                        targetPart = obj
+                    elseif obj:IsA("Model") then
+                        targetPart = obj.PrimaryPart or obj:FindFirstChildWhichIsA("BasePart", true)
+                    end
+
+                    if targetPart and targetPart:IsDescendantOf(Workspace) then
+                        pcall(function()
+                            -- Pindahkan item tepat 2 stud di depan/atas badan
+                            targetPart.CFrame = rootPart.CFrame + Vector3.new(0, 2, 0)
+                            count += 1
+                        end)
+                    end
                 end
             end
         end
     end
 
-    print("Berhasil menarik " .. count .. " item dengan keyword: " .. keyword)
+    print("[Bring Item] Berhasil menarik " .. count .. " item dengan keyword: '" .. keyword .. "'")
+    return count
 end
 
--- Contoh cara eksekusi langsung via chat bar / executor:
--- Tarik semua kue / egg:
-bringItems("kue") 
--- atau pakai bahasa Inggris:
--- bringItems("egg")
+-- ----------------------------------------------------------------
+-- INDEPENDENT FLOATING GUI UI
+-- ----------------------------------------------------------------
+local existingGui = CoreGui:FindFirstChild("BringItemGui") or LocalPlayer:WaitForChild("PlayerGui"):FindFirstChild("BringItemGui")
+if existingGui then
+    existingGui:Destroy()
+end
+
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "BringItemGui"
+screenGui.ResetOnSpawn = false
+
+pcall(function() screenGui.Parent = CoreGui end)
+if not screenGui.Parent then screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui") end
+
+local mainFrame = Instance.new("Frame")
+mainFrame.Name = "MainFrame"
+mainFrame.Size = UDim2.new(0, 240, 0, 110)
+mainFrame.Position = UDim2.new(0.5, -120, 0.3, 0)
+mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+mainFrame.BorderSizePixel = 0
+mainFrame.Active = true
+mainFrame.Draggable = true
+mainFrame.Parent = screenGui
+Instance.new("UICorner", mainFrame).CornerRadius = UDim.new(0, 8)
+
+-- TopBar
+local topBar = Instance.new("Frame")
+topBar.Size = UDim2.new(1, 0, 0, 28)
+topBar.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+topBar.BorderSizePixel = 0
+topBar.Parent = mainFrame
+Instance.new("UICorner", topBar).CornerRadius = UDim.new(0, 8)
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, -30, 1, 0)
+title.Position = UDim2.new(0, 8, 0, 0)
+title.BackgroundTransparency = 1
+title.Font = Enum.Font.GothamBold
+title.Text = "🧲 Item Bringer"
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.TextSize = 12
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.Parent = topBar
+
+local closeBtn = Instance.new("TextButton")
+closeBtn.Size = UDim2.new(0, 20, 0, 20)
+closeBtn.Position = UDim2.new(1, -24, 0, 4)
+closeBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+closeBtn.BorderSizePixel = 0
+closeBtn.Font = Enum.Font.GothamBold
+closeBtn.Text = "X"
+closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+closeBtn.TextSize = 11
+closeBtn.Parent = topBar
+Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 4)
+
+closeBtn.MouseButton1Click:Connect(function()
+    screenGui:Destroy()
+end)
+
+-- Input Box
+local textBox = Instance.new("TextBox")
+textBox.Size = UDim2.new(1, -16, 0, 30)
+textBox.Position = UDim2.new(0, 8, 0, 36)
+textBox.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+textBox.BorderSizePixel = 0
+textBox.Font = Enum.Font.Gotham
+textBox.PlaceholderText = "Ketik item (contoh: kue / egg)..."
+textBox.Text = ""
+textBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+textBox.PlaceholderColor3 = Color3.fromRGB(140, 140, 140)
+textBox.TextSize = 11
+textBox.ClearTextOnFocus = false
+textBox.Parent = mainFrame
+Instance.new("UICorner", textBox).CornerRadius = UDim.new(0, 6)
+
+-- Tombol Bring / Magnet
+local bringBtn = Instance.new("TextButton")
+bringBtn.Size = UDim2.new(1, -16, 0, 30)
+bringBtn.Position = UDim2.new(0, 8, 0, 72)
+bringBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 90)
+bringBtn.BorderSizePixel = 0
+bringBtn.Font = Enum.Font.GothamBold
+bringBtn.Text = "BRING ITEM"
+bringBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+bringBtn.TextSize = 11
+bringBtn.Parent = mainFrame
+Instance.new("UICorner", bringBtn).CornerRadius = UDim.new(0, 6)
+
+-- Event Click / Enter
+bringBtn.MouseButton1Click:Connect(function()
+    local itemInput = textBox.Text
+    if itemInput ~= "" then
+        getgenv().BringItems(itemInput)
+    end
+end)
+
+textBox.FocusLost:Connect(function(enterPressed)
+    if enterPressed and textBox.Text ~= "" then
+        getgenv().BringItems(textBox.Text)
+    end
+end)
+
+print("[Bring Item] Script berhasil di-execute secara independen!")
