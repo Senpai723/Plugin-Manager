@@ -157,10 +157,11 @@ local function getValidCheckpointPart(obj)
     if not obj or not (obj:IsA("BasePart") or obj:IsA("MeshPart") or obj:IsA("UnionOperation") or obj:IsA("Model")) then return nil end
     if isBlacklisted(obj.Name) then return nil end
 
-    -- Deteksi TouchInterest atau TouchTransmitter secara fleksibel
+    -- Cek 1: Memiliki TouchInterest langsung
     local hasTouch = obj:FindFirstChild("TouchInterest") or obj:FindFirstChildOfClass("TouchTransmitter")
     if hasTouch then return obj end
 
+    -- Cek 2: Memiliki ProximityPrompt langsung
     local hasPrompt = obj:FindFirstChildOfClass("ProximityPrompt") or obj:FindFirstChildWhichIsA("ProximityPrompt", true)
     if hasPrompt then
         if obj:IsA("Model") then
@@ -169,6 +170,7 @@ local function getValidCheckpointPart(obj)
         return obj
     end
 
+    -- Cek 3: Cek anak-anak objek
     for _, desc in ipairs(obj:GetDescendants()) do
         if (desc:IsA("BasePart") or desc:IsA("MeshPart") or desc:IsA("UnionOperation")) and not isBlacklisted(desc.Name) then
             if desc:FindFirstChild("TouchInterest") or desc:FindFirstChildOfClass("TouchTransmitter") or desc:FindFirstChildOfClass("ProximityPrompt") then
@@ -208,33 +210,35 @@ local function parseCPIdentity(obj)
     end
 
     -- ==================================================
-    -- 1. DETEKSI SUMMIT (Pengecekan Mutlak Tanpa Batasan Folder)
+    -- 1. DETEKSI SUMMIT (Murni mendeteksi kata summit atau SummitPart)
     -- ==================================================
-        local summitKeywords = {"summit", "peak", "finish", "puncak", "winpad"}
-    local isSummit = false
-    
-    for _, kw in ipairs(summitKeywords) do
-        if string.find(lowerName, kw, 1, true) or string.find(lowerParent, kw, 1, true) then
-            isSummit = true
-            break
-        end
-    end
-
-    -- Pengecekan mutlak jika nama objek mengandung kata summit (seperti SummitPart)
-    if string.find(lowerName, "summit", 1, true) then
-        isSummit = true
-    end
-
-    if isSummit then
-        local summitDesc = (guiText ~= "" and guiText or name)
+    if string.find(lowerName, "summit", 1, true) or string.find(lowerParent, "summit", 1, true) or string.find(lowerName, "peak", 1, true) or string.find(lowerName, "finish", 1, true) or string.find(lowerName, "puncak", 1, true) then
+        local summitDesc = name
         if folderContext ~= "" then
-            summitDesc = folderContext .. " - " .. summitDesc
+            summitDesc = folderContext .. " - " .. name
         end
         return "SUMMIT", summitDesc, validPart, 10
     end
 
+    -- Deteksi khusus "Reset" jika berada di jalur checkpoint/obby
+    local summitKeywords = {"reset"}
+    for _, kw in ipairs(summitKeywords) do
+        if string.find(lowerName, kw, 1, true) or string.find(lowerParent, kw, 1, true) then
+            local fullInstancePath = string.lower(getInstancePath(obj))
+            if string.find(fullInstancePath, "checkpoint") or string.find(fullInstancePath, "obby") or string.find(fullInstancePath, "gunung") then
+                local summitDesc = name
+                if folderContext ~= "" then
+                    summitDesc = folderContext .. " - " .. name
+                end
+                return "SUMMIT", summitDesc, validPart, 10
+            end
+        end
+    end
 
-    local combined = lowerParent .. " " .. lowerName .. " " .. guiText
+    -- ==================================================
+    -- 2. PARSING NOMOR CHECKPOINT BIASA (Logika Lama yang Stabil)
+    -- ==================================================
+    local combined = lowerParent .. " " .. lowerName
 
     local num = string.match(combined, "checkpoints?%s*(%d+%.?%d*)") or
                 string.match(combined, "checkpoint%s*(%d+%.?%d*)") or
@@ -249,8 +253,9 @@ local function parseCPIdentity(obj)
                 string.match(combined, "ring%s*(%d+%.?%d*)") or
                 string.match(combined, "ring(%d+%.?%d*)")
 
-    if not num and guiText ~= "" then
-        num = string.match(guiText, "(%d+%.?%d*)")
+    -- Fallback angka murni jika nama part berupa angka (misal: "1", "2", "3.5")
+    if not num then
+        num = string.match(name, "^(%d+%.?%d*)$")
     end
 
     if not num then
@@ -288,9 +293,6 @@ local function parseCPIdentity(obj)
     local descText = name
     if folderContext ~= "" then
         descText = folderContext .. " (" .. name .. ")"
-    end
-    if guiText ~= "" then
-        descText = folderContext ~= "" and (folderContext .. " - " .. guiText) or guiText
     end
 
     return nVal, descText, validPart, priorityScore
