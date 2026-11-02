@@ -1,5 +1,5 @@
 -- ================================================================
--- FINAL SMOOTH AIM-DOWN & TAP GRABBER
+-- PRECISE GRABBER FIX: NEAREST SORT & CAMERA UNLOCK
 -- ================================================================
 
 local Players = game:GetService("Players")
@@ -50,14 +50,13 @@ getgenv().ExecutePreciseGrab = function(keyword)
     local originalCamType = Camera.CameraType
     local translatedKeyword = TRANSLATION_MAP[searchKeyword]
     local collected = 0
-    local maxCount = 10 -- Batas aman maksimal 10 item per eksekusi
+    local maxCount = 10 
     local itemsFolder = Workspace:FindFirstChild("Items") or Workspace
 
-    print("[Grab] Memulai loop pengambilan untuk: " .. searchKeyword)
+    -- 1. KUMPULKAN DAN URUTKAN ITEM BERDASARKAN JARAK TERDEKAT (NEAREST FIRST)
+    local validItems = {}
 
     for _, obj in ipairs(itemsFolder:GetDescendants()) do
-        if collected >= maxCount then break end
-
         local fullName = lower(obj:GetFullName())
         if not string.find(fullName, "placezone") and not string.find(fullName, "tempinvis") then
             local name = lower(obj.Name)
@@ -71,49 +70,63 @@ getgenv().ExecutePreciseGrab = function(keyword)
                 end
 
                 if targetPart and targetPart:IsDescendantOf(Workspace) then
-                    pcall(function()
-                        local itemPos = targetPart.Position
-                        
-                        -- 1. Teleport karakter tepat di sebelah item
-                        rootPart.CFrame = CFrame.new(itemPos + Vector3.new(0, 0.5, 1.5), itemPos)
-                        
-                        -- 2. Alihkan kamera tepat di atas item, menghadap ke bawah (nunduk ke arah item)
-                        Camera.CameraType = Enum.CameraType.Scriptable
-                        Camera.CFrame = CFrame.lookAt(itemPos + Vector3.new(0, 4, 2), itemPos)
-                        
-                        task.wait(0.15) -- Jeda sebentar agar posisi stabil
-
-                        -- 3. Simulasi Tap / Klik di tengah layar (posisi item pas di crosshair)
-                        local vp = Camera.ViewportSize
-                        VirtualInputManager:SendMouseButtonEvent(vp.X/2, vp.Y/2, 0, true, game, 0)
-                        task.wait(0.05)
-                        VirtualInputManager:SendMouseButtonEvent(vp.X/2, vp.Y/2, 0, false, game, 0)
-
-                        -- 4. Tambahan touch event untuk memastikan sistem game merespon
-                        if targetPart:IsA("BasePart") then
-                            firetouchinterest(rootPart, targetPart, 0)
-                            task.wait(0.05)
-                            firetouchinterest(rootPart, targetPart, 1)
-                        end
-
-                        collected += 1
-                        print("[Grab] Berhasil mengambil item ke-" .. collected)
-                    end)
-
-                    -- Jeda perulangan (repeat) agar prosesnya natural dan tidak nge-lag
-                    task.wait(0.4)
+                    local dist = (targetPart.Position - rootPart.Position).Magnitude
+                    table.insert(validItems, {Part = targetPart, Distance = dist})
                 end
             end
         end
     end
 
-    -- Kembalikan kamera dan posisi player ke semula setelah selesai repeat
+    -- Urutkan dari item yang paling dekat dengan player biar nggak loncat-loncat jauh
+    table.sort(validItems, function(a, b)
+        return a.Distance < b.Distance
+    end)
+
+    print("[Grab] Total item ditemukan: " .. #validItems .. ". Memulai pengambilan...")
+
+    -- 2. EKSEKUSI PENGAMBILAN BERURUTAN
+    for _, itemData in ipairs(validItems) do
+        if collected >= maxCount then break end
+        local targetPart = itemData.Part
+
+        if targetPart and targetPart:IsDescendantOf(Workspace) then
+            pcall(function()
+                local itemPos = targetPart.Position
+                
+                -- Teleport pas di sebelah item
+                rootPart.CFrame = CFrame.new(itemPos + Vector3.new(0, 0.5, 1.5), itemPos)
+                
+                -- Alihkan kamera nunduk ke bawah menghadap item
+                Camera.CameraType = Enum.CameraType.Scriptable
+                Camera.CFrame = CFrame.lookAt(itemPos + Vector3.new(0, 4, 2), itemPos)
+                task.wait(0.12)
+
+                -- Simulasi Tap layar di tengah
+                local vp = Camera.ViewportSize
+                VirtualInputManager:SendMouseButtonEvent(vp.X/2, vp.Y/2, 0, true, game, 0)
+                task.wait(0.04)
+                VirtualInputManager:SendMouseButtonEvent(vp.X/2, vp.Y/2, 0, false, game, 0)
+
+                if targetPart:IsA("BasePart") then
+                    firetouchinterest(rootPart, targetPart, 0)
+                    task.wait(0.04)
+                    firetouchinterest(rootPart, targetPart, 1)
+                end
+
+                collected += 1
+            end)
+            task.wait(0.3)
+        end
+    end
+
+    -- 3. WAJIB: KEMBALIKAN KAMERA & POSISI PLAYER KE SEMULA SECARA AMAN
     pcall(function()
-        Camera.CameraType = originalCamType
+        Camera.CameraType = Enum.CameraType.Custom -- Membuka kunci kamera agar bisa digerakkan normal lagi!
+        Camera.CameraSubject = character:FindFirstChildOfClass("Humanoid")
         rootPart.CFrame = originalCFrame
     end)
 
-    print("[Grab] Selesai! Total " .. collected .. " item berhasil diproses.")
+    print("[Grab] Selesai! Berhasil mengambil " .. collected .. " item. Kamera dipulihkan.")
 end
 
 -- ----------------------------------------------------------------
@@ -148,7 +161,7 @@ title.Size = UDim2.new(1, -30, 1, 0)
 title.Position = UDim2.new(0, 8, 0, 0)
 title.BackgroundTransparency = 1
 title.Font = Enum.Font.GothamBold
-title.Text = "🎯 Precise Grabber"
+title.Text = "🎯 Precise Grabber (Fix)"
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.TextSize = 12
 title.TextXAlignment = Enum.TextXAlignment.Left
@@ -169,7 +182,7 @@ textBox.Size = UDim2.new(1, -16, 0, 30)
 textBox.Position = UDim2.new(0, 8, 0, 36)
 textBox.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 textBox.Font = Enum.Font.Gotham
-textBox.PlaceholderText = "Ketik item (contoh: telur / kue)..."
+textBox.PlaceholderText = "Ketik item (contoh: kue / telur)..."
 textBox.Text = ""
 textBox.TextColor3 = Color3.fromRGB(255, 255, 255)
 textBox.PlaceholderColor3 = Color3.fromRGB(140, 140, 140)
@@ -199,4 +212,4 @@ textBox.FocusLost:Connect(function(enter)
     end
 end)
 
-print("[Precise Grabber] Skrip berhasil dimuat!")
+print("[Precise Grabber Fix] Skrip berhasil dimuat!")
