@@ -1,12 +1,14 @@
 -- ================================================================
--- INFINITE YIELD PLUGIN: LIMITED ITEM BRINGER (MAX 10 ITEMS)
+-- INFINITE YIELD PLUGIN: AIM CAMERA & TAP GRABBER
 -- ================================================================
 
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
+local VirtualInputManager = game:GetService("VirtualInputManager")
 local LocalPlayer = Players.LocalPlayer
+local Camera = Workspace.CurrentCamera
 
--- Kamus terjemahan bilingual (Indo <-> Eng)
+-- Kamus terjemahan bilingual
 local TRANSLATION_MAP = {
     ["telur"] = "egg",
     ["egg"] = "telur",
@@ -30,83 +32,111 @@ local function lower(val)
     return string.lower(tostring(val or ""))
 end
 
--- ----------------------------------------------------------------
--- LOGIKA BRING ITEM (DIBATASI MAKSIMAL 10 ITEM)
--- ----------------------------------------------------------------
-local function executeBringLimit(keyword)
+local function executeAimAndTapGrab(keyword, maxCount)
+    local searchKeyword = lower(keyword)
+    if searchKeyword == "" then
+        print("[Grab] Masukkan nama itemnya, bro!")
+        return
+    end
+
+    maxCount = tonumber(maxCount) or 1
     local character = LocalPlayer.Character
     local rootPart = character and character:FindFirstChild("HumanoidRootPart")
     
     if not rootPart then
-        print("[Bring Item] Karakter tidak ditemukan!")
-        return 0
+        print("[Grab] Karakter tidak ditemukan!")
+        return
     end
 
-    local searchKeyword = lower(keyword)
-    if searchKeyword == "" then
-        print("[Bring Item] Keyword kosong! Contoh: ;rgrab telur")
-        return 0
-    end
-
+    local originalCFrame = rootPart.CFrame
+    local originalCamType = Camera.CameraType
     local translatedKeyword = TRANSLATION_MAP[searchKeyword]
-    local count = 0
-    local maxLimit = 10 -- Batas maksimal 10 item agar server tidak bug/kewalahan
+    local collected = 0
+    local itemsFolder = Workspace:FindFirstChild("Items") or Workspace
 
-    for _, obj in ipairs(Workspace:GetDescendants()) do
-        -- Hentikan pencarian jika sudah mencapai batas 10 item
-        if count >= maxLimit then
-            break
+    print(string.format("[Grab] Memulai Aim-Grab '%s' sebanyak %d item...", searchKeyword, maxCount))
+
+    for _, obj in ipairs(itemsFolder:GetDescendants()) do
+        if collected >= maxCount then 
+            break 
         end
 
-        if obj:IsA("Model") or obj:IsA("BasePart") then
-            local fullName = lower(obj:GetFullName())
-            if string.find(fullName, "items") then
-                if not string.find(fullName, "placezone") and not string.find(fullName, "tempinvis") then
-                    local name = lower(obj.Name)
+        local fullName = lower(obj:GetFullName())
+        if not string.find(fullName, "placezone") and not string.find(fullName, "tempinvis") then
+            local name = lower(obj.Name)
 
-                    if string.find(name, searchKeyword, 1, true) or (translatedKeyword and string.find(name, translatedKeyword, 1, true)) then
-                        local targetPart = nil
+            if string.find(name, searchKeyword, 1, true) or (translatedKeyword and string.find(name, translatedKeyword, 1, true)) then
+                local targetPart = nil
+
+                if obj:IsA("BasePart") then
+                    targetPart = obj
+                elseif obj:IsA("Model") then
+                    targetPart = obj.PrimaryPart or obj:FindFirstChildWhichIsA("BasePart", true)
+                end
+
+                if targetPart and targetPart:IsDescendantOf(Workspace) then
+                    pcall(function()
+                        local itemPos = targetPart.Position
                         
-                        if obj:IsA("BasePart") then
-                            targetPart = obj
-                        elseif obj:IsA("Model") then
-                            targetPart = obj.PrimaryPart or obj:FindFirstChildWhichIsA("BasePart", true)
+                        -- 1. Teleport karakter ke depan item (berjarak 3 stud)
+                        local standPos = itemPos + Vector3.new(0, 1, 3)
+                        rootPart.CFrame = CFrame.new(standPos, itemPos)
+                        
+                        -- 2. Paksa Kamera untuk MENENGOK/MENGHADAP tepat ke titik tengah item
+                        Camera.CameraType = Enum.CameraType.Scriptable
+                        Camera.CFrame = CFrame.new(Camera.CFrame.Position, itemPos)
+                        
+                        task.wait(0.15) -- Jeda mikro agar Raycast game mendeteksi item di tengah kursor
+
+                        -- 3. Simulasi Tap / Click Layar di tengah (Crosshair)
+                        local viewportSize = Camera.ViewportSize
+                        local centerX = viewportSize.X / 2
+                        local centerY = viewportSize.Y / 2
+                        
+                        VirtualInputManager:SendMouseButtonEvent(centerX, centerY, 0, true, game, 0)
+                        task.wait(0.05)
+                        VirtualInputManager:SendMouseButtonEvent(centerX, centerY, 0, false, game, 0)
+
+                        -- Fallback Touch Interest jika game pakai gabungan touch
+                        if targetPart:IsA("BasePart") then
+                            firetouchinterest(rootPart, targetPart, 0)
+                            task.wait(0.05)
+                            firetouchinterest(rootPart, targetPart, 1)
                         end
 
-                        if targetPart and targetPart:IsDescendantOf(Workspace) then
-                            pcall(function()
-                                -- Penyebaran posisi (spread) di depan player
-                                local randomX = math.random(-3, 3)
-                                local randomZ = math.random(-4, -1)
-                                
-                                targetPart.CFrame = rootPart.CFrame * CFrame.new(randomX, -2, randomZ)
-                                count += 1
-                            end)
-                        end
-                    end
+                        collected += 1
+                        print(string.format("[Grab] Berhasil Aim & Tap item ke-%d", collected))
+                    end)
+
+                    -- Jeda agar animasi/sistem server sempat memindahkan item ke tangan
+                    task.wait(0.4)
                 end
             end
         end
     end
 
-    print(string.format("[Bring Item] Berhasil menarik %d item (max 10) dengan keyword: '%s'", count, keyword))
-    return count
+    -- Balikkan Kamera & Posisi Karakter ke tempat semula
+    pcall(function()
+        Camera.CameraType = originalCamType
+        rootPart.CFrame = originalCFrame
+    end)
+
+    print(string.format("[Grab] Selesai! Total %d item berhasil di-grab.", collected))
 end
 
--- ----------------------------------------------------------------
--- STRUKTUR PLUGIN INFINITE YIELD
--- ----------------------------------------------------------------
+-- Plugin Struct Infinite Yield
 local Plugin = {
-    ["PluginName"] = "Bring Item Spread (Max 10)",
-    ["PluginDescription"] = "Menarik item ke depan player maksimal 10 buah dengan efek sebar",
+    ["PluginName"] = "Aim Camera & Tap Grabber",
+    ["PluginDescription"] = "Mengarahkan kamera pas ke item lalu men-tap layar otomatis.",
     ["Commands"] = {
         ["rgrab"] = {
-            ["ListName"] = "rgrab <namaitem>",
-            ["Description"] = "Tarik maksimal 10 item (Contoh: ;rgrab telur)",
-            ["Aliases"] = {"bringitem", "grab"},
+            ["ListName"] = "rgrab <item> [jumlah]",
+            ["Description"] = "Contoh: ;rgrab telur 5 atau ;rgrab kue 2",
+            ["Aliases"] = {"aimgrab"},
             ["Function"] = function(args, speaker)
-                local keyword = table.concat(args, " ")
-                executeBringLimit(keyword)
+                local keyword = args[1] or ""
+                local count = args[2] or 1
+                executeAimAndTapGrab(keyword, count)
             end
         }
     }
