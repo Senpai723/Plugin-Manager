@@ -1,5 +1,5 @@
 -- ================================================================
--- PRECISE GRABBER: STRICT PHRASE + SAFE SERVER COOLDOWN (MAX 10)
+-- PRECISE GRABBER: PURE ENGLISH WORKSPACE MATCH (MAX 10)
 -- ================================================================
 
 local Players = game:GetService("Players")
@@ -41,7 +41,7 @@ getgenv().ExecutePreciseGrab = function(keyword)
             local parentName = obj.Parent and lower(obj.Parent.Name) or ""
             local combinedName = objName .. " " .. parentName
 
-            -- KEMBALI KE PENCARIAN FRASA UTUH (Harus sesuai persis dengan ketikan)
+            -- Pencarian murni sesuai ketikan (Bahasa Inggris Workspace)
             if string.find(combinedName, searchKeyword, 1, true) then
                 local targetPart = nil
                 if obj:IsA("BasePart") then
@@ -66,17 +66,17 @@ getgenv().ExecutePreciseGrab = function(keyword)
     end)
 
     if #validItems == 0 then
-        print("[Grab] Item dengan frasa '" .. keyword .. "' tidak ditemukan di map!")
+        print("[Grab] Item '" .. keyword .. "' tidak ditemukan di Workspace!")
         return
     end
 
-    -- Ambil hingga batas maksimal 10 item
+    -- Batas maksimal 10 item (fleksibel untuk game lain)
     local targetLimit = math.min(#validItems, 10)
     print("[Grab] Ditemukan " .. #validItems .. " item. Memproses " .. targetLimit .. " item terdekat...")
 
     local collected = 0
 
-    -- EKSEKUSI TELEPORT & TOUCH ITEM DENGAN JEDA AMAN SERVER (0.4 DETIK)
+    -- EKSEKUSI TELEPORT & TOUCH ITEM
     for i = 1, targetLimit do
         local itemData = validItems[i]
         if not itemData then break end
@@ -106,8 +106,7 @@ getgenv().ExecutePreciseGrab = function(keyword)
 
                 collected += 1
             end)
-            -- Jeda dinaikkan jadi 0.4 detik agar server game tidak mendeteksi spam/cooldown
-            task.wait(0.4)
+            task.wait(0.3)
         end
     end
 
@@ -122,7 +121,7 @@ getgenv().ExecutePreciseGrab = function(keyword)
         humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
     end)
 
-    print("[Grab] Selesai! Berhasil mengambil " .. collected .. " item tanpa terhalang cooldown.")
+    print("[Grab] Selesai! Berhasil mengambil " .. collected .. " item.")
 end
 
 -- ----------------------------------------------------------------
@@ -157,7 +156,7 @@ title.Size = UDim2.new(1, -30, 1, 0)
 title.Position = UDim2.new(0, 8, 0, 0)
 title.BackgroundTransparency = 1
 title.Font = Enum.Font.GothamBold
-title.Text = "🎯 Precise Grabber (Stable)"
+title.Text = "🎯 Precise Grabber (Max 10)"
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.TextSize = 12
 title.TextXAlignment = Enum.TextXAlignment.Left
@@ -178,7 +177,7 @@ textBox.Size = UDim2.new(1, -16, 0, 30)
 textBox.Position = UDim2.new(0, 8, 0, 36)
 textBox.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 textBox.Font = Enum.Font.Gotham
-textBox.PlaceholderText = "Ketik nama (cth: dark chocolate bar)..."
+textBox.PlaceholderText = "Type item (e.g., coffee macaron)..."
 textBox.Text = ""
 textBox.TextColor3 = Color3.fromRGB(255, 255, 255)
 textBox.PlaceholderColor3 = Color3.fromRGB(140, 140, 140)
@@ -187,6 +186,7 @@ textBox.ClearTextOnFocus = false
 Instance.new("UICorner", textBox).CornerRadius = UDim.new(0, 6)
 
 local btn = Instance.new("TextButton", mainFrame)
+btn.Size = UDim2.src or UDim2.new(1, -16, 0, 30)
 btn.Size = UDim2.new(1, -16, 0, 30)
 btn.Position = UDim2.new(0, 8, 0, 72)
 btn.BackgroundColor3 = Color3.fromRGB(0, 150, 90)
@@ -208,4 +208,4 @@ textBox.FocusLost:Connect(function(enter)
     end
 end)
 
-print("[Precise Grabber Stable] Skrip siap di-test!")
+print("[Precise Grabber Pure English] Skrip siap digunakan!")
