@@ -1,5 +1,5 @@
 -- ================================================================
--- PRECISE GRABBER FINAL FIX: EXACT NAME MATCH & CLEAN UNLOCK
+-- PRECISE GRABBER ULTIMATE FIX (AUTO LIMIT & CLEAN UNLOCK)
 -- ================================================================
 
 local Players = game:GetService("Players")
@@ -48,23 +48,18 @@ getgenv().ExecutePreciseGrab = function(keyword)
         return
     end
 
-    -- Simpan posisi awal dengan aman
     local originalCFrame = rootPart.CFrame
     local translatedKeyword = TRANSLATION_MAP[searchKeyword]
-    local collected = 0
-    local maxCount = 10 
     local itemsFolder = Workspace:FindFirstChild("Items") or Workspace
 
-    -- 1. FILTER PENCARIAN PRESISI (MENGHINDARI MODEL DISPLAY / PAPAN NAMA)
+    -- 1. KUMPULKAN HANYA ITEM YANG VALID DAN PUNYA POSISI NYATA
     local validItems = {}
 
     for _, obj in ipairs(itemsFolder:GetDescendants()) do
         local fullName = lower(obj:GetFullName())
-        -- Pastikan hanya mengambil objek di dalam folder items yang valid, bukan dekorasi map/display
         if not string.find(fullName, "placezone") and not string.find(fullName, "tempinvis") and not string.find(fullName, "display") then
             local name = lower(obj.Name)
 
-            -- Cek apakah nama objek benar-benar cocok dengan keyword spesifik
             local isMatch = false
             if name == searchKeyword or string.find(name, searchKeyword, 1, true) then
                 isMatch = true
@@ -75,12 +70,11 @@ getgenv().ExecutePreciseGrab = function(keyword)
             if isMatch then
                 local targetPart = nil
                 if obj:IsA("BasePart") then
-                    -- Pastikan bukan part besar seperti lantai atau meja
-                    if obj.Size.Magnitude < 15 then
+                    if obj.Size.Magnitude < 12 and obj.Transparency < 1 then
                         targetPart = obj
                     end
                 elseif obj:IsA("Model") then
-                    targetPart = obj.PrimaryPart or obj:FindFirstChildWhichIsA("BasePart", true)
+                    targetPart = obj.PrimaryPart or obj:FindFirstChildWhichIsA("BasePart")
                 end
 
                 if targetPart and targetPart:IsDescendantOf(Workspace) then
@@ -91,26 +85,36 @@ getgenv().ExecutePreciseGrab = function(keyword)
         end
     end
 
-    -- Urutkan berdasarkan jarak terdekat dari player
+    -- Urutkan dari yang terdekat
     table.sort(validItems, function(a, b)
         return a.Distance < b.Distance
     end)
 
-    print("[Grab] Item valid ditemukan: " + #validItems + ". Memulai...")
+    if #validItems == 0 then
+        print("[Grab] Item dengan keyword '" .. keyword .. "' tidak ditemukan di map!")
+        return
+    end
 
-    -- 2. EKSEKUSI TELEPORT & GRAB BERURUTAN
-    for _, itemData in ipairs(validItems) do
-        if collected >= maxCount then break end
+    -- Batasi maksimal pengambilan sesuai jumlah item yang beneran ada di map (maksimal 7 atau sisa item)
+    local targetLimit = math.min(#validItems, 7)
+    print("[Grab] Ditemukan " .. #validItems .. " item. Memproses " .. targetLimit .. " item terdekat...")
+
+    local collected = 0
+
+    -- 2. EKSEKUSI TELEPORT & GRAB SESUAI JUMLAH NYATA
+    for i = 1, targetLimit do
+        local itemData = validItems[i]
+        if not itemData then break end
         local targetPart = itemData.Part
 
         if targetPart and targetPart:IsDescendantOf(Workspace) then
             pcall(function()
                 local itemPos = targetPart.Position
                 
-                -- Teleport tepat di sebelah item
+                -- Teleport pas di sebelah item
                 rootPart.CFrame = CFrame.new(itemPos + Vector3.new(0, 0.5, 1.5), itemPos)
                 
-                -- Alihkan kamera nunduk pas menghadap ke item
+                -- Kamera nunduk pas ke item
                 Camera.CameraType = Enum.CameraType.Scriptable
                 Camera.CFrame = CFrame.lookAt(itemPos + Vector3.new(0, 3, 2), itemPos)
                 task.wait(0.1)
@@ -133,18 +137,18 @@ getgenv().ExecutePreciseGrab = function(keyword)
         end
     end
 
-    -- 3. PEMULIHAN TOTAL (KAMERA & KONTROL DIJAMIN LANGSUNG NORMAL BEBAS)
+    -- 3. PEMULIHAN MUTLAK (DIJAMIN KONTROL LANGSUNG NORMAL TANPA DELAY)
     pcall(function()
         -- Kembalikan posisi player ke asal
         rootPart.CFrame = originalCFrame
         
-        -- Reset total sistem kamera Roblox agar tidak nge-lock/ngadat di analog
+        -- Reset total kamera dan kontrol karakter
         Camera.CameraType = Enum.CameraType.Custom
         Camera.CameraSubject = humanoid
-        LocalPlayer.DevCameraOcclusionMode = Enum.DevCameraOcclusionMode.Zoom
+        humanoid.PlatformStand = false
     end)
 
-    print("[Grab] Selesai! Berhasil mengambil " + collected + " item. Kontrol pulih.")
+    print("[Grab] Selesai! Berhasil mengambil " .. collected .. " item. Kontrol & kamera kembali normal.")
 end
 
 -- ----------------------------------------------------------------
@@ -179,7 +183,7 @@ title.Size = UDim2.new(1, -30, 1, 0)
 title.Position = UDim2.new(0, 8, 0, 0)
 title.BackgroundTransparency = 1
 title.Font = Enum.Font.GothamBold
-title.Text = "🎯 Precise Grabber (Clean)"
+title.Text = "🎯 Precise Grabber (Ultimate)"
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.TextSize = 12
 title.TextXAlignment = Enum.TextXAlignment.Left
@@ -230,4 +234,4 @@ textBox.FocusLost:Connect(function(enter)
     end
 end)
 
-print("[Precise Grabber Clean] Skrip siap digunakan!")
+print("[Precise Grabber Ultimate] Skrip siap di-test!")
