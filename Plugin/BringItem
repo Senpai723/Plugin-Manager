@@ -1,5 +1,5 @@
 -- ================================================================
--- PRECISE GRABBER: PURE ENGLISH WORKSPACE MATCH (MAX 10)
+-- PRECISE GRABBER: FLOOR ITEMS OPTIMIZED (MAX 10)
 -- ================================================================
 
 local Players = game:GetService("Players")
@@ -36,12 +36,12 @@ getgenv().ExecutePreciseGrab = function(keyword)
 
     for _, obj in ipairs(itemsFolder:GetDescendants()) do
         local fullName = lower(obj:GetFullName())
+        -- Filter objek pajangan/display agar yang disedot murni item fisik di lantai
         if not string.find(fullName, "placezone") and not string.find(fullName, "tempinvis") and not string.find(fullName, "display") then
             local objName = lower(obj.Name)
             local parentName = obj.Parent and lower(obj.Parent.Name) or ""
             local combinedName = objName .. " " .. parentName
 
-            -- Pencarian murni sesuai ketikan (Bahasa Inggris Workspace)
             if string.find(combinedName, searchKeyword, 1, true) then
                 local targetPart = nil
                 if obj:IsA("BasePart") then
@@ -60,23 +60,22 @@ getgenv().ExecutePreciseGrab = function(keyword)
         end
     end
 
-    -- Urutkan dari item yang paling dekat dengan player
+    -- Urutkan dari item di lantai yang paling dekat dengan player
     table.sort(validItems, function(a, b)
         return a.Distance < b.Distance
     end)
 
     if #validItems == 0 then
-        print("[Grab] Item '" .. keyword .. "' tidak ditemukan di Workspace!")
+        print("[Grab] Item '" .. keyword .. "' tidak ditemukan di lantai!")
         return
     end
 
-    -- Batas maksimal 10 item (fleksibel untuk game lain)
     local targetLimit = math.min(#validItems, 10)
-    print("[Grab] Ditemukan " .. #validItems .. " item. Memproses " .. targetLimit .. " item terdekat...")
+    print("[Grab] Ditemukan " .. #validItems .. " item di lantai. Memproses " .. targetLimit .. " item terdekat...")
 
     local collected = 0
 
-    -- EKSEKUSI TELEPORT & TOUCH ITEM
+    -- EKSEKUSI TELEPORT & TOUCH ITEM DENGAN STABILISASI SERVER
     for i = 1, targetLimit do
         local itemData = validItems[i]
         if not itemData then break end
@@ -86,12 +85,12 @@ getgenv().ExecutePreciseGrab = function(keyword)
             pcall(function()
                 local itemPos = targetPart.Position
                 
-                -- Teleport pas di sebelah item
-                rootPart.CFrame = CFrame.lookAt(itemPos + Vector3.new(0, 0.5, 1.5), itemPos)
+                -- Teleport pas di sebelah item lantai
+                rootPart.CFrame = CFrame.lookAt(itemPos + Vector3.new(0, 0.3, 1.2), itemPos)
                 
                 Camera.CameraType = Enum.CameraType.Scriptable
-                Camera.CFrame = CFrame.lookAt(itemPos + Vector3.new(0, 3, 2), itemPos)
-                task.wait(0.08)
+                Camera.CFrame = CFrame.lookAt(itemPos + Vector3.new(0, 2, 2), itemPos)
+                task.wait(0.06)
 
                 local vp = Camera.ViewportSize
                 VirtualInputManager:SendMouseButtonEvent(vp.X/2, vp.Y/2, 0, true, game, 0)
@@ -106,7 +105,8 @@ getgenv().ExecutePreciseGrab = function(keyword)
 
                 collected += 1
             end)
-            task.wait(0.3)
+            -- Jeda sedikit diperhalus agar server game tidak mendrop event sentuh berikutnya
+            task.wait(0.35)
         end
     end
 
@@ -121,7 +121,7 @@ getgenv().ExecutePreciseGrab = function(keyword)
         humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
     end)
 
-    print("[Grab] Selesai! Berhasil mengambil " .. collected .. " item.")
+    print("[Grab] Selesai! Berhasil mengambil " .. collected .. " item dari lantai.")
 end
 
 -- ----------------------------------------------------------------
@@ -156,7 +156,7 @@ title.Size = UDim2.new(1, -30, 1, 0)
 title.Position = UDim2.new(0, 8, 0, 0)
 title.BackgroundTransparency = 1
 title.Font = Enum.Font.GothamBold
-title.Text = "🎯 Precise Grabber (Max 10)"
+title.Text = "🎯 Precise Grabber (Floor Optimized)"
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.TextSize = 12
 title.TextXAlignment = Enum.TextXAlignment.Left
@@ -177,7 +177,7 @@ textBox.Size = UDim2.new(1, -16, 0, 30)
 textBox.Position = UDim2.new(0, 8, 0, 36)
 textBox.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 textBox.Font = Enum.Font.Gotham
-textBox.PlaceholderText = "Type item (e.g., coffee macaron)..."
+textBox.PlaceholderText = "Type item (e.g., vanilla cookie)..."
 textBox.Text = ""
 textBox.TextColor3 = Color3.fromRGB(255, 255, 255)
 textBox.PlaceholderColor3 = Color3.fromRGB(140, 140, 140)
@@ -186,7 +186,6 @@ textBox.ClearTextOnFocus = false
 Instance.new("UICorner", textBox).CornerRadius = UDim.new(0, 6)
 
 local btn = Instance.new("TextButton", mainFrame)
-btn.Size = UDim2.src or UDim2.new(1, -16, 0, 30)
 btn.Size = UDim2.new(1, -16, 0, 30)
 btn.Position = UDim2.new(0, 8, 0, 72)
 btn.BackgroundColor3 = Color3.fromRGB(0, 150, 90)
@@ -208,4 +207,4 @@ textBox.FocusLost:Connect(function(enter)
     end
 end)
 
-print("[Precise Grabber Pure English] Skrip siap digunakan!")
+print("[Precise Grabber Floor Optimized] Skrip siap di-test!")
