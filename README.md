@@ -28,5 +28,5 @@
 Skrip Plugin di sini selalu Up to date tanpa perlu mendownload ulang!
 
 ```lua
-loadstring(game:HttpGet("https://raw.githubusercontent.com/Senpai723/Plugin-Manager/refs/heads/main/MasterWindow.lua"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/MasterWindow.lua"))()
 ```
