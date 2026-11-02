@@ -462,7 +462,7 @@ end
 
 local LOOT_ESP_NAME = "loot esp"
 local LOOT_LABEL_NAME = "loot esp name"
-local LOOT_COLOR = "Bright red"
+local LOOT_COLOR = "Really red"
 local lootEnabled = false
 
 local function getLootPart(model)
