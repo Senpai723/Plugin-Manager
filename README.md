@@ -8,7 +8,7 @@
 
 <p align="center">
 	<a href="https://discord.com/users/Tryofp">
-		<img alt="Discord" src="https://img.shields.io/discord/1014040973027844106?color=%235865F2&logo=discord&logoColor=%23DCDDDE&style=flat-square">
+		<img alt="Discord" src="https://img.shields.io/badge/chat-Tryofp-%235865F2?style=flat-square&logo=discord&logoColor=%23DCDDDE">
 	</a>
 	<a href="https://github.com/Senpai723/Plugin-Manager/issues">
 		<img alt="Issues" src="https://img.shields.io/github/issues/Senpai723/Plugin-Manager?color=0088ff&style=flat-square"/>
