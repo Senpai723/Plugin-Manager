@@ -1,5 +1,5 @@
 -- ================================================================
--- PRECISE GRABBER: FIXED & CLEAN SCRIPT (NO SYNTAX ERROR)
+-- PRECISE GRABBER: ORIGINAL WORKING GUI + INSTANT CAMERA RELEASE
 -- ================================================================
 
 local Players = game:GetService("Players")
@@ -52,7 +52,7 @@ getgenv().ExecutePreciseGrab = function(keyword)
     local translatedKeyword = TRANSLATION_MAP[searchKeyword]
     local itemsFolder = Workspace:FindFirstChild("Items") or Workspace
 
-    -- 1. KUMPULKAN ITEM YANG VALID (TERMASUK APPLE PIE / KUE LAINNYA)
+    -- Kumpulkan item valid
     local validItems = {}
 
     for _, obj in ipairs(itemsFolder:GetDescendants()) do
@@ -85,7 +85,6 @@ getgenv().ExecutePreciseGrab = function(keyword)
         end
     end
 
-    -- Urutkan dari yang terdekat
     table.sort(validItems, function(a, b)
         return a.Distance < b.Distance
     end)
@@ -96,11 +95,9 @@ getgenv().ExecutePreciseGrab = function(keyword)
     end
 
     local targetLimit = math.min(#validItems, 7)
-    print("[Grab] Memproses " .. targetLimit .. " item...")
-
     local collected = 0
 
-    -- 2. EKSEKUSI TELEPORT, AIM KAMERA KE BAWAH, & KLIK
+    -- Eksekusi Teleport & Aim Kamera
     for i = 1, targetLimit do
         local itemData = validItems[i]
         if not itemData then break end
@@ -110,15 +107,12 @@ getgenv().ExecutePreciseGrab = function(keyword)
             pcall(function()
                 local itemPos = targetPart.Position
                 
-                -- Teleport pas di sebelah item dan badan menghadap ke item
                 rootPart.CFrame = CFrame.lookAt(itemPos + Vector3.new(0, 0.5, 1.5), itemPos)
                 
-                -- Kamera dipaksa nunduk pas menghadap ke item (Scriptable sebentar)
                 Camera.CameraType = Enum.CameraType.Scriptable
                 Camera.CFrame = CFrame.lookAt(itemPos + Vector3.new(0, 3, 2), itemPos)
                 task.wait(0.08)
 
-                -- Simulasi klik / touch layar di tengah (Crosshair pas di item)
                 local vp = Camera.ViewportSize
                 VirtualInputManager:SendMouseButtonEvent(vp.X/2, vp.Y/2, 0, true, game, 0)
                 task.wait(0.03)
@@ -136,22 +130,22 @@ getgenv().ExecutePreciseGrab = function(keyword)
         end
     end
 
-    -- 3. PEMULIHAN MUTLAK (DIJAMIN TOMBOL & ANALOG HP LANGSUNG NORMAL)
+    -- PEMULIHAN MUTLAK (DIJAMIN KONTROL LANGSUNG NORMAL TANPA DELAY)
     pcall(function()
-        -- Kembalikan posisi player ke asal
+        Camera.CameraType = Enum.CameraType.Custom
+        Camera.CameraSubject = humanoid
         rootPart.CFrame = originalCFrame
         
-        -- Kembalikan kamera ke mode normal secara tuntas
-        Camera.CameraSubject = humanoid
-        Camera.CameraType = Enum.CameraType.Custom
-        humanoid.PlatformStand = false
+        -- Memaksa pembersihan status input sentuh agar analog & tombol lompat langsung muncul
+        local vim = game:GetService("VirtualInputManager")
+        vim:SendKeyEvent(false, Enum.KeyCode.Unknown, false, game)
     end)
 
-    print("[Grab] Selesai! Berhasil mengambil " .. collected .. " item. Kontrol HP kembali normal.")
+    print("[Grab] Selesai! Berhasil mengambil " .. collected .. " item.")
 end
 
 -- ----------------------------------------------------------------
--- GUI INTERFACE
+-- GUI INTERFACE (VERSI ASLI YANG PASTI MUNCUL)
 -- ----------------------------------------------------------------
 local playerGui = LocalPlayer:WaitForChild("PlayerGui")
 local existing = playerGui:FindFirstChild("PreciseGrabGui") or CoreGui:FindFirstChild("PreciseGrabGui")
@@ -182,7 +176,7 @@ title.Size = UDim2.new(1, -30, 1, 0)
 title.Position = UDim2.new(0, 8, 0, 0)
 title.BackgroundTransparency = 1
 title.Font = Enum.Font.GothamBold
-title.Text = "🎯 Precise Grabber (Fixed)"
+title.Text = "🎯 Precise Grabber"
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.TextSize = 12
 title.TextXAlignment = Enum.TextXAlignment.Left
@@ -233,4 +227,4 @@ textBox.FocusLost:Connect(function(enter)
     end
 end)
 
-print("[Precise Grabber Fixed] Skrip siap di-test!")
+print("[Precise Grabber] Skrip asli dimuat!")
