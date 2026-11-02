@@ -1,0 +1,68 @@
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+local LocalPlayer = Players.LocalPlayer
+
+-- Kamus terjemahan sederhana (sama seperti sebelumnya)
+local TRANSLATION_MAP = {
+    ["telur"] = "egg",
+    ["egg"] = "telur",
+    ["cangkir"] = "cup",
+    ["cup"] = "cangkir",
+    ["roti"] = "bread",
+    ["bread"] = "roti",
+    ["kue"] = "cake",
+    ["cake"] = "kue"
+}
+
+local function lower(val)
+    return string.lower(tostring(val or ""))
+end
+
+-- Fungsi untuk menarik item berdasarkan keyword
+local function bringItems(keyword)
+    local character = LocalPlayer.Character
+    local rootPart = character and character:FindFirstChild("HumanoidRootPart")
+    
+    if not rootPart then
+        print("Karakter tidak ditemukan!")
+        return
+    end
+
+    local searchKeyword = lower(keyword)
+    local translatedKeyword = TRANSLATION_MAP[searchKeyword]
+    local count = 0
+
+    -- Scan semua objek di Workspace
+    for _, obj in ipairs(Workspace:GetDescendants()) do
+        if obj:IsA("Model") or obj:IsA("BasePart") then
+            local name = lower(obj.Name)
+            
+            -- Cek apakah nama objek cocok dengan keyword atau terjemahannya
+            if (searchKeyword == "" or string.find(name, searchKeyword, 1, true) or (translatedKeyword and string.find(name, translatedKeyword, 1, true))) then
+                local targetPart = nil
+                
+                if obj:IsA("BasePart") then
+                    targetPart = obj
+                elseif obj:IsA("Model") then
+                    targetPart = obj.PrimaryPart or obj:FindFirstChildWhichIsA("BasePart", true)
+                end
+
+                if targetPart and targetPart:IsDescendantOf(Workspace) then
+                    -- Pindahkan posisi item ke depan karakter lu (sedikit di atas atau pas di rootpart)
+                    pcall(function()
+                        targetPart.CFrame = rootPart.CFrame + Vector3.new(0, 2, 0)
+                        count += 1
+                    end)
+                end
+            end
+        end
+    end
+
+    print("Berhasil menarik " .. count .. " item dengan keyword: " .. keyword)
+end
+
+-- Contoh cara eksekusi langsung via chat bar / executor:
+-- Tarik semua kue / egg:
+bringItems("kue") 
+-- atau pakai bahasa Inggris:
+-- bringItems("egg")
