@@ -1,5 +1,5 @@
 -- ================================================================
--- INDEPENDENT ITEM MAGNET / BRING ITEM SCRIPT (SPREAD FIX)
+-- INDEPENDENT AUTO-COLLECT PROMPT / CLICK SCRIPT
 -- ================================================================
 
 local Players = game:GetService("Players")
@@ -32,72 +32,69 @@ local function lower(val)
 end
 
 -- ----------------------------------------------------------------
--- LOGIKA UTAMA BRING ITEM (DENGAN SPREAD / PENYEBARAN POSISI)
+-- LOGIKA UTAMA AUTO-COLLECT (TRIGGER PROMPT/CLICK DARI JAUH)
 -- ----------------------------------------------------------------
-getgenv().BringItems = function(keyword)
-    local character = LocalPlayer.Character
-    local rootPart = character and character:FindFirstChild("HumanoidRootPart")
-    
-    if not rootPart then
-        warn("[Bring Item] Karakter tidak ditemukan!")
-        return 0
-    end
-
+getgenv().AutoCollectItems = function(keyword)
     local searchKeyword = lower(keyword)
     if searchKeyword == "" then
-        warn("[Bring Item] Keyword kosong!")
+        warn("[Auto Collect] Keyword kosong!")
         return 0
     end
 
     local translatedKeyword = TRANSLATION_MAP[searchKeyword]
     local count = 0
 
+    -- Scan semua objek di dalam Workspace
     for _, obj in ipairs(Workspace:GetDescendants()) do
-        if obj:IsA("Model") or obj:IsA("BasePart") then
-            local fullName = lower(obj:GetFullName())
-            if string.find(fullName, "items") then
-                if not string.find(fullName, "placezone") and not string.find(fullName, "tempinvis") then
-                    local name = lower(obj.Name)
-
-                    if string.find(name, searchKeyword, 1, true) or (translatedKeyword and string.find(name, translatedKeyword, 1, true)) then
-                        local targetPart = nil
-                        
-                        if obj:IsA("BasePart") then
-                            targetPart = obj
-                        elseif obj:IsA("Model") then
-                            targetPart = obj.PrimaryPart or obj:FindFirstChildWhichIsA("BasePart", true)
+        local fullName = lower(obj:GetFullName())
+        
+        -- Pastikan hanya mengambil dari dalam folder Items dan bukan struktur map
+        if string.find(fullName, "items") and not string.find(fullName, "placezone") and not string.find(fullName, "tempinvis") then
+            
+            -- Cari ProximityPrompt atau ClickDetector di dalam objek/model item tersebut
+            local prompt = obj:FindFirstChildOfClass("ProximityPrompt") or obj:FindFirstChildWhichIsA("ProximityPrompt", true)
+            local detector = obj:FindFirstChildOfClass("ClickDetector") or obj:FindFirstChildWhichIsA("ClickDetector", true)
+            
+            if prompt or detector then
+                local targetName = lower(obj.Name)
+                local promptText = prompt and (lower(prompt.ObjectText) .. " " .. lower(prompt.ActionText)) or ""
+                
+                -- Cek kecocokan nama item atau teks pada prompt
+                if string.find(targetName, searchKeyword, 1, true) or 
+                   (translatedKeyword and string.find(targetName, translatedKeyword, 1, true)) or
+                   string.find(promptText, searchKeyword, 1, true) or
+                   (translatedKeyword and string.find(promptText, translatedKeyword, 1, true)) then
+                    
+                    pcall(function()
+                        if prompt then
+                            -- Men-trigger ProximityPrompt game secara otomatis dari jauh
+                            fireproximityprompt(prompt)
+                            count += 1
+                        elseif detector then
+                            -- Men-trigger ClickDetector game secara otomatis dari jauh
+                            fireclickdetector(detector)
+                            count += 1
                         end
-
-                        if targetPart and targetPart:IsDescendantOf(Workspace) then
-                            pcall(function()
-                                -- Berikan jarak acak (spread) agar item tidak menumpuk di satu titik
-                                local randomX = math.random(-3, 3) -- Menyebar ke kiri/kanan sejauh 3 stud
-                                local randomZ = math.random(-4, -1) -- Menyebar di depan player
-                                
-                                targetPart.CFrame = rootPart.CFrame * CFrame.new(randomX, -2, randomZ)
-                                count += 1
-                            end)
-                        end
-                    end
+                    end)
                 end
             end
         end
     end
 
-    print("[Bring Item] Berhasil menarik dan menyebarkan " .. count .. " item dengan keyword: '" .. keyword .. "'")
+    print("[Auto Collect] Berhasil mentrigger " .. count .. " item dengan keyword: '" .. keyword .. "'")
     return count
 end
 
 -- ----------------------------------------------------------------
 -- INDEPENDENT FLOATING GUI UI
 -- ----------------------------------------------------------------
-local existingGui = CoreGui:FindFirstChild("BringItemGui") or LocalPlayer:WaitForChild("PlayerGui"):FindFirstChild("BringItemGui")
+local existingGui = CoreGui:FindFirstChild("AutoCollectGui") or LocalPlayer:WaitForChild("PlayerGui"):FindFirstChild("AutoCollectGui")
 if existingGui then
     existingGui:Destroy()
 end
 
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "BringItemGui"
+screenGui.Name = "AutoCollectGui"
 screenGui.ResetOnSpawn = false
 
 pcall(function() screenGui.Parent = CoreGui end)
@@ -127,7 +124,7 @@ title.Size = UDim2.new(1, -30, 1, 0)
 title.Position = UDim2.new(0, 8, 0, 0)
 title.BackgroundTransparency = 1
 title.Font = Enum.Font.GothamBold
-title.Text = "🧲 Item Bringer (Spread)"
+title.Text = "⚡ Auto-Collect Item"
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.TextSize = 12
 title.TextXAlignment = Enum.TextXAlignment.Left
@@ -165,31 +162,31 @@ textBox.ClearTextOnFocus = false
 textBox.Parent = mainFrame
 Instance.new("UICorner", textBox).CornerRadius = UDim.new(0, 6)
 
--- Tombol Bring / Magnet
-local bringBtn = Instance.new("TextButton")
-bringBtn.Size = UDim2.new(1, -16, 0, 30)
-bringBtn.Position = UDim2.new(0, 8, 0, 72)
-bringBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 90)
-bringBtn.BorderSizePixel = 0
-bringBtn.Font = Enum.Font.GothamBold
-bringBtn.Text = "BRING ITEM"
-bringBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-bringBtn.TextSize = 11
-bringBtn.Parent = mainFrame
-Instance.new("UICorner", bringBtn).CornerRadius = UDim.new(0, 6)
+-- Tombol Collect
+local collectBtn = Instance.new("TextButton")
+collectBtn.Size = UDim2.new(1, -16, 0, 30)
+collectBtn.Position = UDim2.new(0, 8, 0, 72)
+collectBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 90)
+collectBtn.BorderSizePixel = 0
+collectBtn.Font = Enum.Font.GothamBold
+collectBtn.Text = "COLLECT ITEMS"
+collectBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+collectBtn.TextSize = 11
+collectBtn.Parent = mainFrame
+Instance.new("UICorner", collectBtn).CornerRadius = UDim.new(0, 6)
 
 -- Event Click / Enter
-bringBtn.MouseButton1Click:Connect(function()
+collectBtn.MouseButton1Click:Connect(function()
     local itemInput = textBox.Text
     if itemInput ~= "" then
-        getgenv().BringItems(itemInput)
+        getgenv().AutoCollectItems(itemInput)
     end
 end)
 
 textBox.FocusLost:Connect(function(enterPressed)
     if enterPressed and textBox.Text ~= "" then
-        getgenv().BringItems(textBox.Text)
+        getgenv().AutoCollectItems(textBox.Text)
     end
 end)
 
-print("[Bring Item Spread] Skrip berhasil dimuat dengan efek sebar!")
+print("[Auto Collect] Skrip berhasil dimuat!")
