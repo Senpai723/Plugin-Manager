@@ -1,0 +1,238 @@
+-- ================================================================
+-- PRECISE GRABBER: FLOOR ITEMS OPTIMIZED (MAX 10)
+-- ================================================================
+
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+local CoreGui = game:GetService("CoreGui")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+local LocalPlayer = Players.LocalPlayer
+local Camera = Workspace.CurrentCamera
+
+local function lower(val)
+    return string.lower(tostring(val or ""))
+end
+
+getgenv().ExecutePreciseGrab = function(keyword)
+    local searchKeyword = lower(keyword)
+    if searchKeyword == "" then
+        print("[Grab] Keyword kosong!")
+        return
+    end
+
+    local character = LocalPlayer.Character
+    local rootPart = character and character:FindFirstChild("HumanoidRootPart")
+    local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+    
+    if not rootPart or not humanoid then
+        print("[Grab] Karakter / Humanoid tidak ditemukan!")
+        return
+    end
+
+    local originalCFrame = rootPart.CFrame
+    local itemsFolder = Workspace:FindFirstChild("Items") or Workspace
+
+    local validItems = {}
+
+    for _, obj in ipairs(itemsFolder:GetDescendants()) do
+        local fullName = lower(obj:GetFullName())
+        -- Filter objek pajangan/display agar yang disedot murni item fisik di lantai
+        if not string.find(fullName, "placezone") and not string.find(fullName, "tempinvis") and not string.find(fullName, "display") then
+            local objName = lower(obj.Name)
+            local parentName = obj.Parent and lower(obj.Parent.Name) or ""
+            local combinedName = objName .. " " .. parentName
+
+            if string.find(combinedName, searchKeyword, 1, true) then
+                local targetPart = nil
+                if obj:IsA("BasePart") then
+                    if obj.Size.Magnitude < 15 and obj.Transparency < 1 then
+                        targetPart = obj
+                    end
+                elseif obj:IsA("Model") then
+                    targetPart = obj.PrimaryPart or obj:FindFirstChildWhichIsA("BasePart")
+                end
+
+                if targetPart and targetPart:IsDescendantOf(Workspace) then
+                    local dist = (targetPart.Position - rootPart.Position).Magnitude
+                    table.insert(validItems, {Part = targetPart, Distance = dist})
+                end
+            end
+        end
+    end
+
+    -- Urutkan dari item di lantai yang paling dekat dengan player
+    table.sort(validItems, function(a, b)
+        return a.Distance < b.Distance
+    end)
+
+    if #validItems == 0 then
+        print("[Grab] Item '" .. keyword .. "' tidak ditemukan di lantai!")
+        return
+    end
+
+    local targetLimit = math.min(#validItems, 10)
+    print("[Grab] Ditemukan " .. #validItems .. " item di lantai. Memproses " .. targetLimit .. " item terdekat...")
+
+    local collected = 0
+
+    -- EKSEKUSI TELEPORT & TOUCH ITEM DENGAN STABILISASI SERVER
+    for i = 1, targetLimit do
+        local itemData = validItems[i]
+        if not itemData then break end
+        local targetPart = itemData.Part
+
+        if targetPart and targetPart:IsDescendantOf(Workspace) then
+            pcall(function()
+                local itemPos = targetPart.Position
+                
+                -- Teleport pas di sebelah item lantai
+                rootPart.CFrame = CFrame.lookAt(itemPos + Vector3.new(0, 0.3, 1.2), itemPos)
+                
+                Camera.CameraType = Enum.CameraType.Scriptable
+                Camera.CFrame = CFrame.lookAt(itemPos + Vector3.new(0, 2, 2), itemPos)
+                task.wait(0.06)
+
+                local vp = Camera.ViewportSize
+                VirtualInputManager:SendMouseButtonEvent(vp.X/2, vp.Y/2, 0, true, game, 0)
+                task.wait(0.03)
+                VirtualInputManager:SendMouseButtonEvent(vp.X/2, vp.Y/2, 0, false, game, 0)
+
+                if targetPart:IsA("BasePart") then
+                    firetouchinterest(rootPart, targetPart, 0)
+                    task.wait(0.03)
+                    firetouchinterest(rootPart, targetPart, 1)
+                end
+
+                collected += 1
+            end)
+            -- Jeda sedikit diperhalus agar server game tidak mendrop event sentuh berikutnya
+            task.wait(0.35)
+        end
+    end
+
+    -- PEMULIHAN TOTAL: POSISI, KAMERA, DAN KONTROL MOBILE
+    -- Jalankan pemulihan secara terpisah agar satu kegagalan tidak
+    -- menghentikan langkah pemulihan berikutnya.
+    pcall(function()
+        if rootPart and rootPart.Parent then
+            rootPart.AssemblyLinearVelocity = Vector3.zero
+            rootPart.AssemblyAngularVelocity = Vector3.zero
+            rootPart.CFrame = originalCFrame
+        end
+    end)
+
+    pcall(function()
+        Camera = Workspace.CurrentCamera
+        Camera.CameraType = Enum.CameraType.Custom
+        Camera.CameraSubject = humanoid
+    end)
+
+    pcall(function()
+        humanoid.PlatformStand = false
+        humanoid.Sit = false
+        humanoid.AutoRotate = true
+        humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
+        humanoid:ChangeState(Enum.HumanoidStateType.Running)
+    end)
+
+    -- Roblox mobile controls (joystick + tombol lompat) perlu di-enable
+    -- kembali secara eksplisit setelah kamera/karakter dipindahkan.
+    pcall(function()
+        local playerScripts = LocalPlayer:FindFirstChild("PlayerScripts")
+        local playerModuleScript = playerScripts and playerScripts:FindFirstChild("PlayerModule")
+        if playerModuleScript then
+            local playerModule = require(playerModuleScript)
+            local controls = playerModule:GetControls()
+            if controls then
+                controls:Enable()
+            end
+        end
+    end)
+
+    print("[Grab] Selesai! Berhasil mengambil " .. collected .. " item dari lantai.")
+end
+
+-- ----------------------------------------------------------------
+-- GUI INTERFACE
+-- ----------------------------------------------------------------
+local playerGui = LocalPlayer:WaitForChild("PlayerGui")
+local existing = playerGui:FindFirstChild("PreciseGrabGui") or CoreGui:FindFirstChild("PreciseGrabGui")
+if existing then existing:Destroy() end
+
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "PreciseGrabGui"
+screenGui.ResetOnSpawn = false
+pcall(function() screenGui.Parent = CoreGui end)
+if not screenGui.Parent then screenGui.Parent = playerGui end
+
+local mainFrame = Instance.new("Frame", screenGui)
+mainFrame.Size = UDim2.new(0, 240, 0, 110)
+mainFrame.Position = UDim2.new(0.5, -120, 0.3, 0)
+mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+mainFrame.BorderSizePixel = 0
+mainFrame.Active = true
+mainFrame.Draggable = true
+Instance.new("UICorner", mainFrame).CornerRadius = UDim.new(0, 8)
+
+local topBar = Instance.new("Frame", mainFrame)
+topBar.Size = UDim2.new(1, 0, 0, 28)
+topBar.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+Instance.new("UICorner", topBar).CornerRadius = UDim.new(0, 8)
+
+local title = Instance.new("TextLabel", topBar)
+title.Size = UDim2.new(1, -30, 1, 0)
+title.Position = UDim2.new(0, 8, 0, 0)
+title.BackgroundTransparency = 1
+title.Font = Enum.Font.GothamBold
+title.Text = "🎯 Precise Grabber (Floor Optimized)"
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.TextSize = 12
+title.TextXAlignment = Enum.TextXAlignment.Left
+
+local closeBtn = Instance.new("TextButton", topBar)
+closeBtn.Size = UDim2.new(0, 20, 0, 20)
+closeBtn.Position = UDim2.new(1, -24, 0, 4)
+closeBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+closeBtn.Font = Enum.Font.GothamBold
+closeBtn.Text = "X"
+closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+closeBtn.TextSize = 11
+Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 4)
+closeBtn.MouseButton1Click:Connect(function() screenGui:Destroy() end)
+
+local textBox = Instance.new("TextBox", mainFrame)
+textBox.Size = UDim2.new(1, -16, 0, 30)
+textBox.Position = UDim2.new(0, 8, 0, 36)
+textBox.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+textBox.Font = Enum.Font.Gotham
+textBox.PlaceholderText = "Type item (e.g., vanilla cookie)..."
+textBox.Text = ""
+textBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+textBox.PlaceholderColor3 = Color3.fromRGB(140, 140, 140)
+textBox.TextSize = 11
+textBox.ClearTextOnFocus = false
+Instance.new("UICorner", textBox).CornerRadius = UDim.new(0, 6)
+
+local btn = Instance.new("TextButton", mainFrame)
+btn.Size = UDim2.new(1, -16, 0, 30)
+btn.Position = UDim2.new(0, 8, 0, 72)
+btn.BackgroundColor3 = Color3.fromRGB(0, 150, 90)
+btn.Font = Enum.Font.GothamBold
+btn.Text = "START PRECISE GRAB"
+btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+btn.TextSize = 11
+Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+
+btn.MouseButton1Click:Connect(function()
+    if textBox.Text ~= "" then
+        getgenv().ExecutePreciseGrab(textBox.Text)
+    end
+end)
+
+textBox.FocusLost:Connect(function(enter)
+    if enter and textBox.Text ~= "" then
+        getgenv().ExecutePreciseGrab(textBox.Text)
+    end
+end)
+
+print("[Precise Grabber Floor Optimized] Skrip siap di-test!")
