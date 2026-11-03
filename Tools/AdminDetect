@@ -318,8 +318,8 @@ function scanServerAdmins(isManual, isStateChange)
                                     local isJustPlayerName = (lowerText == pName) or (lowerText == pDisplayName) or string.find(lowerText, pName) or string.find(lowerText, pDisplayName)
 
                                     if not isJustPlayerName then
-                                        local isFormalAdminTag = string.find(lowerText, "headadmin") or string.find(lowerText, "head admin") or string.find(lowerText, "super admin") or string.find(lowerText, "co-owner")
-                                        
+                                       local isFormalAdminTag = string.find(lowerText, "moderator") or string.find(lowerText, "mod") or string.find(lowerText, "headadmin") or string.find(lowerText, "head admin") or string.find(lowerText, "super admin") or string.find(lowerText, "co-owner")
+
                                         -- Tag owner/pemilik di overhead wajib divalidasi (hanya diakui jika rank 255 atau creator ID asli)
                                         local isOverheadOwner = string.find(lowerText, "pemilik") or string.find(lowerText, "owner") or string.find(lowerText, "founder")
                                         if isOverheadOwner then
