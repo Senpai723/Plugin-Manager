@@ -1,5 +1,5 @@
 -- ================================================================
--- PRECISE GRABBER: FLOOR ITEMS OPTIMIZED (MAX 10)
+-- PRECISE GRABBER: AUTO-CATEGORY + EXACT CAMERA RESTORE (MAX 10)
 -- ================================================================
 
 local Players = game:GetService("Players")
@@ -29,20 +29,63 @@ getgenv().ExecutePreciseGrab = function(keyword)
         return
     end
 
+    -- SIMPAN POSISI KARAKTER & SUDUT PANDANG KAMERA AWAL (MENGHADAP RAK)
     local originalCFrame = rootPart.CFrame
+    local originalCameraCFrame = Camera.CFrame 
+    
     local itemsFolder = Workspace:FindFirstChild("Items") or Workspace
 
     local validItems = {}
 
+    -- Scan seluruh isi folder Items di Workspace (Mendukung Nama Item & Kategori Folder/Atribut)
     for _, obj in ipairs(itemsFolder:GetDescendants()) do
         local fullName = lower(obj:GetFullName())
-        -- Filter objek pajangan/display agar yang disedot murni item fisik di lantai
+        
+        -- Filter objek pajangan/display
         if not string.find(fullName, "placezone") and not string.find(fullName, "tempinvis") and not string.find(fullName, "display") then
-            local objName = lower(obj.Name)
-            local parentName = obj.Parent and lower(obj.Parent.Name) or ""
-            local combinedName = objName .. " " .. parentName
+            
+            local searchTexts = {}
+            
+            -- 1. Masukkan nama objek dan parent hierarkinya
+            table.insert(searchTexts, lower(obj.Name))
+            local currentParent = obj.Parent
+            while currentParent and currentParent ~= Workspace and currentParent ~= itemsFolder do
+                table.insert(searchTexts, lower(currentParent.Name))
+                currentParent = currentParent.Parent
+            end
+            
+            -- 2. Otomatis baca Attributes jika ada
+            pcall(function()
+                for _, attrVal in pairs(obj:GetAttributes()) do
+                    table.insert(searchTexts, lower(tostring(attrVal)))
+                end
+                if obj.Parent then
+                    for _, attrVal in pairs(obj.Parent:GetAttributes()) do
+                        table.insert(searchTexts, lower(tostring(attrVal)))
+                    end
+                end
+            end)
+            
+            -- 3. Otomatis baca Child Values (StringValue / Tag internal game)
+            pcall(function()
+                for _, child in ipairs(obj:GetChildren()) do
+                    if child:IsA("StringValue") or child:IsA("ValueBase") then
+                        table.insert(searchTexts, lower(tostring(child.Value)))
+                    end
+                end
+                if obj.Parent then
+                    for _, child in ipairs(obj.Parent:GetChildren()) do
+                        if child:IsA("StringValue") or child:IsA("ValueBase") then
+                            table.insert(searchTexts, lower(tostring(child.Value)))
+                        end
+                    end
+                end
+            end)
 
-            if string.find(combinedName, searchKeyword, 1, true) then
+            local combinedSearchString = table.concat(searchTexts, " ")
+
+            -- Cek kecocokan keyword
+            if string.find(combinedSearchString, searchKeyword, 1, true) then
                 local targetPart = nil
                 if obj:IsA("BasePart") then
                     if obj.Size.Magnitude < 15 and obj.Transparency < 1 then
@@ -60,22 +103,22 @@ getgenv().ExecutePreciseGrab = function(keyword)
         end
     end
 
-    -- Urutkan dari item di lantai yang paling dekat dengan player
+    -- Urutkan dari item yang paling dekat dengan player
     table.sort(validItems, function(a, b)
         return a.Distance < b.Distance
     end)
 
     if #validItems == 0 then
-        print("[Grab] Item '" .. keyword .. "' tidak ditemukan di lantai!")
+        print("[Grab] Item atau Kategori '" .. keyword .. "' tidak ditemukan!")
         return
     end
 
     local targetLimit = math.min(#validItems, 10)
-    print("[Grab] Ditemukan " .. #validItems .. " item di lantai. Memproses " .. targetLimit .. " item terdekat...")
+    print("[Grab] Ditemukan " .. #validItems .. " item. Memproses " .. targetLimit .. " item terdekat...")
 
     local collected = 0
 
-    -- EKSEKUSI TELEPORT & TOUCH ITEM DENGAN STABILISASI SERVER
+    -- EKSEKUSI TELEPORT & TOUCH ITEM
     for i = 1, targetLimit do
         local itemData = validItems[i]
         if not itemData then break end
@@ -85,7 +128,7 @@ getgenv().ExecutePreciseGrab = function(keyword)
             pcall(function()
                 local itemPos = targetPart.Position
                 
-                -- Teleport pas di sebelah item lantai
+                -- Teleport pas di sebelah item
                 rootPart.CFrame = CFrame.lookAt(itemPos + Vector3.new(0, 0.3, 1.2), itemPos)
                 
                 Camera.CameraType = Enum.CameraType.Scriptable
@@ -105,14 +148,11 @@ getgenv().ExecutePreciseGrab = function(keyword)
 
                 collected += 1
             end)
-            -- Jeda sedikit diperhalus agar server game tidak mendrop event sentuh berikutnya
             task.wait(0.35)
         end
     end
 
-    -- PEMULIHAN TOTAL: POSISI, KAMERA, DAN KONTROL MOBILE
-    -- Jalankan pemulihan secara terpisah agar satu kegagalan tidak
-    -- menghentikan langkah pemulihan berikutnya.
+    -- PEMULIHAN TOTAL: POSISI, KAMERA (KEMBALI KE SUDUT PANDANG AWAL MENGHADAP RAK), DAN KONTROL MOBILE
     pcall(function()
         if rootPart and rootPart.Parent then
             rootPart.AssemblyLinearVelocity = Vector3.zero
@@ -123,6 +163,9 @@ getgenv().ExecutePreciseGrab = function(keyword)
 
     pcall(function()
         Camera = Workspace.CurrentCamera
+        Camera.CameraType = Enum.CameraType.Scriptable
+        Camera.CFrame = originalCameraCFrame -- Kembalikan sudut pandang kamera persis seperti sebelum start
+        task.wait(0.05)
         Camera.CameraType = Enum.CameraType.Custom
         Camera.CameraSubject = humanoid
     end)
@@ -135,8 +178,6 @@ getgenv().ExecutePreciseGrab = function(keyword)
         humanoid:ChangeState(Enum.HumanoidStateType.Running)
     end)
 
-    -- Roblox mobile controls (joystick + tombol lompat) perlu di-enable
-    -- kembali secara eksplisit setelah kamera/karakter dipindahkan.
     pcall(function()
         local playerScripts = LocalPlayer:FindFirstChild("PlayerScripts")
         local playerModuleScript = playerScripts and playerScripts:FindFirstChild("PlayerModule")
@@ -149,7 +190,7 @@ getgenv().ExecutePreciseGrab = function(keyword)
         end
     end)
 
-    print("[Grab] Selesai! Berhasil mengambil " .. collected .. " item dari lantai.")
+    print("[Grab] Selesai! Berhasil mengambil " .. collected .. " item. Kamera kembali menghadap rak.")
 end
 
 -- ----------------------------------------------------------------
@@ -184,7 +225,7 @@ title.Size = UDim2.new(1, -30, 1, 0)
 title.Position = UDim2.new(0, 8, 0, 0)
 title.BackgroundTransparency = 1
 title.Font = Enum.Font.GothamBold
-title.Text = "🎯 Precise Grabber (Floor Optimized)"
+title.Text = "🎯 Precise Grabber (Perfect Cam)"
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.TextSize = 12
 title.TextXAlignment = Enum.TextXAlignment.Left
@@ -205,12 +246,11 @@ textBox.Size = UDim2.new(1, -16, 0, 30)
 textBox.Position = UDim2.new(0, 8, 0, 36)
 textBox.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 textBox.Font = Enum.Font.Gotham
-textBox.PlaceholderText = "Type item (e.g., vanilla cookie)..."
+textBox.PlaceholderText = "Type item or category..."
 textBox.Text = ""
 textBox.TextColor3 = Color3.fromRGB(255, 255, 255)
 textBox.PlaceholderColor3 = Color3.fromRGB(140, 140, 140)
-textBox.TextSize = 11
-textBox.ClearTextOnFocus = false
+textBox.TextSize, textBox.ClearTextOnFocus = 11, false
 Instance.new("UICorner", textBox).CornerRadius = UDim.new(0, 6)
 
 local btn = Instance.new("TextButton", mainFrame)
@@ -235,4 +275,4 @@ textBox.FocusLost:Connect(function(enter)
     end
 end)
 
-print("[Precise Grabber Floor Optimized] Skrip siap di-test!")
+print("[Precise Grabber Perfect Cam] Skrip siap digunakan!")
