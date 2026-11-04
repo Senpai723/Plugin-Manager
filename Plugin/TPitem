@@ -1,5 +1,5 @@
 -- ================================================================
--- PRECISE GRABBER: CUSTOM MAX LIMIT & DUAL-INPUT GUI
+-- PRECISE GRABBER: ULTIMATE MOBILE FIX (CUSTOM MAX + INSTANT MOVE)
 -- ================================================================
 
 local Players = game:GetService("Players")
@@ -20,14 +20,13 @@ getgenv().ExecutePreciseGrab = function(keyword, maxLimitInput)
         return
     end
 
-    -- Ambil nilai limit dari input box (default 7 jika kosong atau bukan angka)
     local maxAllowed = tonumber(maxLimitInput) or 7
 
     local character = LocalPlayer.Character
     local rootPart = character and character:FindFirstChild("HumanoidRootPart")
     local humanoid = character and character:FindFirstChildOfClass("Humanoid")
     
-    if not rootPart or not humanoid then
+    if not rootPart || not humanoid then
         print("[Grab] Karakter / Humanoid tidak ditemukan!")
         return
     end
@@ -47,7 +46,6 @@ getgenv().ExecutePreciseGrab = function(keyword, maxLimitInput)
         -- Filter objek pajangan/display
         if not string.find(fullName, "placezone") and not string.find(fullName, "tempinvis") and not string.find(fullName, "display") then
             
-            -- Cari model utama (root model) dari item tersebut
             local rootModel = obj
             if obj:IsA("BasePart") then
                 local p = obj.Parent
@@ -60,7 +58,6 @@ getgenv().ExecutePreciseGrab = function(keyword, maxLimitInput)
                 end
             end
 
-            -- Jika rootModel belum tercatat, lakukan Deep Scan
             if not addedModels[rootModel] then
                 local searchTexts = {}
                 
@@ -150,7 +147,9 @@ getgenv().ExecutePreciseGrab = function(keyword, maxLimitInput)
         end
     end
 
-    -- PEMULIHAN TOTAL: POSISI, KAMERA, DAN KONTROL MOBILE
+    -- ================================================================
+    -- PEMULIHAN TOTAL & FIX KONTROL MOBILE INSTAN
+    -- ================================================================
     pcall(function()
         if rootPart and rootPart.Parent then
             rootPart.AssemblyLinearVelocity = Vector3.zero
@@ -176,19 +175,23 @@ getgenv().ExecutePreciseGrab = function(keyword, maxLimitInput)
         humanoid:ChangeState(Enum.HumanoidStateType.Running)
     end)
 
-    pcall(function()
-        local playerScripts = LocalPlayer:FindFirstChild("PlayerScripts")
-        local playerModuleScript = playerScripts and playerScripts:FindFirstChild("PlayerModule")
-        if playerModuleScript then
-            local playerModule = require(playerModuleScript)
-            local controls = playerModule:GetControls()
-            if controls then
-                controls:Enable()
+    -- Sinkronisasi ulang kontrol mobile agar tombol joystick & lompat langsung muncul instan
+    task.spawn(function()
+        task.wait(0.05)
+        pcall(function()
+            local playerScripts = LocalPlayer:FindFirstChild("PlayerScripts")
+            local playerModuleScript = playerScripts and playerScripts:FindFirstChild("PlayerModule")
+            if playerModuleScript then
+                local playerModule = require(playerModuleScript)
+                local controls = playerModule:GetControls()
+                if controls then
+                    controls:Enable()
+                end
             end
-        end
+        end)
     end)
 
-    print("[Grab] Selesai! Berhasil mengambil " .. collected .. " item.")
+    print("[Grab] Selesai! Berhasil mengambil " .. collected .. " item. Kontrol siap.")
 end
 
 -- ----------------------------------------------------------------
@@ -223,7 +226,7 @@ title.Size = UDim2.new(1, -30, 1, 0)
 title.Position = UDim2.new(0, 8, 0, 0)
 title.BackgroundTransparency = 1
 title.Font = Enum.Font.GothamBold
-title.Text = "🎯 Precise Grabber (Custom Max)"
+title.Text = "🎯 Precise Grabber (Ultimate)"
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.TextSize = 12
 title.TextXAlignment = Enum.TextXAlignment.Left
@@ -260,7 +263,7 @@ maxBox.Position = UDim2.new(0, 176, 0, 36)
 maxBox.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 maxBox.Font = Enum.Font.GothamBold
 maxBox.PlaceholderText = "Max"
-maxBox.Text = "7" -- Default 7 sesuai permintaan
+maxBox.Text = "7"
 maxBox.TextColor3 = Color3.fromRGB(255, 255, 255)
 maxBox.PlaceholderColor3 = Color3.fromRGB(140, 140, 140)
 maxBox.TextSize = 11
@@ -294,4 +297,4 @@ maxBox.FocusLost:Connect(function(enter)
     if enter then triggerGrab() end
 end)
 
-print("[Precise Grabber Custom Max] Skrip siap digunakan!")
+print("[Precise Grabber Ultimate] Skrip siap digunakan!")
