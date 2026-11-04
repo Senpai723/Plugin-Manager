@@ -39,7 +39,7 @@ return {
             Desc = "Mengatur suara di map dan memutar Lagu",
             RawUrl = "",
             SubFeatures = {
-                { Name = "Spectator", Desc = "Menonton dan menguping target dari jauh", Cmd = "spectate", UnCmd = "unspectate", NeedInput = true, RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Plugin/SoundManage" },
+                { Name = "Spectator", Desc = "Menonton dan menguping target dari jauh", Cmd = "spectate", UnCmd = "", RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Plugin/SoundManage" },
                 { Name = "Mute Sound", Desc = "Membisukan suara Latar Belakang Map", Cmd = "mutesound", UnCmd = "unmutesound", RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Plugin/SoundManage" },
                 { Name = "Play Music", Desc = "Mendengarkan musik", Cmd = "playmusic", UnCmd = "stopmusic", NeedInput = true, RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Plugin/MusicTimeML" }
             }
