@@ -158,7 +158,7 @@ local function cycleTarget(direction)
     startSpectate(players[currentIndex])
 end
 
--- FUNGSI UNTUK MEMPERBARUI ISI LIST PLAYER (MENGGUNAKAN DISPLAYNAME)
+-- FUNGSI UNTUK MEMPERBARUI ISI LIST PLAYER
 function updatePlayerListUI(container)
     for _, child in ipairs(container:GetChildren()) do
         if child:IsA("TextButton") then
@@ -201,7 +201,7 @@ function updatePlayerListUI(container)
     container.CanvasSize = UDim2.new(0, 0, 0, yOffset + 5)
 end
 
--- FUNGSI PEMBUATAN UI UTAMA (POSISI TENGAH DISESUAIKAN)
+-- FUNGSI PEMBUATAN UI UTAMA (POSISI BENAR-BENAR DITENGAHKAN)
 function createSpectateUI(onPrev, onNext, onExit)
     if state.uiGui then
         state.uiGui:Destroy()
@@ -219,10 +219,11 @@ function createSpectateUI(onPrev, onNext, onExit)
         ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
     end
 
-    -- Container Utama Bawah (Digeser sedikit ke kanan agar benar-benar simetris)
+    -- Container Utama Bawah (Anchor Point diatur ke 0.5 agar presisi di tengah layar)
     local MainContainer = Instance.new("Frame")
     MainContainer.Size = UDim2.new(0, 340, 0, 50)
-    MainContainer.Position = UDim2.new(0.5, -170, 1, -120)
+    MainContainer.AnchorPoint = Vector2.new(0.5, 1)
+    MainContainer.Position = UDim2.new(0.5, 0, 1, -120)
     MainContainer.BackgroundTransparency = 1
     MainContainer.Parent = ScreenGui
 
@@ -240,7 +241,7 @@ function createSpectateUI(onPrev, onNext, onExit)
     PrevBtn.Parent = MainContainer
     Instance.new("UICorner", PrevBtn).CornerRadius = UDim.new(0, 8)
 
-    -- Kotak Nama Player di Tengah (Lebar disesuaikan untuk menampung DisplayName & @username)
+    -- Kotak Nama Player di Tengah
     local NameBox = Instance.new("Frame")
     NameBox.Size = UDim2.new(0, 220, 0, 40)
     NameBox.Position = UDim2.new(0, 55, 0, 5)
@@ -277,7 +278,8 @@ function createSpectateUI(onPrev, onNext, onExit)
     -- Tombol Tambahan di Bawah (PLAYER LIST & CLOSE)
     local BottomBar = Instance.new("Frame")
     BottomBar.Size = UDim2.new(0, 340, 0, 35)
-    BottomBar.Position = UDim2.new(0.5, -170, 1, -70)
+    BottomBar.AnchorPoint = Vector2.new(0.5, 1)
+    BottomBar.Position = UDim2.new(0.5, 0, 1, -70)
     BottomBar.BackgroundTransparency = 1
     BottomBar.Parent = ScreenGui
 
@@ -360,14 +362,13 @@ end
 
 local Plugin = {
     ["PluginName"] = "Spectate & MuteManager",
-    ["PluginDescription"] = "Spectate player lengkap dengan Player List DisplayName & format nama tengah",
+    ["PluginDescription"] = "Clean spectate plugin with player list and mute manager",
     ["Commands"] = {
         ["spectate"] = {
-            ["ListName"] = "spectate [nama_player (opsional)]",
-            ["Description"] = "Spectate target dengan UI interaktif, format DisplayName (@username) & Player List",
+            ["ListName"] = "spectate",
+            ["Description"] = "Mulai spectate player terdekat/pertama dengan menu Player List",
             ["Aliases"] = {"spec", "view"},
             ["Function"] = function(args, speaker)
-                local targetName = args[1]
                 local players = getOtherPlayers()
 
                 if #players == 0 then
@@ -376,26 +377,10 @@ local Plugin = {
                 end
 
                 local foundTarget = nil
-
-                if not targetName or targetName == "" then
-                    if state.spectateTarget then
-                        foundTarget = state.spectateTarget
-                    else
-                        foundTarget = players[1]
-                    end
+                if state.spectateTarget then
+                    foundTarget = state.spectateTarget
                 else
-                    local targetLower = string.lower(targetName)
-                    for _, p in ipairs(players) do
-                        if string.find(string.lower(p.Name), targetLower, 1, true) or string.find(string.lower(p.DisplayName or ""), targetLower, 1, true) then
-                            foundTarget = p
-                            break
-                        end
-                    end
-                end
-
-                if not foundTarget then
-                    print("[Spectate] Player tidak ditemukan!")
-                    return
+                    foundTarget = players[1]
                 end
 
                 createSpectateUI(
@@ -405,14 +390,6 @@ local Plugin = {
                 )
 
                 startSpectate(foundTarget)
-            end
-        },
-        ["unspectate"] = {
-            ["ListName"] = "unspectate",
-            ["Description"] = "Keluar dari mode spectate",
-            ["Aliases"] = {"unspec", "backview"},
-            ["Function"] = function(args, speaker)
-                stopSpectate()
             end
         },
         ["mutesound"] = {
