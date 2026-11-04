@@ -158,6 +158,24 @@ local function cycleTarget(direction)
     startSpectate(players[currentIndex])
 end
 
+-- FUNGSI TELEPORT KE TARGET YANG SEDANG DI-SPECTATE
+local function teleportToTarget()
+    if not state.spectateTarget or not state.spectateTarget.Character then
+        print("[Teleport] Target tidak valid atau tidak memiliki karakter!")
+        return
+    end
+
+    local localChar = LocalPlayer.Character
+    local targetChar = state.spectateTarget.Character
+
+    if localChar and localChar:FindFirstChild("HumanoidRootPart") and targetChar:FindFirstChild("HumanoidRootPart") then
+        local targetHRP = targetChar.HumanoidRootPart
+        -- Teleport sedikit di atas atau pas di posisi target agar tidak nyangkut
+        localChar.HumanoidRootPart.CFrame = targetHRP.CFrame + Vector3.new(0, 3, 0)
+        print("[Teleport] Berhasil teleport ke: " .. state.spectateTarget.Name)
+    end
+end
+
 -- FUNGSI UNTUK MEMPERBARUI ISI LIST PLAYER
 function updatePlayerListUI(container)
     for _, child in ipairs(container:GetChildren()) do
@@ -203,7 +221,7 @@ function updatePlayerListUI(container)
     container.CanvasSize = UDim2.new(0, 0, 0, yOffset + 10)
 end
 
--- FUNGSI PEMBUATAN UI UTAMA
+-- FUNGSI PEMBUATAN UI UTAMA DENGAN TOMBOL TELEPORT DI TENGAH
 function createSpectateUI(onPrev, onNext, onExit)
     if state.uiGui then
         state.uiGui:Destroy()
@@ -221,7 +239,7 @@ function createSpectateUI(onPrev, onNext, onExit)
         ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
     end
 
-    -- Container Utama Bawah
+    -- Container Utama Bawah (Panah & Kotak Nama)
     local MainContainer = Instance.new("Frame")
     MainContainer.Size = UDim2.new(0, 340, 0, 50)
     MainContainer.AnchorPoint = Vector2.new(0.5, 1)
@@ -277,39 +295,53 @@ function createSpectateUI(onPrev, onNext, onExit)
     NextBtn.Parent = MainContainer
     Instance.new("UICorner", NextBtn).CornerRadius = UDim.new(0, 8)
 
-    -- Tombol Tambahan di Bawah (PLAYER LIST & CLOSE)
+    -- Bar Tombol Bawah (PLAYER LIST | TELEPORT | CLOSE) - Lebar Total 340 dibagi 3 bagian
     local BottomBar = Instance.new("Frame")
-    BottomBar.Size = UDim2.new(0, 340, 0, 35)
+    BottomBar.Size = UDim2.new(0, 340, 0, 32)
     BottomBar.AnchorPoint = Vector2.new(0.5, 1)
     BottomBar.Position = UDim2.new(0.5, 0, 1, -70)
     BottomBar.BackgroundTransparency = 1
     BottomBar.Parent = ScreenGui
 
-    -- Tombol Toggle Player List
+    -- 1. Tombol Toggle Player List (Kiri)
     local PlayerListBtn = Instance.new("TextButton")
-    PlayerListBtn.Size = UDim2.new(0, 160, 0, 30)
+    PlayerListBtn.Size = UDim2.new(0, 108, 0, 30)
     PlayerListBtn.Position = UDim2.new(0, 0, 0, 0)
     PlayerListBtn.BackgroundColor3 = Color3.fromRGB(15, 60, 40)
     PlayerListBtn.BackgroundTransparency = 0.2
     PlayerListBtn.BorderSizePixel = 0
     PlayerListBtn.Font = Enum.Font.GothamBold
-    PlayerListBtn.Text = "PLAYER LIST"
+    PlayerListBtn.Text = "PLAYERS"
     PlayerListBtn.TextColor3 = Color3.fromRGB(0, 255, 150)
-    PlayerListBtn.TextSize = 12
+    PlayerListBtn.TextSize = 11
     PlayerListBtn.Parent = BottomBar
     Instance.new("UICorner", PlayerListBtn).CornerRadius = UDim.new(0, 6)
 
-    -- Tombol Close / Keluar Spectate
+    -- 2. Tombol Teleport ke Target (Tengah)
+    local TeleportBtn = Instance.new("TextButton")
+    TeleportBtn.Size = UDim2.new(0, 108, 0, 30)
+    TeleportBtn.Position = UDim2.new(0.5, -54, 0, 0)
+    TeleportBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 15)
+    TeleportBtn.BackgroundTransparency = 0.2
+    TeleportBtn.BorderSizePixel = 0
+    TeleportBtn.Font = Enum.Font.GothamBold
+    TeleportBtn.Text = "TELEPORT"
+    TeleportBtn.TextColor3 = Color3.fromRGB(255, 220, 0)
+    TeleportBtn.TextSize = 11
+    TeleportBtn.Parent = BottomBar
+    Instance.new("UICorner", TeleportBtn).CornerRadius = UDim.new(0, 6)
+
+    -- 3. Tombol Close / Keluar Spectate (Kanan)
     local CloseBtn = Instance.new("TextButton")
-    CloseBtn.Size = UDim2.new(0, 160, 0, 30)
-    CloseBtn.Position = UDim2.new(1, -160, 0, 0)
+    CloseBtn.Size = UDim2.new(0, 108, 0, 30)
+    CloseBtn.Position = UDim2.new(1, -108, 0, 0)
     CloseBtn.BackgroundColor3 = Color3.fromRGB(60, 15, 15)
     CloseBtn.BackgroundTransparency = 0.2
     CloseBtn.BorderSizePixel = 0
     CloseBtn.Font = Enum.Font.GothamBold
     CloseBtn.Text = "CLOSE"
     CloseBtn.TextColor3 = Color3.fromRGB(255, 100, 100)
-    CloseBtn.TextSize = 12
+    CloseBtn.TextSize = 11
     CloseBtn.Parent = BottomBar
     Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(0, 6)
 
@@ -346,6 +378,7 @@ function createSpectateUI(onPrev, onNext, onExit)
     PrevBtn.MouseButton1Click:Connect(onPrev)
     NextBtn.MouseButton1Click:Connect(onNext)
     CloseBtn.MouseButton1Click:Connect(onExit)
+    TeleportBtn.MouseButton1Click:Connect(teleportToTarget)
 
     PlayerListBtn.MouseButton1Click:Connect(function()
         state.playerListVisible = not state.playerListVisible
@@ -364,11 +397,11 @@ end
 
 local Plugin = {
     ["PluginName"] = "Spectate & MuteManager",
-    ["PluginDescription"] = "Clean spectate plugin with fixed scrolling player list and working mutesound",
+    ["PluginDescription"] = "Clean spectate plugin with player list, teleport button, and mute manager",
     ["Commands"] = {
         ["spectate"] = {
             ["ListName"] = "spectate",
-            ["Description"] = "Mulai spectate player dengan menu Player List",
+            ["Description"] = "Mulai spectate player dengan menu Player List dan Teleport",
             ["Aliases"] = {"spec", "view"},
             ["Function"] = function(args, speaker)
                 local players = getOtherPlayers()
