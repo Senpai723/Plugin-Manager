@@ -158,7 +158,7 @@ local function cycleTarget(direction)
     startSpectate(players[currentIndex])
 end
 
--- FUNGSI UNTUK MEMPERBARUI ISI LIST PLAYER
+-- FUNGSI UNTUK MEMPERBARUI ISI LIST PLAYER (DIUJUNG BAWAH NGEPAS TANPA RUANG KOSONG)
 function updatePlayerListUI(container)
     for _, child in ipairs(container:GetChildren()) do
         if child:IsA("TextButton") then
@@ -167,11 +167,13 @@ function updatePlayerListUI(container)
     end
 
     local players = getOtherPlayers()
-    local yOffset = 5
+    local itemHeight = 32
+    local itemSpacing = 4
+    local yOffset = 0
     
     for _, p in ipairs(players) do
         local PlayerBtn = Instance.new("TextButton")
-        PlayerBtn.Size = UDim2.new(1, -10, 0, 32)
+        PlayerBtn.Size = UDim2.new(1, -10, 0, itemHeight)
         PlayerBtn.Position = UDim2.new(0, 5, 0, yOffset)
         
         if p == state.spectateTarget then
@@ -195,13 +197,15 @@ function updatePlayerListUI(container)
             startSpectate(p)
         end)
 
-        yOffset = yOffset + 36
+        yOffset = yOffset + itemHeight + itemSpacing
     end
 
-    container.CanvasSize = UDim2.new(0, 0, 0, yOffset + 5)
+    -- CanvasSize diatur persis pas dengan total tinggi elemen dikurangi jarak spasi terakhir agar mentok bawah ngepas
+    local totalHeight = math.max(0, yOffset - itemSpacing)
+    container.CanvasSize = UDim2.new(0, 0, 0, totalHeight)
 end
 
--- FUNGSI PEMBUATAN UI UTAMA (POSISI BENAR-BENAR DITENGAHKAN)
+-- FUNGSI PEMBUATAN UI UTAMA
 function createSpectateUI(onPrev, onNext, onExit)
     if state.uiGui then
         state.uiGui:Destroy()
@@ -219,7 +223,7 @@ function createSpectateUI(onPrev, onNext, onExit)
         ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
     end
 
-    -- Container Utama Bawah (Anchor Point diatur ke 0.5 agar presisi di tengah layar)
+    -- Container Utama Bawah
     local MainContainer = Instance.new("Frame")
     MainContainer.Size = UDim2.new(0, 340, 0, 50)
     MainContainer.AnchorPoint = Vector2.new(0.5, 1)
@@ -312,14 +316,13 @@ function createSpectateUI(onPrev, onNext, onExit)
     Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(0, 6)
 
     -- Panel Dropdown / Pop-up Player List
-    local ListPanel = Instance.new("ScrollingFrame")
+    local ListPanel = Instance.new("Frame")
     ListPanel.Size = UDim2.new(0, 170, 0, 220)
     ListPanel.Position = UDim2.new(0, 20, 0.5, -110)
     ListPanel.BackgroundColor3 = Color3.fromRGB(20, 35, 25)
     ListPanel.BackgroundTransparency = 0.25
     ListPanel.BorderSizePixel = 0
     ListPanel.Visible = state.playerListVisible
-    ListPanel.ScrollBarThickness = 4
     ListPanel.Parent = ScreenGui
     Instance.new("UICorner", ListPanel).CornerRadius = UDim.new(0, 8)
 
@@ -332,6 +335,7 @@ function createSpectateUI(onPrev, onNext, onExit)
     ListHeader.TextSize = 12
     ListHeader.Parent = ListPanel
 
+    -- ScrollingContent menggunakan ScrollingFrame dengan CanvasSize dinamis
     local ScrollingContent = Instance.new("ScrollingFrame")
     ScrollingContent.Size = UDim2.new(1, 0, 1, -25)
     ScrollingContent.Position = UDim2.new(0, 0, 0, 25)
@@ -362,7 +366,7 @@ end
 
 local Plugin = {
     ["PluginName"] = "Spectate & MuteManager",
-    ["PluginDescription"] = "Clean spectate plugin with player list and mute manager",
+    ["PluginDescription"] = "Clean spectate plugin with seamless scrolling player list",
     ["Commands"] = {
         ["spectate"] = {
             ["ListName"] = "spectate",
