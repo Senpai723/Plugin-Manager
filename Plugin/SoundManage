@@ -158,7 +158,7 @@ local function cycleTarget(direction)
     startSpectate(players[currentIndex])
 end
 
--- FUNGSI UNTUK MEMPERBARUI ISI LIST PLAYER (DENGAN PADDING AMAN UNTUK SCROLL)
+-- FUNGSI UNTUK MEMPERBARUI ISI LIST PLAYER
 function updatePlayerListUI(container)
     for _, child in ipairs(container:GetChildren()) do
         if child:IsA("TextButton") then
@@ -200,7 +200,6 @@ function updatePlayerListUI(container)
         yOffset = yOffset + itemHeight + itemSpacing
     end
 
-    -- Ditambah sedikit padding bawah agar nyaman di-scroll tapi tidak ada celah berlebih
     container.CanvasSize = UDim2.new(0, 0, 0, yOffset + 10)
 end
 
@@ -365,7 +364,7 @@ end
 
 local Plugin = {
     ["PluginName"] = "Spectate & MuteManager",
-    ["PluginDescription"] = "Clean spectate plugin with fixed scrolling player list",
+    ["PluginDescription"] = "Clean spectate plugin with fixed scrolling player list and working mutesound",
     ["Commands"] = {
         ["spectate"] = {
             ["ListName"] = "spectate",
@@ -411,7 +410,7 @@ local Plugin = {
                     if obj:IsA("Sound") then applyMute(obj) end
                 end
                 for _, obj in ipairs(SoundService:GetDescendants()) do
-                    if obj:IsA("Sound") then applyMunt(obj) end
+                    if obj:IsA("Sound") then applyMute(obj) end
                 end
 
                 muteState.addedConn = Workspace.DescendantAdded:Connect(function(obj)
