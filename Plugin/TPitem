@@ -26,7 +26,7 @@ getgenv().ExecutePreciseGrab = function(keyword, maxLimitInput)
     local rootPart = character and character:FindFirstChild("HumanoidRootPart")
     local humanoid = character and character:FindFirstChildOfClass("Humanoid")
     
-    if not rootPart || not humanoid then
+    if not rootPart or not humanoid then
         print("[Grab] Karakter / Humanoid tidak ditemukan!")
         return
     end
