@@ -12,7 +12,8 @@ _G.__SpectateState = _G.__SpectateState or {
     spectateTarget = nil,
     targetIndex = 1,
     conn = nil,
-    uiGui = nil
+    uiGui = nil,
+    playerListVisible = false
 }
 
 _G.__VoiceSpyMuteState = _G.__VoiceSpyMuteState or {
@@ -60,10 +61,152 @@ local function applyMute(sound)
     end
 end
 
--- FUNGSI UNTUK MEMBUAT UI TOMBOL PANAH KIRI KANAN & NAMA PLAYER
+-- FORWARD DECLARATION
+local createSpectateUI, updatePlayerListUI
 local nameLabelRef = nil
+local playerListContainerRef = nil
 
-local function createSpectateUI(onPrev, onNext, onExit)
+local function getOtherPlayers()
+    local list = {}
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer then
+            table.insert(list, p)
+        end
+    end
+    return list
+end
+
+local function stopSpectate()
+    state.isSpectating = false
+    state.spectateTarget = nil
+    state.playerListVisible = false
+
+    if state.conn then
+        state.conn:Disconnect()
+        state.conn = nil
+    end
+
+    if state.uiGui then
+        state.uiGui:Destroy()
+        state.uiGui = nil
+    end
+
+    pcall(function()
+        Camera.CameraType = Enum.CameraType.Custom
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+            Camera.CameraSubject = LocalPlayer.Character.Humanoid
+        end
+    end)
+    print("[Spectate] Keluar dari mode spectate.")
+end
+
+local function startSpectate(targetPlayer)
+    if not targetPlayer or not targetPlayer.Character then
+        print("[Spectate] Target tidak valid!")
+        return
+    end
+
+    state.spectateTarget = targetPlayer
+    state.isSpectating = true
+
+    if nameLabelRef and nameLabelRef.Parent then
+        nameLabelRef.Text = targetPlayer.Name
+    end
+
+    if state.conn then
+        state.conn:Disconnect()
+    end
+
+    Camera.CameraType = Enum.CameraType.Custom
+    state.conn = RunService.RenderStepped:Connect(function()
+        if not state.isSpectating or not state.spectateTarget or not state.spectateTarget.Character then
+            return
+        end
+        local char = state.spectateTarget.Character
+        local hum = char:FindFirstChild("Humanoid")
+        if hum and Camera.CameraSubject ~= hum then
+            Camera.CameraSubject = hum
+        end
+    end)
+
+    -- Update highlight active player di list jika sedang terbuka
+    if playerListContainerRef and playerListContainerRef.Parent then
+        updatePlayerListUI(playerListContainerRef)
+    end
+
+    print("[Spectate] Sedang melihat: " .. targetPlayer.Name)
+end
+
+local function cycleTarget(direction)
+    local players = getOtherPlayers()
+    if #players == 0 then return end
+
+    local currentIndex = 1
+    for i, p in ipairs(players) do
+        if p == state.spectateTarget then
+            currentIndex = i
+            break
+        end
+    end
+
+    currentIndex = currentIndex + direction
+    if currentIndex > #players then
+        currentIndex = 1
+    elseif currentIndex < 1 then
+        currentIndex = #players
+    end
+
+    startSpectate(players[currentIndex])
+end
+
+-- FUNGSI UNTUK MEMPERBARUI ISI LIST PLAYER
+function updatePlayerListUI(container)
+    -- Bersihkan isi sebelumnya
+    for _, child in ipairs(container:GetChildren()) do
+        if child:IsA("TextButton") then
+            child:Destroy()
+        end
+    end
+
+    local players = getOtherPlayers()
+    local yOffset = 5
+    
+    for _, p in ipairs(players) do
+        local PlayerBtn = Instance.new("TextButton")
+        PlayerBtn.Size = UDim2.new(1, -10, 0, 32)
+        PlayerBtn.Position = UDim2.new(0, 5, 0, yOffset)
+        
+        -- Warna berbeda jika player tersebut sedang di-spectate
+        if p == state.spectateTarget then
+            PlayerBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 70)
+        else
+            PlayerBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+        end
+        
+        PlayerBtn.BackgroundTransparency = 0.2
+        PlayerBtn.BorderSizePixel = 0
+        PlayerBtn.Font = Enum.Font.GothamSemibold
+        PlayerBtn.Text = "  " .. p.Name
+        PlayerBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        PlayerBtn.TextSize = 13
+        PlayerBtn.TextXAlignment = Enum.TextXAlignment.Left
+        PlayerBtn.Parent = container
+        
+        Instance.new("UICorner", PlayerBtn).CornerRadius = UDim.new(0, 6)
+
+        -- Klik player di list untuk langsung menspectate
+        PlayerBtn.MouseButton1Click:Connect(function()
+            startSpectate(p)
+        end)
+
+        yOffset = yOffset + 36
+    end
+
+    container.CanvasSize = UDim2.new(0, 0, 0, yOffset + 5)
+end
+
+-- FUNGSI PEMBUATAN UI UTAMA
+function createSpectateUI(onPrev, onNext, onExit)
     if state.uiGui then
         state.uiGui:Destroy()
         state.uiGui = nil
@@ -80,9 +223,10 @@ local function createSpectateUI(onPrev, onNext, onExit)
         ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
     end
 
+    -- Container Utama Bawah (Panah Kiri, Nama, Panah Kanan)
     local MainContainer = Instance.new("Frame")
     MainContainer.Size = UDim2.new(0, 320, 0, 50)
-    MainContainer.Position = UDim2.new(0.5, -160, 1, -80)
+    MainContainer.Position = UDim2.new(0.5, -160, 1, -120)
     MainContainer.BackgroundTransparency = 1
     MainContainer.Parent = ScreenGui
 
@@ -134,116 +278,101 @@ local function createSpectateUI(onPrev, onNext, onExit)
     NextBtn.Parent = MainContainer
     Instance.new("UICorner", NextBtn).CornerRadius = UDim.new(0, 8)
 
+    -- Tombol Tambahan di Bawah: PLAYER LIST & CLOSE
+    local BottomBar = Instance.new("Frame")
+    BottomBar.Size = UDim2.new(0, 320, 0, 35)
+    BottomBar.Position = UDim2.new(0.5, -160, 1, -70)
+    BottomBar.BackgroundTransparency = 1
+    BottomBar.Parent = ScreenGui
+
+    -- Tombol Toggle Player List
+    local PlayerListBtn = Instance.new("TextButton")
+    PlayerListBtn.Size = UDim2.new(0, 150, 0, 30)
+    PlayerListBtn.Position = UDim2.new(0, 0, 0, 0)
+    PlayerListBtn.BackgroundColor3 = Color3.fromRGB(15, 60, 40)
+    PlayerListBtn.BackgroundTransparency = 0.2
+    PlayerListBtn.BorderSizePixel = 0
+    PlayerListBtn.Font = Enum.Font.GothamBold
+    PlayerListBtn.Text = "PLAYER LIST"
+    PlayerListBtn.TextColor3 = Color3.fromRGB(0, 255, 150)
+    PlayerListBtn.TextSize = 12
+    PlayerListBtn.Parent = BottomBar
+    Instance.new("UICorner", PlayerListBtn).CornerRadius = UDim.new(0, 6)
+
+    -- Tombol Close / Keluar Spectate
+    local CloseBtn = Instance.new("TextButton")
+    CloseBtn.Size = UDim2.new(0, 150, 0, 30)
+    CloseBtn.Position = UDim2.new(1, -150, 0, 0)
+    CloseBtn.BackgroundColor3 = Color3.fromRGB(60, 15, 15)
+    CloseBtn.BackgroundTransparency = 0.2
+    CloseBtn.BorderSizePixel = 0
+    CloseBtn.Font = Enum.Font.GothamBold
+    CloseBtn.Text = "CLOSE"
+    CloseBtn.TextColor3 = Color3.fromRGB(255, 100, 100)
+    CloseBtn.TextSize = 12
+    CloseBtn.Parent = BottomBar
+    Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(0, 6)
+
+    -- Panel Dropdown / Pop-up Player List (Di sebelah kiri layar seperti di video)
+    local ListPanel = Instance.new("ScrollingFrame")
+    ListPanel.Size = UDim2.new(0, 170, 0, 220)
+    ListPanel.Position = UDim2.new(0, 20, 0.5, -110)
+    ListPanel.BackgroundColor3 = Color3.fromRGB(20, 35, 25)
+    ListPanel.BackgroundTransparency = 0.25
+    ListPanel.BorderSizePixel = 0
+    ListPanel.Visible = state.playerListVisible
+    ListPanel.ScrollBarThickness = 4
+    ListPanel.Parent = ScreenGui
+    Instance.new("UICorner", ListPanel).CornerRadius = UDim.new(0, 8)
+
+    -- Judul Header di dalam Panel List
+    local ListHeader = Instance.new("TextLabel")
+    ListHeader.Size = UDim2.new(1, 0, 0, 25)
+    ListHeader.BackgroundTransparency = 1
+    ListHeader.Font = Enum.Font.GothamBold
+    ListHeader.Text = "PLAYERS"
+    ListHeader.TextColor3 = Color3.fromRGB(0, 255, 150)
+    ListHeader.TextSize = 12
+    ListHeader.Parent = ListPanel
+
+    -- Container isi list player (Scrolling content)
+    local ScrollingContent = Instance.new("ScrollingFrame")
+    ScrollingContent.Size = UDim2.new(1, 0, 1, -25)
+    ScrollingContent.Position = UDim2.new(0, 0, 0, 25)
+    ScrollingContent.BackgroundTransparency = 1
+    ScrollingContent.BorderSizePixel = 0
+    ScrollingContent.ScrollBarThickness = 3
+    ScrollingContent.Parent = ListPanel
+    playerListContainerRef = ScrollingContent
+
+    -- Event Handler Tombol-Tombol
     PrevBtn.MouseButton1Click:Connect(onPrev)
     NextBtn.MouseButton1Click:Connect(onNext)
+    CloseBtn.MouseButton1Click:Connect(onExit)
+
+    PlayerListBtn.MouseButton1Click:Connect(function()
+        state.playerListVisible = not state.playerListVisible
+        ListPanel.Visible = state.playerListVisible
+        if state.playerListVisible then
+            updatePlayerListUI(ScrollingContent)
+        end
+    end)
+
+    -- Jika list aktif saat reload/buka, isi langsung
+    if state.playerListVisible then
+        updatePlayerListUI(ScrollingContent)
+    end
 
     state.uiGui = ScreenGui
 end
 
-local function updateSpectateUItext(text)
-    if nameLabelRef and nameLabelRef.Parent then
-        nameLabelRef.Text = text
-    end
-end
-
-local function stopSpectate()
-    state.isSpectating = false
-    state.spectateTarget = nil
-
-    if state.conn then
-        state.conn:Disconnect()
-        state.conn = nil
-    end
-
-    if state.uiGui then
-        state.uiGui:Destroy()
-        state.uiGui = nil
-    end
-
-    pcall(function()
-        Camera.CameraType = Enum.CameraType.Custom
-        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-            Camera.CameraSubject = LocalPlayer.Character.Humanoid
-        end
-    end)
-    print("[Spectate] Keluar dari mode spectate.")
-end
-
-local function startSpectate(targetPlayer)
-    if not targetPlayer or not targetPlayer.Character then
-        print("[Spectate] Target tidak valid!")
-        return
-    end
-
-    state.spectateTarget = targetPlayer
-    state.isSpectating = true
-
-    updateSpectateUItext(targetPlayer.Name)
-
-    if state.conn then
-        state.conn:Disconnect()
-    end
-
-    -- Gunakan RenderStepped agar kamera mengikuti posisi target tapi bebas digeser 3D
-    Camera.CameraType = Enum.CameraType.Custom
-    state.conn = RunService.RenderStepped:Connect(function()
-        if not state.isSpectating or not state.spectateTarget or not state.spectateTarget.Character then
-            return
-        end
-        local char = state.spectateTarget.Character
-        local head = char:FindFirstChild("Head") or char:FindFirstChild("HumanoidRootPart")
-        if head then
-            -- Set CameraSubject ke Humanoid target supaya bebas diputar-putar
-            local hum = char:FindFirstChild("Humanoid")
-            if hum and Camera.CameraSubject ~= hum then
-                Camera.CameraSubject = hum
-            end
-        end
-    end)
-
-    print("[Spectate] Sedang melihat: " .. targetPlayer.Name)
-end
-
-local function getOtherPlayers()
-    local list = {}
-    for _, p in ipairs(Players:GetPlayers()) do
-        if p ~= LocalPlayer then
-            table.insert(list, p)
-        end
-    end
-    return list
-end
-
-local function cycleTarget(direction)
-    local players = getOtherPlayers()
-    if #players == 0 then return end
-
-    -- Cari index target saat ini
-    local currentIndex = 1
-    for i, p in ipairs(players) do
-        if p == state.spectateTarget then
-            currentIndex = i
-            break
-        end
-    end
-
-    currentIndex = currentIndex + direction
-    if currentIndex > #players then
-        currentIndex = 1
-    elseif currentIndex < 1 then
-        currentIndex = #players
-    end
-
-    startSpectate(players[currentIndex])
-end
-
 local Plugin = {
     ["PluginName"] = "Spectate & MuteManager",
-    ["PluginDescription"] = "Spectate player dengan UI tombol panah interaktif",
+    ["PluginDescription"] = "Spectate player lengkap dengan Player List interaktif & tombol navigasi",
     ["Commands"] = {
         ["spectate"] = {
             ["ListName"] = "spectate [nama_player (opsional)]",
-            ["Description"] = "Spectate target dengan tombol UI interaktif kiri/kanan",
+            ["Description"] = "Spectate target dengan tombol UI interaktif dan menu Player List",
             ["Aliases"] = {"spec", "view"},
             ["Function"] = function(args, speaker)
                 local targetName = args[1]
@@ -257,7 +386,6 @@ local Plugin = {
                 local foundTarget = nil
 
                 if not targetName or targetName == "" then
-                    -- Kalau cuma ketik 'spectate', ambil player pertama atau lanjutkan yang aktif
                     if state.spectateTarget then
                         foundTarget = state.spectateTarget
                     else
@@ -278,11 +406,10 @@ local Plugin = {
                     return
                 end
 
-                -- Munculkan UI Overlay Tombol Kiri-Kanan
                 createSpectateUI(
-                    function() cycleTarget(-1) end, -- Tombol Kiri (Prev)
-                    function() cycleTarget(1)  end, -- Tombol Kanan (Next)
-                    function() stopSpectate()  end  -- Tombol Keluar (opsional)
+                    function() cycleTarget(-1) end,
+                    function() cycleTarget(1)  end,
+                    function() stopSpectate()  end
                 )
 
                 startSpectate(foundTarget)
