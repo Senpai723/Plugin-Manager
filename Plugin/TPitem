@@ -1,5 +1,5 @@
 -- ================================================================
--- PRECISE GRABBER: UNIQUE MODEL DEDUPLICATION (MAX 10)
+-- PRECISE GRABBER: CUSTOM MAX LIMIT & DUAL-INPUT GUI
 -- ================================================================
 
 local Players = game:GetService("Players")
@@ -13,12 +13,15 @@ local function lower(val)
     return string.lower(tostring(val or ""))
 end
 
-getgenv().ExecutePreciseGrab = function(keyword)
+getgenv().ExecutePreciseGrab = function(keyword, maxLimitInput)
     local searchKeyword = lower(keyword)
     if searchKeyword == "" then
         print("[Grab] Keyword kosong!")
         return
     end
+
+    -- Ambil nilai limit dari input box (default 7 jika kosong atau bukan angka)
+    local maxAllowed = tonumber(maxLimitInput) or 7
 
     local character = LocalPlayer.Character
     local rootPart = character and character:FindFirstChild("HumanoidRootPart")
@@ -36,7 +39,7 @@ getgenv().ExecutePreciseGrab = function(keyword)
     local itemsFolder = Workspace:FindFirstChild("Items") or Workspace
 
     local validItems = {}
-    local addedModels = {} -- PENGAMAN ANTI-DUPLIKASI (Memastikan 1 item fisik hanya dicatat sekali)
+    local addedModels = {} -- Anti-duplikasi item fisik
 
     for _, obj in ipairs(itemsFolder:GetDescendants()) do
         local fullName = lower(obj:GetFullName())
@@ -44,7 +47,7 @@ getgenv().ExecutePreciseGrab = function(keyword)
         -- Filter objek pajangan/display
         if not string.find(fullName, "placezone") and not string.find(fullName, "tempinvis") and not string.find(fullName, "display") then
             
-            -- Cari model utama (root model) dari item tersebut di dalam folder Items
+            -- Cari model utama (root model) dari item tersebut
             local rootModel = obj
             if obj:IsA("BasePart") then
                 local p = obj.Parent
@@ -57,17 +60,15 @@ getgenv().ExecutePreciseGrab = function(keyword)
                 end
             end
 
-            -- Jika rootModel belum pernah dimasukkan, proses pencariannya
+            -- Jika rootModel belum tercatat, lakukan Deep Scan
             if not addedModels[rootModel] then
                 local searchTexts = {}
                 
-                -- Masukkan nama model utama dan seluruh turunannya ke dalam teks pencarian (Deep Scan)
                 table.insert(searchTexts, lower(rootModel.Name))
                 for _, desc in ipairs(rootModel:GetDescendants()) do
                     table.insert(searchTexts, lower(desc.Name))
                 end
                 
-                -- Baca Attributes & Child Values jika ada
                 pcall(function()
                     for _, attrVal in pairs(rootModel:GetAttributes()) do
                         table.insert(searchTexts, lower(tostring(attrVal)))
@@ -81,7 +82,6 @@ getgenv().ExecutePreciseGrab = function(keyword)
 
                 local combinedSearchString = table.concat(searchTexts, " ")
 
-                -- Cek kecocokan keyword
                 if string.find(combinedSearchString, searchKeyword, 1, true) then
                     local targetPart = nil
                     if rootModel:IsA("Model") then
@@ -93,7 +93,7 @@ getgenv().ExecutePreciseGrab = function(keyword)
                     end
 
                     if targetPart and targetPart:IsDescendantOf(Workspace) then
-                        addedModels[rootModel] = true -- Kunci agar model ini tidak dibaca dua kali
+                        addedModels[rootModel] = true
                         local dist = (targetPart.Position - rootPart.Position).Magnitude
                         table.insert(validItems, {Part = targetPart, Distance = dist})
                     end
@@ -102,7 +102,7 @@ getgenv().ExecutePreciseGrab = function(keyword)
         end
     end
 
-    -- Urutkan dari item unik yang paling dekat dengan player
+    -- Urutkan dari item unik terdekat
     table.sort(validItems, function(a, b)
         return a.Distance < b.Distance
     end)
@@ -112,7 +112,7 @@ getgenv().ExecutePreciseGrab = function(keyword)
         return
     end
 
-    local targetLimit = math.min(#validItems, 10)
+    local targetLimit = math.min(#validItems, maxAllowed)
     print("[Grab] Ditemukan " .. #validItems .. " item unik. Memproses " .. targetLimit .. " item terdekat...")
 
     local collected = 0
@@ -127,7 +127,6 @@ getgenv().ExecutePreciseGrab = function(keyword)
             pcall(function()
                 local itemPos = targetPart.Position
                 
-                -- Teleport pas di sebelah item
                 rootPart.CFrame = CFrame.lookAt(itemPos + Vector3.new(0, 0.3, 1.2), itemPos)
                 
                 Camera.CameraType = Enum.CameraType.Scriptable
@@ -189,11 +188,11 @@ getgenv().ExecutePreciseGrab = function(keyword)
         end
     end)
 
-    print("[Grab] Selesai! Berhasil mengambil " .. collected .. " item unik tanpa duplikasi.")
+    print("[Grab] Selesai! Berhasil mengambil " .. collected .. " item.")
 end
 
 -- ----------------------------------------------------------------
--- GUI INTERFACE
+-- GUI INTERFACE (CUSTOM LAYOUT)
 -- ----------------------------------------------------------------
 local playerGui = LocalPlayer:WaitForChild("PlayerGui")
 local existing = playerGui:FindFirstChild("PreciseGrabGui") or CoreGui:FindFirstChild("PreciseGrabGui")
@@ -206,8 +205,8 @@ pcall(function() screenGui.Parent = CoreGui end)
 if not screenGui.Parent then screenGui.Parent = playerGui end
 
 local mainFrame = Instance.new("Frame", screenGui)
-mainFrame.Size = UDim2.new(0, 240, 0, 110)
-mainFrame.Position = UDim2.new(0.5, -120, 0.3, 0)
+mainFrame.Size = UDim2.new(0, 260, 0, 110)
+mainFrame.Position = UDim2.new(0.5, -130, 0.3, 0)
 mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 mainFrame.BorderSizePixel = 0
 mainFrame.Active = true
@@ -224,7 +223,7 @@ title.Size = UDim2.new(1, -30, 1, 0)
 title.Position = UDim2.new(0, 8, 0, 0)
 title.BackgroundTransparency = 1
 title.Font = Enum.Font.GothamBold
-title.Text = "🎯 Precise Grabber (Anti-Dup Fix)"
+title.Text = "🎯 Precise Grabber (Custom Max)"
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.TextSize = 12
 title.TextXAlignment = Enum.TextXAlignment.Left
@@ -240,38 +239,59 @@ closeBtn.TextSize = 11
 Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 4)
 closeBtn.MouseButton1Click:Connect(function() screenGui:Destroy() end)
 
+-- Kotak Kiri: Input Nama Objek / Kategori
 local textBox = Instance.new("TextBox", mainFrame)
-textBox.Size = UDim2.new(1, -16, 0, 30)
+textBox.Size = UDim2.new(0, 160, 0, 30)
 textBox.Position = UDim2.new(0, 8, 0, 36)
 textBox.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 textBox.Font = Enum.Font.Gotham
-textBox.PlaceholderText = "Type item or category..."
+textBox.PlaceholderText = "Input nama / kategori..."
 textBox.Text = ""
 textBox.TextColor3 = Color3.fromRGB(255, 255, 255)
 textBox.PlaceholderColor3 = Color3.fromRGB(140, 140, 140)
-textBox.TextSize, textBox.ClearTextOnFocus = 11, false
+textBox.TextSize = 11
+textBox.ClearTextOnFocus = false
 Instance.new("UICorner", textBox).CornerRadius = UDim.new(0, 6)
 
+-- Kotak Kanan: Input Jumlah Max (Default 7)
+local maxBox = Instance.new("TextBox", mainFrame)
+maxBox.Size = UDim2.new(0, 76, 0, 30)
+maxBox.Position = UDim2.new(0, 176, 0, 36)
+maxBox.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+maxBox.Font = Enum.Font.GothamBold
+maxBox.PlaceholderText = "Max"
+maxBox.Text = "7" -- Default 7 sesuai permintaan
+maxBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+maxBox.PlaceholderColor3 = Color3.fromRGB(140, 140, 140)
+maxBox.TextSize = 11
+maxBox.ClearTextOnFocus = false
+Instance.new("UICorner", maxBox).CornerRadius = UDim.new(0, 6)
+
+-- Tombol START di bawah
 local btn = Instance.new("TextButton", mainFrame)
-btn.Size = UDim2.new(1, -16, 0, 30)
+btn.Size = UDim2.new(0, 244, 0, 30)
 btn.Position = UDim2.new(0, 8, 0, 72)
 btn.BackgroundColor3 = Color3.fromRGB(0, 150, 90)
 btn.Font = Enum.Font.GothamBold
-btn.Text = "START PRECISE GRAB"
+btn.Text = "START"
 btn.TextColor3 = Color3.fromRGB(255, 255, 255)
 btn.TextSize = 11
 Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
 
-btn.MouseButton1Click:Connect(function()
+local function triggerGrab()
     if textBox.Text ~= "" then
-        getgenv().ExecutePreciseGrab(textBox.Text)
+        getgenv().ExecutePreciseGrab(textBox.Text, maxBox.Text)
     end
-end)
+end
+
+btn.MouseButton1Click:Connect(triggerGrab)
 
 textBox.FocusLost:Connect(function(enter)
-    if enter and textBox.Text ~= "" then
-        getgenv().ExecutePreciseGrab(textBox.Text)
-    end
+    if enter then triggerGrab() end
 end)
 
-print("[Precise Grabber Anti-Dup Fix] Skrip siap di-test!")
+maxBox.FocusLost:Connect(function(enter)
+    if enter then triggerGrab() end
+end)
+
+print("[Precise Grabber Custom Max] Skrip siap digunakan!")
