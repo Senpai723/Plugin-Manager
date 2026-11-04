@@ -147,9 +147,7 @@ getgenv().ExecutePreciseGrab = function(keyword, maxLimitInput)
         end
     end
 
-    -- ================================================================
-    -- PEMULIHAN TOTAL & FIX KONTROL MOBILE INSTAN
-    -- ================================================================
+    -- PEMULIHAN TOTAL DENGAN JEDA KONTROL YANG PAS
     pcall(function()
         if rootPart and rootPart.Parent then
             rootPart.AssemblyLinearVelocity = Vector3.zero
@@ -158,11 +156,14 @@ getgenv().ExecutePreciseGrab = function(keyword, maxLimitInput)
         end
     end)
 
+    -- Jeda dikit biar posisi karakter bener-bener stabil di server
+    task.wait(0.05)
+
     pcall(function()
         Camera = Workspace.CurrentCamera
         Camera.CameraType = Enum.CameraType.Scriptable
-        Camera.CFrame = originalCameraCFrame -- Kembali ke sudut pandang rak semula
-        task.wait(0.05)
+        Camera.CFrame = originalCameraCFrame
+        task.wait(0.1) -- Ditingkatin dikit biar transisi kamera mulus
         Camera.CameraType = Enum.CameraType.Custom
         Camera.CameraSubject = humanoid
     end)
@@ -175,9 +176,9 @@ getgenv().ExecutePreciseGrab = function(keyword, maxLimitInput)
         humanoid:ChangeState(Enum.HumanoidStateType.Running)
     end)
 
-    -- Sinkronisasi ulang kontrol mobile agar tombol joystick & lompat langsung muncul instan
+    -- Aktifkan ulang kontrol mobile dengan jeda yang pas untuk TouchGui
     task.spawn(function()
-        task.wait(0.05)
+        task.wait(0.15) -- Jeda aman buat nge-refresh touch joystick mobile
         pcall(function()
             local playerScripts = LocalPlayer:FindFirstChild("PlayerScripts")
             local playerModuleScript = playerScripts and playerScripts:FindFirstChild("PlayerModule")
