@@ -158,7 +158,7 @@ local function cycleTarget(direction)
     startSpectate(players[currentIndex])
 end
 
--- FUNGSI UNTUK MEMPERBARUI ISI LIST PLAYER (DIUJUNG BAWAH NGEPAS TANPA RUANG KOSONG)
+-- FUNGSI UNTUK MEMPERBARUI ISI LIST PLAYER (DENGAN PADDING AMAN UNTUK SCROLL)
 function updatePlayerListUI(container)
     for _, child in ipairs(container:GetChildren()) do
         if child:IsA("TextButton") then
@@ -169,7 +169,7 @@ function updatePlayerListUI(container)
     local players = getOtherPlayers()
     local itemHeight = 32
     local itemSpacing = 4
-    local yOffset = 0
+    local yOffset = 5
     
     for _, p in ipairs(players) do
         local PlayerBtn = Instance.new("TextButton")
@@ -200,9 +200,8 @@ function updatePlayerListUI(container)
         yOffset = yOffset + itemHeight + itemSpacing
     end
 
-    -- CanvasSize diatur persis pas dengan total tinggi elemen dikurangi jarak spasi terakhir agar mentok bawah ngepas
-    local totalHeight = math.max(0, yOffset - itemSpacing)
-    container.CanvasSize = UDim2.new(0, 0, 0, totalHeight)
+    -- Ditambah sedikit padding bawah agar nyaman di-scroll tapi tidak ada celah berlebih
+    container.CanvasSize = UDim2.new(0, 0, 0, yOffset + 10)
 end
 
 -- FUNGSI PEMBUATAN UI UTAMA
@@ -335,7 +334,7 @@ function createSpectateUI(onPrev, onNext, onExit)
     ListHeader.TextSize = 12
     ListHeader.Parent = ListPanel
 
-    -- ScrollingContent menggunakan ScrollingFrame dengan CanvasSize dinamis
+    -- ScrollingContent menggunakan ScrollingFrame dengan CanvasSize pas
     local ScrollingContent = Instance.new("ScrollingFrame")
     ScrollingContent.Size = UDim2.new(1, 0, 1, -25)
     ScrollingContent.Position = UDim2.new(0, 0, 0, 25)
@@ -366,11 +365,11 @@ end
 
 local Plugin = {
     ["PluginName"] = "Spectate & MuteManager",
-    ["PluginDescription"] = "Clean spectate plugin with seamless scrolling player list",
+    ["PluginDescription"] = "Clean spectate plugin with fixed scrolling player list",
     ["Commands"] = {
         ["spectate"] = {
             ["ListName"] = "spectate",
-            ["Description"] = "Mulai spectate player terdekat/pertama dengan menu Player List",
+            ["Description"] = "Mulai spectate player dengan menu Player List",
             ["Aliases"] = {"spec", "view"},
             ["Function"] = function(args, speaker)
                 local players = getOtherPlayers()
@@ -412,7 +411,7 @@ local Plugin = {
                     if obj:IsA("Sound") then applyMute(obj) end
                 end
                 for _, obj in ipairs(SoundService:GetDescendants()) do
-                    if obj:IsA("Sound") then applyMute(obj) end
+                    if obj:IsA("Sound") then applyMunt(obj) end
                 end
 
                 muteState.addedConn = Workspace.DescendantAdded:Connect(function(obj)
