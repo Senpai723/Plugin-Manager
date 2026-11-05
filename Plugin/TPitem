@@ -1,5 +1,5 @@
 -- ================================================================
--- PRECISE GRABBER: ULTIMATE + SMART RACK LIST & SAFE FORWARD TP
+-- PRECISE GRABBER: ULTIMATE + SMART RACK LIST (RIGHT SIDE FIXED)
 -- ================================================================
 
 local Players = game:GetService("Players")
@@ -186,7 +186,7 @@ getgenv().ExecutePreciseGrab = function(keyword, maxLimitInput)
     print("[Grab] Selesai! Berhasil mengambil " .. collected .. " item.")
 end
 
--- 2. FUNGSI SCAN RAK DENGAN FORMAT GABUNGAN LABEL (CONTOH: Middle Table (G3))
+-- 2. FUNGSI SCAN RAK DENGAN FORMAT GABUNGAN LABEL
 local function getAllRacks()
     local racks = {}
     local seenNames = {}
@@ -195,7 +195,6 @@ local function getAllRacks()
         if obj:IsA("TextLabel") or obj:IsA("TextButton") then
             local txt = obj.Text
             if txt and txt ~= "" and string.len(txt) < 30 then
-                -- Cari parent model atau part fisik raknya
                 local targetPart = nil
                 local parentName = ""
                 local parent = obj.Parent
@@ -215,7 +214,6 @@ local function getAllRacks()
                 end
 
                 if targetPart then
-                    -- Gabungkan nama label dengan nama objek/parent jika berbeda agar informatif
                     local displayName = txt
                     if parentName ~= "" and parentName ~= txt and not string.find(parentName, "Model") then
                         displayName = txt .. " (" .. parentName .. ")"
@@ -233,7 +231,7 @@ local function getAllRacks()
 end
 
 -- ----------------------------------------------------------------
--- GUI INTERFACE (DENGAN LIST RAK DI SEBELAH KANAN)
+-- GUI INTERFACE (LIST DIGESER JAUH KE KANAN & NAMA TOMBOL DIUBAH)
 -- ----------------------------------------------------------------
 local playerGui = LocalPlayer:WaitForChild("PlayerGui")
 local existing = playerGui:FindFirstChild("PreciseGrabGui") or CoreGui:FindFirstChild("PreciseGrabGui")
@@ -242,7 +240,7 @@ if existing then existing:Destroy() end
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "PreciseGrabGui"
 screenGui.ResetOnSpawn = false
-pcall(function() screenGui.Parent = CoreGui end)
+pcall(screenGui.Parent = CoreGui)
 if not screenGui.Parent then screenGui.Parent = playerGui end
 
 local mainFrame = Instance.new("Frame", screenGui)
@@ -264,7 +262,7 @@ title.Size = UDim2.new(1, -30, 1, 0)
 title.Position = UDim2.new(0, 8, 0, 0)
 title.BackgroundTransparency = 1
 title.Font = Enum.Font.GothamBold
-title.Text = "🎯 Precise Grabber + Smart Rack List"
+title.Text = "🎯 Precise Grabber + Placezone"
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.TextSize = 12
 title.TextXAlignment = Enum.TextXAlignment.Left
@@ -319,21 +317,21 @@ btn.TextColor3 = Color3.fromRGB(255, 255, 255)
 btn.TextSize = 11
 Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
 
--- Tombol PUT (Toggle List Rak di Sebelah Kanan)
+-- Tombol List Placezone di sebelah kanan tombol START
 local putBtn = Instance.new("TextButton", mainFrame)
 putBtn.Size = UDim2.new(0, 86, 0, 30)
 putBtn.Position = UDim2.new(0, 166, 0, 72)
 putBtn.BackgroundColor3 = Color3.fromRGB(50, 110, 200)
 putBtn.Font = Enum.Font.GothamBold
-putBtn.Text = "PUT (LIST)"
+putBtn.Text = "List Placezone"
 putBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-putBtn.TextSize = 11
+putBtn.TextSize = 10
 Instance.new("UICorner", putBtn).CornerRadius = UDim.new(0, 6)
 
--- Panel List Rak (Muncul di Sebelah Kanan Menu Utama)
+-- Panel List Rak (DIGESER JAUH KE KANAN SUPAYA TIDAK DI TENGAH)
 local rackListPanel = Instance.new("Frame", screenGui)
-rackListPanel.Size = UDim2.new(0, 185, 0, 220)
-rackListPanel.Position = UDim2.new(0.5, 135, 0.3, 0)
+rackListPanel.Size = UDim2.new(0, 190, 0, 230)
+rackListPanel.Position = UDim2.new(0.5, 145, 0.3, 0) -- Digeser pas ke sebelah kanan layar
 rackListPanel.BackgroundColor3 = Color3.fromRGB(20, 35, 25)
 rackListPanel.BackgroundTransparency = 0.2
 rackListPanel.BorderSizePixel = 0
@@ -344,9 +342,9 @@ local listHeader = Instance.new("TextLabel", rackListPanel)
 listHeader.Size = UDim2.new(1, 0, 0, 25)
 listHeader.BackgroundTransparency = 1
 listHeader.Font = Enum.Font.GothamBold
-listHeader.Text = "DAFTAR RAK / MEJA"
+listHeader.Text = "DAFTAR PLACEZONE"
 listHeader.TextColor3 = Color3.fromRGB(0, 255, 150)
-listHeader.TextSize = 12
+listHeader.TextSize = 11
 
 local scrollingContent = Instance.new("ScrollingFrame", rackListPanel)
 scrollingContent.Size = UDim2.new(1, 0, 1, -25)
@@ -382,17 +380,15 @@ local function updateRackListUI()
         rackBtn.Parent = scrollingContent
         Instance.new("UICorner", rackBtn).CornerRadius = UDim.new(0, 6)
 
-        -- KLIK RAK: TELEPORT AMAN DI DEPAN MEJA (ANTI TENGGELAM)
         rackBtn.MouseButton1Click:Connect(function()
             local character = LocalPlayer.Character
             local rootPart = character and character:FindFirstChild("HumanoidRootPart")
             if rootPart and rack.Part and rack.Part.Parent then
                 pcall(function()
                     local targetCFrame = rack.Part.CFrame
-                    -- Geser posisi teleport sedikit ke depan (3.5 stud) dan naik dikit agar berdiri sempurna di luar meja
                     local safePos = targetCFrame + (targetCFrame.LookVector * -3.5) + Vector3.new(0, 0.5, 0)
                     rootPart.CFrame = CFrame.new(safePos.Position, targetCFrame.Position)
-                    print("[Teleport] Berhasil ke depan: " .. rack.Name)
+                    print("[Teleport] Berhasil ke depan placezone: " .. rack.Name)
                 end)
             end
         end)
@@ -426,4 +422,4 @@ maxBox.FocusLost:Connect(function(enter)
     if enter then triggerGrab() end
 end)
 
-print("[Precise Grabber + Smart Rack List] Skrip siap digunakan!")
+print("[Precise Grabber + List Placezone] Skrip siap digunakan!")
