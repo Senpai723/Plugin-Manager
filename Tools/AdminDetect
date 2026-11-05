@@ -488,7 +488,7 @@ end)
 
 return {
     ["PluginName"] = "Admin Detector",
-    ["UpdateTimestamp"] = 061120260205,
+    ["UpdateTimestamp"] = 061120260215,
     ["Commands"] = {
         ["cad"] = {
             ["ListName"] = "cad",
