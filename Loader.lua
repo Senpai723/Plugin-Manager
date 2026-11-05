@@ -119,7 +119,9 @@ return {
             Desc = "Mendeteksi Owner dan Admin, tunggu beberapa detik setelah Execute",
             Cmd = "cad",
             UnCmd = "",
-            RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Tools/AdminDetect"
+            RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Tools/AdminDetect",
+            UpdateTimestamp = "061120260259",
+            BadgeText = "Update!"
         },
         {
             Name = "Noclip",
