@@ -1,19 +1,12 @@
 -- ================================================================
--- PRECISE GRABBER: ULTIMATE + PLACEZONE LIST & SEARCH BAR (BULLETPROOF)
+-- PRECISE GRABBER: CLEAN GUI REFERENCE + PLACEZONE LIST & SEARCH
 -- ================================================================
 
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
-local VirtualInputManager = game:GetService("VirtualInputManager")
 local CoreGui = game:GetService("CoreGui")
-
--- Pengaman agar LocalPlayer dipastikan sudah siap dimuat oleh executor HP
+local VirtualInputManager = game:GetService("VirtualInputManager")
 local LocalPlayer = Players.LocalPlayer
-while not LocalPlayer do
-    Players.PlayerAdded:Wait()
-    LocalPlayer = Players.LocalPlayer
-end
-
 local Camera = Workspace.CurrentCamera
 
 local function lower(val)
@@ -149,7 +142,6 @@ getgenv().ExecutePreciseGrab = function(keyword, maxLimitInput)
         end
     end
 
-    -- PEMULIHAN AKHIR
     pcall(function()
         if rootPart and rootPart.Parent then
             rootPart.AssemblyLinearVelocity = Vector3.zero
@@ -193,7 +185,7 @@ getgenv().ExecutePreciseGrab = function(keyword, maxLimitInput)
     print("[Grab] Selesai! Berhasil mengambil " .. collected .. " item.")
 end
 
--- 2. FUNGSI SCAN PLACEZONE / RAK
+-- 2. FUNGSI SCAN PLACEZONE / RAK DENGAN FORMAT GABUNGAN LABEL
 local function getAllRacks()
     local racks = {}
     local seenNames = {}
@@ -238,29 +230,17 @@ local function getAllRacks()
 end
 
 -- ----------------------------------------------------------------
--- GUI INTERFACE (ROBUST PARENTING UNTUK MOBILE EXECUTOR)
+-- GUI INTERFACE (BERDASARKAN POLA REFERENSI `TPitem (2).txt`)
 -- ----------------------------------------------------------------
 local playerGui = LocalPlayer:WaitForChild("PlayerGui")
-local existing = playerGui:FindFirstChild("PreciseGrabGui") or (CoreGui and CoreGui:FindFirstChild("PreciseGrabGui"))
+local existing = playerGui:FindFirstChild("PreciseGrabGui") or CoreGui:FindFirstChild("PreciseGrabGui")
 if existing then existing:Destroy() end
 
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "PreciseGrabGui"
 screenGui.ResetOnSpawn = false
-
--- Menggunakan metode aman agar pasti muncul di layar HP
-local success = pcall(function()
-    if gethui then
-        screenGui.Parent = gethui()
-    elseif CoreGui then
-        screenGui.Parent = CoreGui
-    else
-        screenGui.Parent = playerGui
-    end
-end)
-if not success then
-    screenGui.Parent = playerGui
-end
+pcall(function() screenGui.Parent = CoreGui end)
+if not screenGui.Parent then screenGui.Parent = playerGui end
 
 local mainFrame = Instance.new("Frame", screenGui)
 mainFrame.Size = UDim2.new(0, 260, 0, 110)
@@ -457,4 +437,4 @@ maxBox.FocusLost:Connect(function(enter)
     if enter then triggerGrab() end
 end)
 
-print("[Precise Grabber] GUI sukses dimuat tanpa kendala!")
+print("[Precise Grabber + Placezone] Skrip siap digunakan!")
