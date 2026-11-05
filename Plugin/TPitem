@@ -1,5 +1,5 @@
 -- ================================================================
--- PRECISE GRABBER: CLEAN UI (CUSTOM MAX LIMIT)
+-- PRECISE GRABBER: ULTIMATE + AUTO PUTITEM FEATURE
 -- ================================================================
 
 local Players = game:GetService("Players")
@@ -13,6 +13,7 @@ local function lower(val)
     return string.lower(tostring(val or ""))
 end
 
+-- 1. FUNGSI UTAMA: AMBIL ITEM DARI LANTAI (TP ITEM)
 getgenv().ExecutePreciseGrab = function(keyword, maxLimitInput)
     local searchKeyword = lower(keyword)
     if searchKeyword == "" then
@@ -31,21 +32,18 @@ getgenv().ExecutePreciseGrab = function(keyword, maxLimitInput)
         return
     end
 
-    -- SIMPAN POSISI & KAMERA AWAL (MENGHADAP RAK)
     local originalCFrame = rootPart.CFrame
     local originalCameraCFrame = Camera.CFrame 
     
     local itemsFolder = Workspace:FindFirstChild("Items") or Workspace
 
     local validItems = {}
-    local addedModels = {} -- Anti-duplikasi item fisik
+    local addedModels = {}
 
     for _, obj in ipairs(itemsFolder:GetDescendants()) do
         local fullName = lower(obj:GetFullName())
         
-        -- Filter objek pajangan/display
         if not string.find(fullName, "placezone") and not string.find(fullName, "tempinvis") and not string.find(fullName, "display") then
-            
             local rootModel = obj
             if obj:IsA("BasePart") then
                 local p = obj.Parent
@@ -60,7 +58,6 @@ getgenv().ExecutePreciseGrab = function(keyword, maxLimitInput)
 
             if not addedModels[rootModel] then
                 local searchTexts = {}
-                
                 table.insert(searchTexts, lower(rootModel.Name))
                 for _, desc in ipairs(rootModel:GetDescendants()) do
                     table.insert(searchTexts, lower(desc.Name))
@@ -99,7 +96,6 @@ getgenv().ExecutePreciseGrab = function(keyword, maxLimitInput)
         end
     end
 
-    -- Urutkan dari item unik terdekat
     table.sort(validItems, function(a, b)
         return a.Distance < b.Distance
     end)
@@ -114,7 +110,6 @@ getgenv().ExecutePreciseGrab = function(keyword, maxLimitInput)
 
     local collected = 0
 
-    -- EKSEKUSI TELEPORT & TOUCH ITEM
     for i = 1, targetLimit do
         local itemData = validItems[i]
         if not itemData then break end
@@ -147,7 +142,7 @@ getgenv().ExecutePreciseGrab = function(keyword, maxLimitInput)
         end
     end
 
-    -- PEMULIHAN TOTAL
+    -- PEMULIHAN AKHIR
     pcall(function()
         if rootPart and rootPart.Parent then
             rootPart.AssemblyLinearVelocity = Vector3.zero
@@ -191,8 +186,89 @@ getgenv().ExecutePreciseGrab = function(keyword, maxLimitInput)
     print("[Grab] Selesai! Berhasil mengambil " .. collected .. " item.")
 end
 
+-- 2. FUNGSI BARU: PUTITEM (TARUH BARANG YANG DIKEPENG KE RAKNYA OTOMATIS)
+getgenv().ExecutePutItem = function()
+    local character = LocalPlayer.Character
+    if not character then
+        print("[PutItem] Karakter tidak ditemukan!")
+        return
+    end
+
+    -- Cari item yang sedang dipegang oleh player (bisa berupa Tool di karakter atau Model di dekat tangan/karakter)
+    local heldItem = nil
+    for _, obj in ipairs(character:GetChildren()) do
+        if obj:IsA("Tool") or obj:IsA("Model") then
+            heldItem = obj
+            break
+        end
+    end
+
+    if not heldItem then
+        print("[PutItem] Tidak ada item yang sedang dipegang!")
+        return
+    end
+
+    local itemName = lower(heldItem.Name)
+    print("[PutItem] Mendeteksi item di tangan: " .. heldItem.Name)
+
+    -- Cari PlaceZone / Rak tujuan yang sesuai di dalam Workspace
+    local targetPlaceZone = nil
+    for _, desc in ipairs(Workspace:GetDescendants()) do
+        if desc.Name == "PlaceZone" or string.find(lower(desc.Name), "placezone") or string.find(lower(desc.Name), "shelf") then
+            -- Cek apakah parent atau area sekitar PlaceZone ini cocok dengan nama item yang dipegang
+            local parentModel = desc.Parent
+            while parentModel and parentModel ~= Workspace do
+                local pName = lower(parentModel.Name)
+                if string.find(pName, itemName, 1, true) or string.find(itemName, pName, 1, true) then
+                    targetPlaceZone = desc
+                    break
+                end
+                parentModel = parentModel.Parent
+            end
+            if targetPlaceZone then break end
+        end
+    end
+
+    -- Jika tidak ketemu lewat parent, cari berdasarkan kesamaan nama langsung di Workspace
+    if not targetPlaceZone then
+        for _, obj in ipairs(Workspace:GetDescendants()) do
+            if obj:IsA("BasePart") and string.find(lower(obj.Name), "placezone", 1, true) then
+                local dist = (obj.Position - character.HumanoidRootPart.Position).Magnitude
+                -- Ambil PlaceZone terdekat yang sesuai kategori item
+                targetPlaceZone = obj
+                break
+            end
+        end
+    end
+
+    if targetPlaceZone then
+        local targetPart = targetPlaceZone:IsA("Model") and (targetPlaceZone.PrimaryPart or targetPlaceZone:FindFirstChildWhichIsA("BasePart")) or targetPlaceZone
+        if targetPart and targetPart:IsA("BasePart") then
+            -- Teleport item yang dipegang ke posisi PlaceZone rak tujuannya
+            pcall(function()
+                if heldItem:IsA("Model") then
+                    if heldItem.PrimaryPart then
+                        heldItem:SetPrimaryPartCFrame(targetPart.CFrame + Vector3.new(0, 1, 0))
+                    else
+                        local part = heldItem:FindFirstChildWhichIsA("BasePart")
+                        if part then part.CFrame = targetPart.CFrame + Vector3.new(0, 1, 0) end
+                    end
+                elseif heldItem:IsA("Tool") then
+                    local handle = heldItem:FindFirstChild("Handle")
+                    if handle then
+                        handle.CFrame = targetPart.CFrame + Vector3.new(0, 1, 0)
+                    end
+                end
+            end)
+            print("[PutItem] Berhasil menaruh " .. heldItem.Name .. " ke rak tujuannya!")
+        end
+    else
+        print("[PutItem] PlaceZone / Rak untuk item '" .. heldItem.Name .. "' tidak ditemukan!")
+    end
+end
+
 -- ----------------------------------------------------------------
--- GUI INTERFACE (CLEAN & MINIMALIST)
+-- GUI INTERFACE (START DI KIRI, PUT DI KANAN)
 -- ----------------------------------------------------------------
 local playerGui = LocalPlayer:WaitForChild("PlayerGui")
 local existing = playerGui:FindFirstChild("PreciseGrabGui") or CoreGui:FindFirstChild("PreciseGrabGui")
@@ -223,7 +299,7 @@ title.Size = UDim2.new(1, -30, 1, 0)
 title.Position = UDim2.new(0, 8, 0, 0)
 title.BackgroundTransparency = 1
 title.Font = Enum.Font.GothamBold
-title.Text = "🎯 Precise Grabber (Clean)"
+title.Text = "🎯 Precise Grabber + PutItem"
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.TextSize = 12
 title.TextXAlignment = Enum.TextXAlignment.Left
@@ -267,9 +343,9 @@ maxBox.TextSize = 11
 maxBox.ClearTextOnFocus = false
 Instance.new("UICorner", maxBox).CornerRadius = UDim.new(0, 6)
 
--- Tombol START penuh di bawah
+-- Tombol START di kiri bawah
 local btn = Instance.new("TextButton", mainFrame)
-btn.Size = UDim2.new(0, 244, 0, 30)
+btn.Size = UDim2.new(0, 150, 0, 30)
 btn.Position = UDim2.new(0, 8, 0, 72)
 btn.BackgroundColor3 = Color3.fromRGB(0, 150, 90)
 btn.Font = Enum.Font.GothamBold
@@ -278,6 +354,17 @@ btn.TextColor3 = Color3.fromRGB(255, 255, 255)
 btn.TextSize = 11
 Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
 
+-- Tombol PUT di sebelah kanan tombol START
+local putBtn = Instance.new("TextButton", mainFrame)
+putBtn.Size = UDim2.new(0, 86, 0, 30)
+putBtn.Position = UDim2.new(0, 166, 0, 72)
+putBtn.BackgroundColor3 = Color3.fromRGB(50, 110, 200)
+putBtn.Font = Enum.Font.GothamBold
+putBtn.Text = "PUT"
+putBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+putBtn.TextSize = 11
+Instance.new("UICorner", putBtn).CornerRadius = UDim.new(0, 6)
+
 local function triggerGrab()
     if textBox.Text ~= "" then
         getgenv().ExecutePreciseGrab(textBox.Text, maxBox.Text)
@@ -285,6 +372,7 @@ local function triggerGrab()
 end
 
 btn.MouseButton1Click:Connect(triggerGrab)
+putBtn.MouseButton1Click:Connect(getgenv().ExecutePutItem)
 
 textBox.FocusLost:Connect(function(enter)
     if enter then triggerGrab() end
@@ -294,4 +382,4 @@ maxBox.FocusLost:Connect(function(enter)
     if enter then triggerGrab() end
 end)
 
-print("[Precise Grabber Clean] Skrip siap digunakan!")
+print("[Precise Grabber + PutItem] Skrip siap digunakan!")
