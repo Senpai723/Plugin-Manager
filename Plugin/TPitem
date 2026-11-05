@@ -1,5 +1,5 @@
 -- ================================================================
--- PRECISE GRABBER: CLEAN UI (CUSTOM MAX LIMIT)
+-- PRECISE GRABBER: CUSTOM MAX + MANUAL CONTROL FIX BUTTON
 -- ================================================================
 
 local Players = game:GetService("Players")
@@ -11,6 +11,35 @@ local Camera = Workspace.CurrentCamera
 
 local function lower(val)
     return string.lower(tostring(val or ""))
+end
+
+-- Fungsi khusus untuk merefresh/memunculkan kembali kontrol mobile & kamera
+getgenv().FixMobileControlsManual = function()
+    pcall(function()
+        local char = LocalPlayer.Character
+        local hum = char and char:FindFirstChildOfClass("Humanoid")
+        if hum then
+            Camera = Workspace.CurrentCamera
+            Camera.CameraType = Enum.CameraType.Custom
+            Camera.CameraSubject = hum
+            hum.PlatformStand = false
+            hum.Sit = false
+            hum.AutoRotate = true
+            hum.ChangeState(Enum.HumanoidStateType.GettingUp)
+            hum.ChangeState(Enum.HumanoidStateType.Running)
+        end
+        
+        local playerScripts = LocalPlayer:FindFirstChild("PlayerScripts")
+        local playerModuleScript = playerScripts and playerScripts:FindFirstChild("PlayerModule")
+        if playerModuleScript then
+            local playerModule = require(playerModuleScript)
+            local controls = playerModule:GetControls()
+            if controls then
+                controls:Enable()
+            end
+        end
+    end)
+    print("[Fix] Kontrol mobile berhasil di-refresh secara manual!")
 end
 
 getgenv().ExecutePreciseGrab = function(keyword, maxLimitInput)
@@ -31,21 +60,18 @@ getgenv().ExecutePreciseGrab = function(keyword, maxLimitInput)
         return
     end
 
-    -- SIMPAN POSISI & KAMERA AWAL (MENGHADAP RAK)
     local originalCFrame = rootPart.CFrame
     local originalCameraCFrame = Camera.CFrame 
     
     local itemsFolder = Workspace:FindFirstChild("Items") or Workspace
 
     local validItems = {}
-    local addedModels = {} -- Anti-duplikasi item fisik
+    local addedModels = {}
 
     for _, obj in ipairs(itemsFolder:GetDescendants()) do
         local fullName = lower(obj:GetFullName())
         
-        -- Filter objek pajangan/display
         if not string.find(fullName, "placezone") and not string.find(fullName, "tempinvis") and not string.find(fullName, "display") then
-            
             local rootModel = obj
             if obj:IsA("BasePart") then
                 local p = obj.Parent
@@ -60,7 +86,6 @@ getgenv().ExecutePreciseGrab = function(keyword, maxLimitInput)
 
             if not addedModels[rootModel] then
                 local searchTexts = {}
-                
                 table.insert(searchTexts, lower(rootModel.Name))
                 for _, desc in ipairs(rootModel:GetDescendants()) do
                     table.insert(searchTexts, lower(desc.Name))
@@ -99,7 +124,6 @@ getgenv().ExecutePreciseGrab = function(keyword, maxLimitInput)
         end
     end
 
-    -- Urutkan dari item unik terdekat
     table.sort(validItems, function(a, b)
         return a.Distance < b.Distance
     end)
@@ -114,7 +138,6 @@ getgenv().ExecutePreciseGrab = function(keyword, maxLimitInput)
 
     local collected = 0
 
-    -- EKSEKUSI TELEPORT & TOUCH ITEM
     for i = 1, targetLimit do
         local itemData = validItems[i]
         if not itemData then break end
@@ -147,7 +170,7 @@ getgenv().ExecutePreciseGrab = function(keyword, maxLimitInput)
         end
     end
 
-    -- PEMULIHAN TOTAL
+    -- PEMULIHAN AKHIR
     pcall(function()
         if rootPart and rootPart.Parent then
             rootPart.AssemblyLinearVelocity = Vector3.zero
@@ -175,24 +198,14 @@ getgenv().ExecutePreciseGrab = function(keyword, maxLimitInput)
 
     task.spawn(function()
         task.wait(0.1)
-        pcall(function()
-            local playerScripts = LocalPlayer:FindFirstChild("PlayerScripts")
-            local playerModuleScript = playerScripts and playerScripts:FindFirstChild("PlayerModule")
-            if playerModuleScript then
-                local playerModule = require(playerModuleScript)
-                local controls = playerModule:GetControls()
-                if controls then
-                    controls:Enable()
-                end
-            end
-        end)
+        getgenv().FixMobileControlsManual()
     end)
 
     print("[Grab] Selesai! Berhasil mengambil " .. collected .. " item.")
 end
 
 -- ----------------------------------------------------------------
--- GUI INTERFACE (CLEAN & MINIMALIST)
+-- GUI INTERFACE (DENGAN TOMBOL FIX MANUAL DI SEBELAH START)
 -- ----------------------------------------------------------------
 local playerGui = LocalPlayer:WaitForChild("PlayerGui")
 local existing = playerGui:FindFirstChild("PreciseGrabGui") or CoreGui:FindFirstChild("PreciseGrabGui")
@@ -223,7 +236,7 @@ title.Size = UDim2.new(1, -30, 1, 0)
 title.Position = UDim2.new(0, 8, 0, 0)
 title.BackgroundTransparency = 1
 title.Font = Enum.Font.GothamBold
-title.Text = "🎯 Precise Grabber (Clean)"
+title.Text = "🎯 Precise Grabber (Manual Fix)"
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.TextSize = 12
 title.TextXAlignment = Enum.TextXAlignment.Left
@@ -267,9 +280,9 @@ maxBox.TextSize = 11
 maxBox.ClearTextOnFocus = false
 Instance.new("UICorner", maxBox).CornerRadius = UDim.new(0, 6)
 
--- Tombol START penuh di bawah
+-- Tombol START di bawah (Lebar dikurangi dikit untuk ruang tombol Fix)
 local btn = Instance.new("TextButton", mainFrame)
-btn.Size = UDim2.new(0, 244, 0, 30)
+btn.Size = UDim2.new(0, 180, 0, 30)
 btn.Position = UDim2.new(0, 8, 0, 72)
 btn.BackgroundColor3 = Color3.fromRGB(0, 150, 90)
 btn.Font = Enum.Font.GothamBold
@@ -278,6 +291,17 @@ btn.TextColor3 = Color3.fromRGB(255, 255, 255)
 btn.TextSize = 11
 Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
 
+-- Tombol FIX MANUAL di sebelah kanan tombol START
+local fixBtn = Instance.new("TextButton", mainFrame)
+fixBtn.Size = UDim2.new(0, 58, 0, 30)
+fixBtn.Position = UDim2.new(0, 194, 0, 72)
+fixBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 100)
+fixBtn.Font = Enum.Font.GothamBold
+fixBtn.Text = "🕹️ Fix"
+fixBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+fixBtn.TextSize = 11
+Instance.new("UICorner", fixBtn).CornerRadius = UDim.new(0, 6)
+
 local function triggerGrab()
     if textBox.Text ~= "" then
         getgenv().ExecutePreciseGrab(textBox.Text, maxBox.Text)
@@ -285,6 +309,7 @@ local function triggerGrab()
 end
 
 btn.MouseButton1Click:Connect(triggerGrab)
+fixBtn.MouseButton1Click:Connect(getgenv().FixMobileControlsManual)
 
 textBox.FocusLost:Connect(function(enter)
     if enter then triggerGrab() end
@@ -294,4 +319,4 @@ maxBox.FocusLost:Connect(function(enter)
     if enter then triggerGrab() end
 end)
 
-print("[Precise Grabber Clean] Skrip siap digunakan!")
+print("[Precise Grabber Manual Fix] Skrip siap digunakan dengan tombol Fix tambahan!")
