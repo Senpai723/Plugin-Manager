@@ -1,10 +1,9 @@
 -- ================================================================
--- PRECISE GRABBER: ULTIMATE + DEEP-SCAN TP (CLEAN & FIXED)
+-- PRECISE GRABBER: MOBILE OPTIMIZED (GUI FIXED TO PLAYERGUI)
 -- ================================================================
 
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
-local CoreGui = game:GetService("CoreGui")
 local VirtualInputManager = game:GetService("VirtualInputManager")
 local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
@@ -186,7 +185,7 @@ getgenv().ExecutePreciseGrab = function(keyword, maxLimitInput)
     print("[Grab] Selesai! Berhasil mengambil " .. collected .. " item.")
 end
 
--- 2. FUNGSI PUT: DEEP-SCAN RAK BERDASARKAN NAMA ITEM DI TANGAN
+-- 2. FUNGSI PUT: TELEPORT KE DEPAN RAK SESUAI ITEM DI TANGAN
 getgenv().ExecutePutItem = function()
     local character = LocalPlayer.Character
     local rootPart = character and character:FindFirstChild("HumanoidRootPart")
@@ -222,39 +221,37 @@ getgenv().ExecutePutItem = function()
 
     local targetPart = nil
 
+    -- Cari lewat TextLabel / Nametag rak di map
     for _, obj in ipairs(Workspace:GetDescendants()) do
-        local nameMatch = string.find(lower(obj.Name), searchKey, 1, true)
-        local fullNameMatch = string.find(lower(obj.GetFullName()), searchKey, 1, true)
-        
-        if nameMatch or fullNameMatch then
-            if not string.find(lower(obj.GetFullName()), "items") then
+        if obj:IsA("TextLabel") or obj:IsA("TextButton") then
+            local txt = lower(obj.Text)
+            if string.find(txt, searchKey, 1, true) then
+                local parent = obj.Parent
+                while parent and parent ~= Workspace do
+                    if parent:IsA("BasePart") then
+                        targetPart = parent
+                        break
+                    elseif parent:IsA("Model") then
+                        targetPart = parent.PrimaryPart or parent:FindFirstChildWhichIsA("BasePart")
+                        if targetPart then break end
+                    end
+                    parent = parent.Parent
+                end
+                if targetPart then break end
+            end
+        end
+    end
+
+    -- Fallback cari lewat nama objek/model di Workspace
+    if not targetPart then
+        for _, obj in ipairs(Workspace:GetDescendants()) do
+            local nameMatch = string.find(lower(obj.Name), searchKey, 1, true)
+            if nameMatch and not string.find(lower(obj.GetFullName()), "items") then
                 if obj:IsA("BasePart") then
                     targetPart = obj
                     break
                 elseif obj:IsA("Model") then
                     targetPart = obj.PrimaryPart or obj:FindFirstChildWhichIsA("BasePart")
-                    if targetPart then break end
-                end
-            end
-        end
-    end
-
-    if not targetPart then
-        for _, obj in ipairs(Workspace:GetDescendants()) do
-            if obj:IsA("TextLabel") or obj:IsA("TextButton") then
-                local txt = lower(obj.Text)
-                if string.find(txt, searchKey, 1, true) then
-                    local parent = obj.Parent
-                    while parent and parent ~= Workspace do
-                        if parent:IsA("BasePart") then
-                            targetPart = parent
-                            break
-                        elseif parent:IsA("Model") then
-                            targetPart = parent.PrimaryPart or parent:FindFirstChildWhichIsA("BasePart")
-                            if targetPart then break end
-                        end
-                        parent = parent.Parent
-                    end
                     if targetPart then break end
                 end
             end
@@ -273,17 +270,16 @@ getgenv().ExecutePutItem = function()
 end
 
 -- ----------------------------------------------------------------
--- GUI INTERFACE
+-- GUI INTERFACE (PARENTED TO PLAYERGUI FOR MOBILE)
 -- ----------------------------------------------------------------
 local playerGui = LocalPlayer:WaitForChild("PlayerGui")
-local existing = playerGui:FindFirstChild("PreciseGrabGui") or CoreGui:FindFirstChild("PreciseGrabGui")
+local existing = playerGui:FindFirstChild("PreciseGrabGui")
 if existing then existing:Destroy() end
 
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "PreciseGrabGui"
 screenGui.ResetOnSpawn = false
-pcall(function() screenGui.Parent = CoreGui end)
-if not screenGui.Parent then screenGui.Parent = playerGui end
+screenGui.Parent = playerGui -- Aman 100% tampil di HP!
 
 local mainFrame = Instance.new("Frame", screenGui)
 mainFrame.Size = UDim2.new(0, 260, 0, 110)
@@ -304,7 +300,7 @@ title.Size = UDim2.new(1, -30, 1, 0)
 title.Position = UDim2.new(0, 8, 0, 0)
 title.BackgroundTransparency = 1
 title.Font = Enum.Font.GothamBold
-title.Text = "🎯 Precise Grabber + DeepScan TP"
+title.Text = "🎯 Precise Grabber (Mobile Fix)"
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.TextSize = 12
 title.TextXAlignment = Enum.TextXAlignment.Left
@@ -317,4 +313,70 @@ closeBtn.Font = Enum.Font.GothamBold
 closeBtn.Text = "X"
 closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 closeBtn.TextSize = 11
-Instance.new("UICorner", closeBtn).Corner
+Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 4)
+closeBtn.MouseButton1Click:Connect(function() screenGui:Destroy() end)
+
+local textBox = Instance.new("TextBox", mainFrame)
+textBox.Size = UDim2.new(0, 160, 0, 30)
+textBox.Position = UDim2.new(0, 8, 0, 36)
+textBox.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+textBox.Font = Enum.Font.Gotham
+textBox.PlaceholderText = "Input nama / kategori..."
+textBox.Text = ""
+textBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+textBox.PlaceholderColor3 = Color3.fromRGB(140, 140, 140)
+textBox.TextSize = 11
+textBox.ClearTextOnFocus = false
+Instance.new("UICorner", textBox).CornerRadius = UDim.new(0, 6)
+
+local maxBox = Instance.new("TextBox", mainFrame)
+maxBox.Size = UDim2.new(0, 76, 0, 30)
+maxBox.Position = UDim2.new(0, 176, 0, 36)
+maxBox.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+maxBox.Font = Enum.Font.GothamBold
+maxBox.PlaceholderText = "Max"
+maxBox.Text = "7"
+maxBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+maxBox.PlaceholderColor3 = Color3.fromRGB(140, 140, 140)
+maxBox.TextSize = 11
+maxBox.ClearTextOnFocus = false
+Instance.new("UICorner", maxBox).CornerRadius = UDim.new(0, 6)
+
+local btn = Instance.new("TextButton", mainFrame)
+btn.Size = UDim2.new(0, 150, 0, 30)
+btn.Position = UDim2.new(0, 8, 0, 72)
+btn.BackgroundColor3 = Color3.fromRGB(0, 150, 90)
+btn.Font = Enum.Font.GothamBold
+btn.Text = "START"
+btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+btn.TextSize = 11
+Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+
+local putBtn = Instance.new("TextButton", mainFrame)
+putBtn.Size = UDim2.new(0, 86, 0, 30)
+putBtn.Position = UDim2.new(0, 166, 0, 72)
+putBtn.BackgroundColor3 = Color3.fromRGB(50, 110, 200)
+putBtn.Font = Enum.Font.GothamBold
+putBtn.Text = "PUT (TP)"
+putBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+putBtn.TextSize = 11
+Instance.new("UICorner", putBtn).CornerRadius = UDim.new(0, 6)
+
+local function triggerGrab()
+    if textBox.Text ~= "" then
+        getgenv().ExecutePreciseGrab(textBox.Text, maxBox.Text)
+    end
+end
+
+btn.MouseButton1Click:Connect(triggerGrab)
+putBtn.MouseButton1Click:Connect(getgenv().ExecutePutItem)
+
+textBox.FocusLost:Connect(function(enter)
+    if enter then triggerGrab() end
+end)
+
+maxBox.FocusLost:Connect(function(enter)
+    if enter then triggerGrab() end
+end)
+
+print("[Precise Grabber Mobile] GUI berhasil dimuat!")
