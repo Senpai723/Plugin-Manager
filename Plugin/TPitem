@@ -1,5 +1,5 @@
 -- ================================================================
--- PRECISE GRABBER: ULTIMATE + SMART TEXT-LABEL RACK TELEPORT
+-- PRECISE GRABBER: ULTIMATE + KEYWORD MATCHING TELEPORT
 -- ================================================================
 
 local Players = game:GetService("Players")
@@ -186,7 +186,7 @@ getgenv().ExecutePreciseGrab = function(keyword, maxLimitInput)
     print("[Grab] Selesai! Berhasil mengambil " .. collected .. " item.")
 end
 
--- 2. FUNGSI PUT: MEMBACA TEXTLABEL NAMETAG DI RAK & TELEPORT KARAKTER
+-- 2. FUNGSI PUT: SMART KEYWORD MATCHING & TELEPORT KE DEPAN RAK
 getgenv().ExecutePutItem = function()
     local character = LocalPlayer.Character
     local rootPart = character and character:FindFirstChild("HumanoidRootPart")
@@ -195,37 +195,40 @@ getgenv().ExecutePutItem = function()
         return
     end
 
-    -- Deteksi item di tangan atau backpack
-    local itemName = ""
+    -- Deteksi item yang sedang dipegang di tangan atau backpack
+    local heldItemName = ""
     for _, obj in ipairs(character:GetChildren()) do
         if obj:IsA("Tool") or obj:IsA("Model") then
-            itemName = lower(obj.Name)
+            heldItemName = obj.Name
             break
         end
     end
-    if itemName == "" and LocalPlayer:FindFirstChild("Backpack") then
+    if heldItemName == "" and LocalPlayer:FindFirstChild("Backpack") then
         for _, obj in ipairs(LocalPlayer.Backpack:GetChildren()) do
             if obj:IsA("Tool") then
-                itemName = lower(obj.Name)
+                heldItemName = obj.Name
                 break
             end
         end
     end
 
-    if itemName == "" then
+    if heldItemName == "" then
         print("[PutItem] Pegang barang dulu di tangan!")
         return
     end
 
-    print("[PutItem] Mendeteksi barang di tangan: " .. itemName .. ". Mencari nametag rak...")
+    -- Ambil kata kunci utama (Contoh: "Drum Toy#18" dipotong menjadi "drum")
+    local rawLower = lower(heldItemName)
+    local searchKey = string.match(rawLower, "^%s*([%w]+)") or rawLower
+    print("[PutItem] Item di tangan: [" .. heldItemName .. "] -> Keyword: " .. searchKey)
 
     local targetPart = nil
 
-    -- Pencarian Utama: Scan semua TextLabel / TextButton di Workspace (Membaca nametag rak seperti "Drum")
+    -- Pencarian 1: Scan TextLabel / TextButton di Map (Mencocokkan nametag rak seperti "Drum")[span_2](start_span)[span_2](end_span)
     for _, obj in ipairs(Workspace:GetDescendants()) do
         if obj:IsA("TextLabel") or obj:IsA("TextButton") then
             local txt = lower(obj.Text)
-            if string.find(txt, itemName, 1, true) or string.find(itemName, txt, 1, true) then
+            if txt ~= "" and (string.find(searchKey, txt, 1, true) or string.find(txt, searchKey, 1, true)) then
                 local parent = obj.Parent
                 while parent and parent ~= Workspace do
                     if parent:IsA("BasePart") then
@@ -242,26 +245,18 @@ getgenv().ExecutePutItem = function()
         end
     end
 
-    -- Fallback: Scan nama objek / model di Workspace jika TextLabel tidak tembus
+    -- Pencarian 2 (Fallback): Scan nama Part / Model di Workspace
     if not targetPart then
         for _, obj in ipairs(Workspace:GetDescendants()) do
-            local fullName = lower(obj:GetFullName())
-            if string.find(fullName, "placezone") or string.find(fullName, "shelf") or string.find(fullName, "rack") then
-                local p = obj
-                while p and p ~= Workspace do
-                    local pName = lower(p.Name)
-                    if string.find(pName, itemName, 1, true) or string.find(itemName, pName, 1, true) then
-                        if obj:IsA("BasePart") then
-                            targetPart = obj
-                            break
-                        elseif obj:IsA("Model") then
-                            targetPart = obj.PrimaryPart or obj:FindFirstChildWhichIsA("BasePart")
-                            break
-                        end
-                    end
-                    p = p.Parent
+            local pName = lower(obj.Name)
+            if string.find(pName, searchKey, 1, true) and not string.find(lower(obj.GetFullName()), "items") then
+                if obj:IsA("BasePart") then
+                    targetPart = obj
+                    break
+                elseif obj:IsA("Model") then
+                    targetPart = obj.PrimaryPart or obj:FindFirstChildWhichIsA("BasePart")
+                    if targetPart then break end
                 end
-                if targetPart then break end
             end
         end
     end
@@ -270,10 +265,10 @@ getgenv().ExecutePutItem = function()
         pcall(function()
             local rackPos = targetPart.Position
             rootPart.CFrame = CFrame.lookAt(rackPos + Vector3.new(0, 0.5, 2.5), rackPos)
-            print("[PutItem] Berhasil teleport ke depan rak!")
+            print("[PutItem] Berhasil teleport ke depan rak " .. searchKey .. "!")
         end)
     else
-        print("[PutItem] Nametag / Rak untuk item tersebut tidak ditemukan di map!")
+        print("[PutItem] Rak untuk item '" .. heldItemName .."' (Keyword: " .. searchKey .. ") tidak ditemukan di map!")
     end
 end
 
@@ -309,7 +304,7 @@ title.Size = UDim2.new(1, -30, 1, 0)
 title.Position = UDim2.new(0, 8, 0, 0)
 title.BackgroundTransparency = 1
 title.Font = Enum.Font.GothamBold
-title.Text = "🎯 Precise Grabber + Smart TP"
+title.Text = "🎯 Precise Grabber + Keyword TP"
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.TextSize = 12
 title.TextXAlignment = Enum.TextXAlignment.Left
@@ -392,4 +387,4 @@ maxBox.FocusLost:Connect(function(enter)
     if enter then triggerGrab() end
 end)
 
-print("[Precise Grabber + Smart TP] Skrip siap digunakan!")
+print("[Precise Grabber + Keyword TP] Skrip siap digunakan!")
