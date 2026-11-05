@@ -1,5 +1,5 @@
 -- ================================================================
--- PRECISE GRABBER: ULTIMATE + SMART RACK DEEP-SCAN TP
+-- PRECISE GRABBER: ULTIMATE + SMART RACK DEEP-SCAN TP (FIXED)
 -- ================================================================
 
 local Players = game:GetService("Players")
@@ -218,19 +218,16 @@ getgenv().ExecutePutItem = function()
     end
 
     local rawLower = lower(heldItemName)
-    -- Ambil kata kunci utama (Contoh: "Drum Toy" atau "Drum")
     local searchKey = string.match(rawLower, "^%s*([%w]+)") or rawLower
     print("[PutItem] Item di tangan: [" .. heldItemName .. "] -> Mencari rak dengan keyword: " .. searchKey)
 
     local targetPart = nil
 
-    -- Deep Scan Workspace untuk mencari objek rak/shelf/placezone yang menyimpan data item tersebut
     for _, obj in ipairs(Workspace:GetDescendants()) do
         local nameMatch = string.find(lower(obj.Name), searchKey, 1, true)
         local fullNameMatch = string.find(lower(obj.GetFullName()), searchKey, 1, true)
         
         if nameMatch or fullNameMatch then
-            -- Pastikan bukan bagian dari folder item di lantai
             if not string.find(lower(obj.GetFullName()), "items") then
                 if obj:IsA("BasePart") then
                     targetPart = obj
@@ -243,7 +240,6 @@ getgenv().ExecutePutItem = function()
         end
     end
 
-    -- Jika masih belum ketemu, cari lewat teks pada UI/SurfaceGui di seluruh map
     if not targetPart then
         for _, obj in ipairs(Workspace:GetDescendants()) do
             if obj:IsA("TextLabel") or obj:IsA("TextButton") then
@@ -325,72 +321,11 @@ closeBtn.TextSize = 11
 Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 4)
 closeBtn.MouseButton1Click:Connect(function() screenGui:Destroy() end)
 
--- Kotak Kiri: Input Nama Objek / Kategori
 local textBox = Instance.new("TextBox", mainFrame)
 textBox.Size = UDim2.new(0, 160, 0, 30)
-textBox.Position = UDim2.0 and UDim2.new(0, 8, 0, 36) or UDim2.new(0, 8, 0, 36)
+textBox.Position = UDim2.new(0, 8, 0, 36)
 textBox.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 textBox.Font = Enum.Font.Gotham
 textBox.PlaceholderText = "Input nama / kategori..."
 textBox.Text = ""
-textBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-textBox.PlaceholderColor3 = Color3.fromRGB(140, 140, 140)
-textBox.TextSize = 11
-textBox.ClearTextOnFocus = false
-Instance.new("UICorner", textBox).CornerRadius = UDim.new(0, 6)
-
--- Kotak Kanan: Input Jumlah Max (Default 7)
-local maxBox = Instance.new("TextBox", mainFrame)
-maxBox.Size = UDim2.new(0, 76, 0, 30)
-maxBox.Position = UDim2.new(0, 176, 0, 36)
-maxBox.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-maxBox.Font = Enum.Font.GothamBold
-maxBox.PlaceholderText = "Max"
-maxBox.Text = "7"
-maxBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-maxBox.PlaceholderColor3 = Color3.fromRGB(140, 140, 140)
-maxBox.TextSize = 11
-maxBox.ClearTextOnFocus = false
-Instance.new("UICorner", maxBox).CornerRadius = UDim.new(0, 6)
-
--- Tombol START di kiri bawah
-local btn = Instance.new("TextButton", mainFrame)
-btn.Size = UDim2.new(0, 150, 0, 30)
-btn.Position = UDim2.new(0, 8, 0, 72)
-btn.BackgroundColor3 = Color3.fromRGB(0, 150, 90)
-btn.Font = Enum.Font.GothamBold
-btn.Text = "START"
-btn.TextColor3 = Color3.fromRGB(255, 255, 2)`55`
-btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-btn.TextSize = 11
-Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
-
--- Tombol PUT di sebelah kanan tombol START
-local putBtn = Instance.new("TextButton", mainFrame)
-putBtn.Size = UDim2.new(0, 86, 0, 30)
-putBtn.Position = UDim2.new(0, 166, 0, 72)
-putBtn.BackgroundColor3 = Color3.fromRGB(50, 110, 200)
-putBtn.Font = Enum.Font.GothamBold
-putBtn.Text = "PUT (TP)"
-putBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-putBtn.TextSize = 11
-Instance.new("UICorner", putBtn).CornerRadius = UDim.new(0, 6)
-
-local function triggerGrab()
-    if textBox.Text ~= "" then
-        getgenv().ExecutePreciseGrab(textBox.Text, maxBox.Text)
-    end
-end
-
-btn.MouseButton1Click:Connect(triggerGrab)
-putBtn.MouseButton1Click:Connect(getgenv().ExecutePutItem)
-
-textBox.FocusLost:Connect(function(enter)
-    if enter then triggerGrab() end
-end)
-
-maxBox.FocusLost:Connect(function(enter)
-    if enter then triggerGrab() end
-end)
-
-print("[Precise Grabber + DeepScan TP] Skrip siap digunakan!")
+textBox.TextColor3 = Color3.fromRGB(255, 255, 2
