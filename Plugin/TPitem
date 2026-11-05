@@ -1,5 +1,5 @@
 -- ================================================================
--- PRECISE GRABBER: ULTIMATE + AUTO PUTITEM FEATURE
+-- PRECISE GRABBER: ULTIMATE + TELEPORT TO TARGET RACK (PUT)
 -- ================================================================
 
 local Players = game:GetService("Players")
@@ -186,15 +186,16 @@ getgenv().ExecutePreciseGrab = function(keyword, maxLimitInput)
     print("[Grab] Selesai! Berhasil mengambil " .. collected .. " item.")
 end
 
--- 2. FUNGSI BARU: PUTITEM (TARUH BARANG YANG DIKEPENG KE RAKNYA OTOMATIS)
+-- 2. FUNGSI PUT: TELEPORT KARAKTER KE DEPAN RAK SESUAI ITEM YANG DIPEGANG
 getgenv().ExecutePutItem = function()
     local character = LocalPlayer.Character
-    if not character then
+    local rootPart = character and character:FindFirstChild("HumanoidRootPart")
+    if not character or not rootPart then
         print("[PutItem] Karakter tidak ditemukan!")
         return
     end
 
-    -- Cari item yang sedang dipegang oleh player (bisa berupa Tool di karakter atau Model di dekat tangan/karakter)
+    -- Deteksi item apa yang sedang dipegang di tangan player
     local heldItem = nil
     for _, obj in ipairs(character:GetChildren()) do
         if obj:IsA("Tool") or obj:IsA("Model") then
@@ -204,66 +205,56 @@ getgenv().ExecutePutItem = function()
     end
 
     if not heldItem then
-        print("[PutItem] Tidak ada item yang sedang dipegang!")
+        print("[PutItem] Pegang barang dulu di tangan!")
         return
     end
 
     local itemName = lower(heldItem.Name)
-    print("[PutItem] Mendeteksi item di tangan: " .. heldItem.Name)
+    print("[PutItem] Mendeteksi barang di tangan: " .. heldItem.Name .. ". Mencari rak tujuannya...")
 
-    -- Cari PlaceZone / Rak tujuan yang sesuai di dalam Workspace
-    local targetPlaceZone = nil
-    for _, desc in ipairs(Workspace:GetDescendants()) do
-        if desc.Name == "PlaceZone" or string.find(lower(desc.Name), "placezone") or string.find(lower(desc.Name), "shelf") then
-            -- Cek apakah parent atau area sekitar PlaceZone ini cocok dengan nama item yang dipegang
-            local parentModel = desc.Parent
-            while parentModel and parentModel ~= Workspace do
-                local pName = lower(parentModel.Name)
+    local targetRackPart = nil
+
+    -- Cari PlaceZone atau Shelf / Rak di map yang namanya cocok dengan item di tangan
+    for _, obj in ipairs(Workspace:GetDescendants()) do
+        local fullName = lower(obj:GetFullName())
+        if string.find(fullName, "placezone") or string.find(fullName, "shelf") or string.find(fullName, "rack") then
+            local p = obj
+            while p and p ~= Workspace do
+                local pName = lower(p.Name)
                 if string.find(pName, itemName, 1, true) or string.find(itemName, pName, 1, true) then
-                    targetPlaceZone = desc
-                    break
+                    if obj:IsA("BasePart") then
+                        targetRackPart = obj
+                        break
+                    elseif obj:IsA("Model") then
+                        targetRackPart = obj.PrimaryPart or obj:FindFirstChildWhichIsA("BasePart")
+                        break
+                    end
                 end
-                parentModel = parentModel.Parent
+                p = p.Parent
             end
-            if targetPlaceZone then break end
+            if targetRackPart then break end
         end
     end
 
-    -- Jika tidak ketemu lewat parent, cari berdasarkan kesamaan nama langsung di Workspace
-    if not targetPlaceZone then
+    -- Fallback: cari part lain di map yang namanya mirip item
+    if not targetRackPart then
         for _, obj in ipairs(Workspace:GetDescendants()) do
-            if obj:IsA("BasePart") and string.find(lower(obj.Name), "placezone", 1, true) then
-                local dist = (obj.Position - character.HumanoidRootPart.Position).Magnitude
-                -- Ambil PlaceZone terdekat yang sesuai kategori item
-                targetPlaceZone = obj
+            if obj:IsA("BasePart") and string.find(lower(obj.Name), itemName, 1, true) and not string.find(lower(obj.GetFullName()), "items") then
+                targetRackPart = obj
                 break
             end
         end
     end
 
-    if targetPlaceZone then
-        local targetPart = targetPlaceZone:IsA("Model") and (targetPlaceZone.PrimaryPart or targetPlaceZone:FindFirstChildWhichIsA("BasePart")) or targetPlaceZone
-        if targetPart and targetPart:IsA("BasePart") then
-            -- Teleport item yang dipegang ke posisi PlaceZone rak tujuannya
-            pcall(function()
-                if heldItem:IsA("Model") then
-                    if heldItem.PrimaryPart then
-                        heldItem:SetPrimaryPartCFrame(targetPart.CFrame + Vector3.new(0, 1, 0))
-                    else
-                        local part = heldItem:FindFirstChildWhichIsA("BasePart")
-                        if part then part.CFrame = targetPart.CFrame + Vector3.new(0, 1, 0) end
-                    end
-                elseif heldItem:IsA("Tool") then
-                    local handle = heldItem:FindFirstChild("Handle")
-                    if handle then
-                        handle.CFrame = targetPart.CFrame + Vector3.new(0, 1, 0)
-                    end
-                end
-            end)
-            print("[PutItem] Berhasil menaruh " .. heldItem.Name .. " ke rak tujuannya!")
-        end
+    if targetRackPart then
+        pcall(function()
+            local rackPos = targetRackPart.Position
+            -- Teleport pas di depan rak (diberi jarak 2.5 stud ke depan dan menghadap ke rak)
+            rootPart.CFrame = CFrame.lookAt(rackPos + Vector3.new(0, 0.5, 2.5), rackPos)
+            print("[PutItem] Berhasil teleport ke depan rak " .. heldItem.Name .. "!")
+        end)
     else
-        print("[PutItem] PlaceZone / Rak untuk item '" .. heldItem.Name .. "' tidak ditemukan!")
+        print("[PutItem] Rak untuk item '" .. heldItem.Name .. "' tidak ditemukan di map!")
     end
 end
 
@@ -299,7 +290,7 @@ title.Size = UDim2.new(1, -30, 1, 0)
 title.Position = UDim2.new(0, 8, 0, 0)
 title.BackgroundTransparency = 1
 title.Font = Enum.Font.GothamBold
-title.Text = "🎯 Precise Grabber + PutItem"
+title.Text = "🎯 Precise Grabber + Put Teleport"
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.TextSize = 12
 title.TextXAlignment = Enum.TextXAlignment.Left
@@ -354,13 +345,13 @@ btn.TextColor3 = Color3.fromRGB(255, 255, 255)
 btn.TextSize = 11
 Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
 
--- Tombol PUT di sebelah kanan tombol START
+-- Tombol PUT di sebelah kanan tombol START (Teleport ke depan rak)
 local putBtn = Instance.new("TextButton", mainFrame)
 putBtn.Size = UDim2.new(0, 86, 0, 30)
 putBtn.Position = UDim2.new(0, 166, 0, 72)
 putBtn.BackgroundColor3 = Color3.fromRGB(50, 110, 200)
 putBtn.Font = Enum.Font.GothamBold
-putBtn.Text = "PUT"
+putBtn.Text = "PUT (TP)"
 putBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 putBtn.TextSize = 11
 Instance.new("UICorner", putBtn).CornerRadius = UDim.new(0, 6)
@@ -382,4 +373,4 @@ maxBox.FocusLost:Connect(function(enter)
     if enter then triggerGrab() end
 end)
 
-print("[Precise Grabber + PutItem] Skrip siap digunakan!")
+print("[Precise Grabber + Put TP] Skrip siap digunakan!")
