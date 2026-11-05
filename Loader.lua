@@ -120,7 +120,7 @@ return {
             Cmd = "cad",
             UnCmd = "",
             RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Tools/AdminDetect",
-            UpdateTimestamp = "061120260259",
+            UpdateTimestamp = "061120260315, 300",
             BadgeText = "Update!"
         },
         {
