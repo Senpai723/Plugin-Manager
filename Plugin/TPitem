@@ -1,9 +1,10 @@
 -- ================================================================
--- PRECISE GRABBER: ULTIMATE + ROBUST HELD ITEM DETECTION
+-- PRECISE GRABBER: ULTIMATE + RACK TELEPORT LIST (RIGHT SIDE)
 -- ================================================================
 
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
+local CoreGui = game:GetService("CoreGui")
 local VirtualInputManager = game:GetService("VirtualInputManager")
 local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
@@ -185,67 +186,17 @@ getgenv().ExecutePreciseGrab = function(keyword, maxLimitInput)
     print("[Grab] Selesai! Berhasil mengambil " .. collected .. " item.")
 end
 
--- 2. FUNGSI PUT: DETEKSI ITEM DI TANGAN DENGAN SYSTEM ROBUST + TELEPORT KE RAK
-getgenv().ExecutePutItem = function()
-    local character = LocalPlayer.Character
-    local rootPart = character and character:FindFirstChild("HumanoidRootPart")
-    if not character or not rootPart then
-        print("[PutItem] Karakter tidak ditemukan!")
-        return
-    end
+-- 2. FUNGSI SCAN RAK UNTUK DIMASUKKAN KE LIST
+local function getAllRacks()
+    local racks = {}
+    local seenNames = {}
 
-    -- PENCETAKAN DETEKSI ITEM YANG LEBIH LUAS (MENGAMBIL DARI TANGAN, TOOL, BACKPACK, ATAU ATRIBUT)
-    local heldItemName = ""
-    
-    -- Cek langsung di karakter (Tool atau Model)
-    for _, obj in ipairs(character:GetChildren()) do
-        if obj:IsA("Tool") or obj:IsA("Model") then
-            heldItemName = obj.Name
-            break
-        end
-    end
-
-    -- Cek lewat RightHand / Right Arm (biasanya game nempelang item pake Motor6D / Grip)
-    if heldItemName == "" then
-        local rightHand = character:FindFirstChild("RightHand") or character:FindFirstChild("Right Arm")
-        if rightHand then
-            for _, child in ipairs(rightHand:GetChildren()) do
-                if child:IsA("Weld") or child:IsA("Motor6D") then
-                    if child.Part1 and child.Part1.Parent then
-                        heldItemName = child.Part1.Parent.Name
-                        break
-                    end
-                end
-            end
-        end
-    end
-
-    -- Cek lewat Backpack player
-    if heldItemName == "" and LocalPlayer:FindFirstChild("Backpack") then
-        for _, obj in ipairs(LocalPlayer.Backpack:GetChildren()) do
-            if obj:IsA("Tool") then
-                heldItemName = obj.Name
-                break
-            end
-        end
-    end
-
-    if heldItemName == "" then
-        print("[PutItem] Pegang barang dulu di tangan!")
-        return
-    end
-
-    local rawLower = lower(heldItemName)
-    local searchKey = string.match(rawLower, "^%s*([%w]+)") or rawLower
-    print("[PutItem] Item terdeteksi di tangan: [" .. heldItemName .. "] -> Keyword: " .. searchKey)
-
-    local targetPart = nil
-
-    -- Cari nametag rak di map
+    -- Scan TextLabel / Nametag rak (seperti "Drum", "Piano", dll) di Workspace
     for _, obj in ipairs(Workspace:GetDescendants()) do
         if obj:IsA("TextLabel") or obj:IsA("TextButton") then
-            local txt = lower(obj.Text)
-            if txt ~= "" and (string.find(searchKey, txt, 1, true) or string.find(txt, searchKey, 1, true)) then
+            local txt = obj.Text
+            if txt and txt ~= "" and not seenNames[txt] and string.len(txt) < 25 then
+                local targetPart = nil
                 local parent = obj.Parent
                 while parent and parent ~= Workspace do
                     if parent:IsA("BasePart") then
@@ -257,49 +208,29 @@ getgenv().ExecutePutItem = function()
                     end
                     parent = parent.Parent
                 end
-                if targetPart then break end
-            end
-        end
-    end
 
-    -- Fallback cari lewat objek Workspace
-    if not targetPart then
-        for _, obj in ipairs(Workspace:GetDescendants()) do
-            local pName = lower(obj.Name)
-            if string.find(pName, searchKey, 1, true) and not string.find(lower(obj.GetFullName()), "items") then
-                if obj:IsA("BasePart") then
-                    targetPart = obj
-                    break
-                elseif obj:IsA("Model") then
-                    targetPart = obj.PrimaryPart or obj:FindFirstChildWhichIsA("BasePart")
-                    if targetPart then break end
+                if targetPart then
+                    seenNames[txt] = true
+                    table.insert(racks, {Name = txt, Part = targetPart})
                 end
             end
         end
     end
-
-    if targetPart then
-        pcall(function()
-            local rackPos = targetPart.Position
-            rootPart.CFrame = CFrame.lookAt(rackPos + Vector3.new(0, 0.5, 2.5), rackPos)
-            print("[PutItem] Berhasil teleport ke depan rak " .. searchKey .. "!")
-        end)
-    else
-        print("[PutItem] Rak untuk item '" .. heldItemName .."' (Keyword: " .. searchKey .. ") tidak ditemukan di map!")
-    end
+    return racks
 end
 
 -- ----------------------------------------------------------------
--- GUI INTERFACE
+-- GUI INTERFACE (DENGAN LIST RAK DI SEBELAH KANAN)
 -- ----------------------------------------------------------------
 local playerGui = LocalPlayer:WaitForChild("PlayerGui")
-local existing = playerGui:FindFirstChild("PreciseGrabGui")
+local existing = playerGui:FindFirstChild("PreciseGrabGui") or CoreGui:FindFirstChild("PreciseGrabGui")
 if existing then existing:Destroy() end
 
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "PreciseGrabGui"
 screenGui.ResetOnSpawn = false
-screenGui.Parent = playerGui
+pcall(function() screenGui.Parent = CoreGui end)
+if not screenGui.Parent then screenGui.Parent = playerGui end
 
 local mainFrame = Instance.new("Frame", screenGui)
 mainFrame.Size = UDim2.new(0, 260, 0, 110)
@@ -320,7 +251,7 @@ title.Size = UDim2.new(1, -30, 1, 0)
 title.Position = UDim2.new(0, 8, 0, 0)
 title.BackgroundTransparency = 1
 title.Font = Enum.Font.GothamBold
-title.Text = "🎯 Precise Grabber + Robust TP"
+title.Text = "🎯 Precise Grabber + Rack List"
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.TextSize = 12
 title.TextXAlignment = Enum.TextXAlignment.Left
@@ -336,6 +267,7 @@ closeBtn.TextSize = 11
 Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 4)
 closeBtn.MouseButton1Click:Connect(function() screenGui:Destroy() end)
 
+-- Kotak Kiri: Input Nama Objek / Kategori
 local textBox = Instance.new("TextBox", mainFrame)
 textBox.Size = UDim2.new(0, 160, 0, 30)
 textBox.Position = UDim2.new(0, 8, 0, 36)
@@ -349,6 +281,7 @@ textBox.TextSize = 11
 textBox.ClearTextOnFocus = false
 Instance.new("UICorner", textBox).CornerRadius = UDim.new(0, 6)
 
+-- Kotak Kanan: Input Jumlah Max (Default 7)
 local maxBox = Instance.new("TextBox", mainFrame)
 maxBox.Size = UDim2.new(0, 76, 0, 30)
 maxBox.Position = UDim2.new(0, 176, 0, 36)
@@ -362,6 +295,7 @@ maxBox.TextSize = 11
 maxBox.ClearTextOnFocus = false
 Instance.new("UICorner", maxBox).CornerRadius = UDim.new(0, 6)
 
+-- Tombol START di kiri bawah
 local btn = Instance.new("TextButton", mainFrame)
 btn.Size = UDim2.new(0, 150, 0, 30)
 btn.Position = UDim2.new(0, 8, 0, 72)
@@ -372,15 +306,96 @@ btn.TextColor3 = Color3.fromRGB(255, 255, 255)
 btn.TextSize = 11
 Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
 
+-- Tombol PUT (Toggle List Rak di Sebelah Kanan)
 local putBtn = Instance.new("TextButton", mainFrame)
 putBtn.Size = UDim2.new(0, 86, 0, 30)
 putBtn.Position = UDim2.new(0, 166, 0, 72)
 putBtn.BackgroundColor3 = Color3.fromRGB(50, 110, 200)
 putBtn.Font = Enum.Font.GothamBold
-putBtn.Text = "PUT (TP)"
+putBtn.Text = "PUT (LIST)"
 putBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 putBtn.TextSize = 11
 Instance.new("UICorner", putBtn).CornerRadius = UDim.new(0, 6)
+
+-- Panel List Rak (Muncul di Sebelah Kanan Menu Utama)
+local rackListPanel = Instance.new("Frame", screenGui)
+rackListPanel.Size = UDim2.new(0, 170, 0, 220)
+rackListPanel.Position = UDim2.new(0.5, 135, 0.3, 0) -- Posisinya di sebelah kanan mainFrame
+rackListPanel.BackgroundColor3 = Color3.fromRGB(20, 35, 25)
+rackListPanel.BackgroundTransparency = 0.2
+rackListPanel.BorderSizePixel = 0
+rackListPanel.Visible = false
+Instance.new("UICorner", rackListPanel).CornerRadius = UDim.new(0, 8)
+
+local listHeader = Instance.new("TextLabel", rackListPanel)
+listHeader.Size = UDim2.new(1, 0, 0, 25)
+listHeader.BackgroundTransparency = 1
+listHeader.Font = Enum.Font.GothamBold
+listHeader.Text = "DAFTAR RAK"
+listHeader.TextColor3 = Color3.fromRGB(0, 255, 150)
+listHeader.TextSize = 12
+
+local scrollingContent = Instance.new("ScrollingFrame", rackListPanel)
+scrollingContent.Size = UDim2.new(1, 0, 1, -25)
+scrollingContent.Position = UDim2.new(0, 0, 0, 25)
+scrollingContent.BackgroundTransparency = 1
+scrollingContent.BorderSizePixel = 0
+scrollingContent.ScrollBarThickness = 3
+
+-- Fungsi untuk mengisi list rak ke dalam ScrollingFrame
+local function updateRackListUI()
+    for _, child in ipairs(scrollingContent:GetChildren()) do
+        if child:IsA("TextButton") then
+            child:Destroy()
+        end
+    end
+
+    local racks = getAllRacks()
+    local itemHeight = 32
+    local itemSpacing = 4
+    local yOffset = 5
+
+    for _, rack in ipairs(racks) do
+        local rackBtn = Instance.new("TextButton")
+        rackBtn.Size = UDim2.new(1, -10, 0, itemHeight)
+        rackBtn.Position = UDim2.new(0, 5, 0, yOffset)
+        rackBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+        rackBtn.BackgroundTransparency = 0.2
+        rackBtn.BorderSizePixel = 0
+        rackBtn.Font = Enum.Font.GothamSemibold
+        rackBtn.Text = "  " .. rack.Name
+        rackBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        rackBtn.TextSize = 12
+        rackBtn.TextXAlignment = Enum.TextXAlignment.Left
+        rackBtn.Parent = scrollingContent
+        Instance.new("UICorner", rackBtn).CornerRadius = UDim.new(0, 6)
+
+        -- Aksi saat salah satu rak diklik: Langsung Teleport ke depan rak tersebut!
+        rackBtn.MouseButton1Click:Connect(function()
+            local character = LocalPlayer.Character
+            local rootPart = character and character:FindFirstChild("HumanoidRootPart")
+            if rootPart and rack.Part and rack.Part.Parent then
+                pcall(function()
+                    local rackPos = rack.Part.Position
+                    rootPart.CFrame = CFrame.lookAt(rackPos + Vector3.new(0, 0.5, 3), rackPos)
+                    print("[Teleport] Berhasil teleport ke depan rak: " .. rack.Name)
+                end)
+            end
+        end)
+
+        yOffset = yOffset + itemHeight + itemSpacing
+    end
+
+    scrollingContent.CanvasSize = UDim2.new(0, 0, 0, yOffset + 10)
+end
+
+-- Tombol PUT (LIST) ditekan untuk memunculkan/menyembunyikan list rak di kanan
+putBtn.MouseButton1Click:Connect(function()
+    rackListPanel.Visible = not rackListPanel.Visible
+    if rackListPanel.Visible then
+        updateRackListUI()
+    end
+end)
 
 local function triggerGrab()
     if textBox.Text ~= "" then
@@ -389,7 +404,6 @@ local function triggerGrab()
 end
 
 btn.MouseButton1Click:Connect(triggerGrab)
-putBtn.MouseButton1Click:Connect(getgenv().ExecutePutItem)
 
 textBox.FocusLost:Connect(function(enter)
     if enter then triggerGrab() end
@@ -399,4 +413,4 @@ maxBox.FocusLost:Connect(function(enter)
     if enter then triggerGrab() end
 end)
 
-print("[Precise Grabber + Robust TP] Skrip siap digunakan!")
+print("[Precise Grabber + Rack List] Skrip siap digunakan!")
