@@ -1,11 +1,19 @@
 -- ================================================================
--- PRECISE GRABBER: ULTIMATE + PLACEZONE LIST & SEARCH BAR (FIXED UI)
+-- PRECISE GRABBER: ULTIMATE + PLACEZONE LIST & SEARCH BAR (BULLETPROOF)
 -- ================================================================
 
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 local VirtualInputManager = game:GetService("VirtualInputManager")
+local CoreGui = game:GetService("CoreGui")
+
+-- Pengaman agar LocalPlayer dipastikan sudah siap dimuat oleh executor HP
 local LocalPlayer = Players.LocalPlayer
+while not LocalPlayer do
+    Players.PlayerAdded:Wait()
+    LocalPlayer = Players.LocalPlayer
+end
+
 local Camera = Workspace.CurrentCamera
 
 local function lower(val)
@@ -185,7 +193,7 @@ getgenv().ExecutePreciseGrab = function(keyword, maxLimitInput)
     print("[Grab] Selesai! Berhasil mengambil " .. collected .. " item.")
 end
 
--- 2. FUNGSI SCAN PLACEZONE / RAK DENGAN FORMAT GABUNGAN LABEL
+-- 2. FUNGSI SCAN PLACEZONE / RAK
 local function getAllRacks()
     local racks = {}
     local seenNames = {}
@@ -230,16 +238,29 @@ local function getAllRacks()
 end
 
 -- ----------------------------------------------------------------
--- GUI INTERFACE (100% AMAN & PASTI MUNCUL DI PLAYERGUI MOBILE)
+-- GUI INTERFACE (ROBUST PARENTING UNTUK MOBILE EXECUTOR)
 -- ----------------------------------------------------------------
 local playerGui = LocalPlayer:WaitForChild("PlayerGui")
-local existing = playerGui:FindFirstChild("PreciseGrabGui")
+local existing = playerGui:FindFirstChild("PreciseGrabGui") or (CoreGui and CoreGui:FindFirstChild("PreciseGrabGui"))
 if existing then existing:Destroy() end
 
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "PreciseGrabGui"
 screenGui.ResetOnSpawn = false
-screenGui.Parent = playerGui -- Langsung ke PlayerGui tanpa pcall yang bikin bug
+
+-- Menggunakan metode aman agar pasti muncul di layar HP
+local success = pcall(function()
+    if gethui then
+        screenGui.Parent = gethui()
+    elseif CoreGui then
+        screenGui.Parent = CoreGui
+    else
+        screenGui.Parent = playerGui
+    end
+end)
+if not success then
+    screenGui.Parent = playerGui
+end
 
 local mainFrame = Instance.new("Frame", screenGui)
 mainFrame.Size = UDim2.new(0, 260, 0, 110)
@@ -324,4 +345,116 @@ putBtn.Font = Enum.Font.GothamBold
 putBtn.Text = "List Placezone"
 putBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 putBtn.TextSize = 10
-Instance.new("UICorner", put
+Instance.new("UICorner", putBtn).CornerRadius = UDim.new(0, 6)
+
+-- Panel List Rak (Di sebelah kanan layar)
+local rackListPanel = Instance.new("Frame", screenGui)
+rackListPanel.Size = UDim2.new(0, 190, 0, 260)
+rackListPanel.Position = UDim2.new(0.5, 145, 0.3, 0)
+rackListPanel.BackgroundColor3 = Color3.fromRGB(20, 35, 25)
+rackListPanel.BackgroundTransparency = 0.2
+rackListPanel.BorderSizePixel = 0
+rackListPanel.Visible = false
+Instance.new("UICorner", rackListPanel).CornerRadius = UDim.new(0, 8)
+
+-- Kolom Pencarian (Search Bar) di bagian atas list
+local searchBar = Instance.new("TextBox", rackListPanel)
+searchBar.Size = UDim2.new(1, -10, 0, 28)
+searchBar.Position = UDim2.new(0, 5, 0, 5)
+searchBar.BackgroundColor3 = Color3.fromRGB(15, 25, 20)
+searchBar.Font = Enum.Font.Gotham
+searchBar.PlaceholderText = "Cari placezone..."
+searchBar.Text = ""
+searchBar.TextColor3 = Color3.fromRGB(255, 255, 255)
+searchBar.PlaceholderColor3 = Color3.fromRGB(140, 140, 140)
+searchBar.TextSize = 11
+searchBar.ClearTextOnFocus = false
+Instance.new("UICorner", searchBar).CornerRadius = UDim.new(0, 6)
+
+local scrollingContent = Instance.new("ScrollingFrame", rackListPanel)
+scrollingContent.Size = UDim2.new(1, 0, 1, -38)
+scrollingContent.Position = UDim2.new(0, 0, 0, 38)
+scrollingContent.BackgroundTransparency = 1
+scrollingContent.BorderSizePixel = 0
+scrollingContent.ScrollBarThickness = 3
+
+local cachedRacks = {}
+
+local function updateRackListUI(filterText)
+    for _, child in ipairs(scrollingContent:GetChildren()) do
+        if child:IsA("TextButton") then
+            child:Destroy()
+        end
+    end
+
+    local filter = lower(filterText or "")
+    local itemHeight = 32
+    local itemSpacing = 4
+    local yOffset = 5
+
+    for _, rack in ipairs(cachedRacks) do
+        if filter == "" or string.find(lower(rack.Name), filter, 1, true) then
+            local rackBtn = Instance.new("TextButton")
+            rackBtn.Size = UDim2.new(1, -10, 0, itemHeight)
+            rackBtn.Position = UDim2.new(0, 5, 0, yOffset)
+            rackBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+            rackBtn.BackgroundTransparency = 0.2
+            rackBtn.BorderSizePixel = 0
+            rackBtn.Font = Enum.Font.GothamSemibold
+            rackBtn.Text = "  " .. rack.Name
+            rackBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+            rackBtn.TextSize = 11
+            rackBtn.TextXAlignment = Enum.TextXAlignment.Left
+            rackBtn.Parent = scrollingContent
+            Instance.new("UICorner", rackBtn).CornerRadius = UDim.new(0, 6)
+
+            rackBtn.MouseButton1Click:Connect(function()
+                local character = LocalPlayer.Character
+                local rootPart = character and character:FindFirstChild("HumanoidRootPart")
+                if rootPart and rack.Part and rack.Part.Parent then
+                    pcall(function()
+                        local targetCFrame = rack.Part.CFrame
+                        local safePos = targetCFrame + (targetCFrame.LookVector * -3.5) + Vector3.new(0, 0.5, 0)
+                        rootPart.CFrame = CFrame.new(safePos.Position, targetCFrame.Position)
+                        print("[Teleport] Berhasil ke depan placezone: " .. rack.Name)
+                    end)
+                end
+            end)
+
+            yOffset = yOffset + itemHeight + itemSpacing
+        end
+    end
+
+    scrollingContent.CanvasSize = UDim2.new(0, 0, 0, yOffset + 10)
+end
+
+putBtn.MouseButton1Click:Connect(function()
+    rackListPanel.Visible = not rackListPanel.Visible
+    if rackListPanel.Visible then
+        cachedRacks = getAllRacks()
+        searchBar.Text = ""
+        updateRackListUI("")
+    end
+end)
+
+searchBar:GetPropertyChangedSignal("Text"):Connect(function()
+    updateRackListUI(searchBar.Text)
+end)
+
+local function triggerGrab()
+    if textBox.Text ~= "" then
+        getgenv().ExecutePreciseGrab(textBox.Text, maxBox.Text)
+    end
+end
+
+btn.MouseButton1Click:Connect(triggerGrab)
+
+textBox.FocusLost:Connect(function(enter)
+    if enter then triggerGrab() end
+end)
+
+maxBox.FocusLost:Connect(function(enter)
+    if enter then triggerGrab() end
+end)
+
+print("[Precise Grabber] GUI sukses dimuat tanpa kendala!")
