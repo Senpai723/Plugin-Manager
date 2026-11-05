@@ -1,5 +1,5 @@
 -- ================================================================
--- PRECISE GRABBER: ULTIMATE + SMART RACK DEEP-SCAN TP (FIXED)
+-- PRECISE GRABBER: ULTIMATE + DEEP-SCAN TP (CLEAN & FIXED)
 -- ================================================================
 
 local Players = game:GetService("Players")
@@ -195,7 +195,6 @@ getgenv().ExecutePutItem = function()
         return
     end
 
-    -- Deteksi item di tangan atau backpack
     local heldItemName = ""
     for _, obj in ipairs(character:GetChildren()) do
         if obj:IsA("Tool") or obj:IsA("Model") then
@@ -318,14 +317,4 @@ closeBtn.Font = Enum.Font.GothamBold
 closeBtn.Text = "X"
 closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 closeBtn.TextSize = 11
-Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 4)
-closeBtn.MouseButton1Click:Connect(function() screenGui:Destroy() end)
-
-local textBox = Instance.new("TextBox", mainFrame)
-textBox.Size = UDim2.new(0, 160, 0, 30)
-textBox.Position = UDim2.new(0, 8, 0, 36)
-textBox.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-textBox.Font = Enum.Font.Gotham
-textBox.PlaceholderText = "Input nama / kategori..."
-textBox.Text = ""
-textBox.TextColor3 = Color3.fromRGB(255, 255, 2
+Instance.new("UICorner", closeBtn).Corner
