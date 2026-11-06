@@ -1,4 +1,19 @@
 return {
+    Tabs = {
+        { Name = "Main", DataKey = "Main" },
+        { Name = "Tools", DataKey = "Tools" },
+        { Name = "Horor", DataKey = "Horor" },
+        { Name = "Gunung", DataKey = "Gunung" },
+        -- CONTOH TAB BARU DENGAN BADGE KHUSUS DI TAB-NYA SAJA:
+        { 
+            Name = "VIP", 
+            DataKey = "VipMenu",
+            TabUpdateTimestamp = "061120260300, 172800", -- Tanggal & Durasi aktif badge tab
+            TabBadgeText = "HOT",                       -- Teks badge di tab (misal: "HOT", "NEW")
+            TabBadgeColor = "green"                     -- Warna badge di tab (misal: "green", "red", dll)
+        }
+    },
+    
     Main = {
         {
             Name = "Interactable / ITP",
