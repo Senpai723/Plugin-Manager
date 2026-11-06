@@ -261,8 +261,8 @@ return function(speaker)
     end
 
     local Frame = Instance.new("Frame")
-    Frame.Size = UDim2.new(0, 280, 0, 360) -- Ubah tingginya jadi 360 aja
-    Frame.Position = UDim2.new(0.5, -140, 0.5, -180)
+    Frame.Size = UDim2.new(0, 280, 0, 320) -- Ubah tingginya jadi 360 aja
+    Frame.Position = UDim2.new(0.5, -140, 0.5, -160)
     Frame.BackgroundColor3 = Color3.fromRGB(20, 25, 32)
     Frame.BackgroundTransparency = 0.25
     Frame.BorderSizePixel = 0
