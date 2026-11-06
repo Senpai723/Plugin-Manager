@@ -1,5 +1,6 @@
 return {
     Tabs = {
+        -- Jika ingin menambah Tab di window, tambah saja lewat tab di bawah ini
         { Name = "Main", DataKey = "Main" },
         { Name = "Tools", DataKey = "Tools" },
         { Name = "Horor", DataKey = "Horor" },
@@ -13,6 +14,11 @@ return {
             TabBadgeColor = "green"                     -- Warna badge di tab (misal: "green", "red", dll)
         }
     },
+
+    -- Format menambahkan Text Update kedip kedip 
+    -- UpdateTimestamp = "061120260326, 300", || 6 November 2026 jam 03.26 dengan durasi 300 detik
+    -- BadgeText = "Update!", || Bebas mau di kasih tulisan apa
+    -- BadgeColor = "yellow" || warna yang tersedia : red, yellow, green, blue, orange, purple, pink, white
     
     Main = {
         {
