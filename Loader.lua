@@ -93,7 +93,7 @@ local SharedFeatures = {
     },
     TpPlayer = {
         Name = "Teleport to Player",
-        Desc = "Teleport ke player dengan 1 klik",
+        Desc = "Teleport ke player dengan cepat ( Jika dalam Jangkauan )",
         Cmd = "tp",
         UnCmd = "",
         RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Plugin/PlayerTeleport"
@@ -102,7 +102,7 @@ local SharedFeatures = {
     -- 4. Sound & View Sub-Features
     Spectator = {
         Name = "Spectator",
-        Desc = "Menonton dan menguping target dari jauh",
+        Desc = "Menonton dan menguping target dari jauh ( Jika dalam Jangkauan )",
         Cmd = "spectate",
         UnCmd = "",
         RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Plugin/SoundandView"
@@ -122,18 +122,11 @@ local SharedFeatures = {
         NeedInput = true,
         RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Plugin/MusicTimeML"
     },
-    MuteSoundHoror = {
-        Name = "Mute Sound",
-        Desc = "Mematikan suara latar belakang Map",
-        Cmd = "mutesound",
-        UnCmd = "unmutesound",
-        RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Plugin/SoundManage"
-    },
 
     -- 5. Fun Sub-Features & Standalone Tools
     TeleportItem = {
         Name = "Teleport to Item",
-        Desc = "tidak untuk semua map, hanya untuk Map yang bertema merapihkan Barang",
+        Desc = "tidak untuk semua map, hanya untuk Map yang bertema merapihkan barang",
         Cmd = "rgrab",
         UnCmd = "",
         RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Plugin/TPitem",
@@ -310,7 +303,7 @@ LoaderData.Tabs = {
     { Name = "Horor", DataKey = "Horor" },
     { Name = "Gunung", DataKey = "Gunung" },
     { 
-        Name = "", 
+        Name = "KAMING SUN", 
         DataKey = "",
         TabUpdateTimestamp = "",
         TabBadgeText = "",
@@ -379,60 +372,6 @@ LoaderData.Main = {
     }
 }
 
-LoaderData.Tools = {
-    SharedFeatures.FullBright,
-    SharedFeatures.InstantPrompts,
-    SharedFeatures.WalkSpeed,
-    SharedFeatures.InfiniteJump,
-    SharedFeatures.AdminDetect,
-    SharedFeatures.Noclip,
-    SharedFeatures.CodeFinder,
-    SharedFeatures.AntiAFK,
-    SharedFeatures.Inspector,
-    {
-        Name = "Effect",
-        Desc = "Menghentikan Effect dan Part yang bandel",
-        RawUrl = "",
-        SubFeatures = {
-            SharedFeatures.AnchorVisual,
-            SharedFeatures.AntiShake,
-            SharedFeatures.AntiWind,
-            SharedFeatures.AntiTrigger
-        }
-    }
-}
-
-LoaderData.Horor = {
-    {
-        Name = "Interactable / ITP",
-        Desc = "Memunculkan ESP Objek berdasarkan Promot, Touch, Click, Pintu atau Trigger",
-        RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Plugin/Interactable",
-        SubFeatures = {
-            SharedFeatures.ITP,
-            SharedFeatures.PPESP,
-            SharedFeatures.CDESP,
-            SharedFeatures.DESP,
-            SharedFeatures.ITESP,
-            SharedFeatures.TESP
-        }
-    },
-    {
-        Name = "Color ESP",
-        Desc = "Player & Enemy ESP",
-        RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Plugin/colorESP",
-        SubFeatures = {
-            SharedFeatures.PESP,
-            SharedFeatures.EESP
-        }
-    },
-    SharedFeatures.FullBright,
-    SharedFeatures.InstantPrompts,
-    SharedFeatures.MuteSoundHoror,
-    SharedFeatures.WalkSpeed,
-    SharedFeatures.Noclip,
-    SharedFeatures.CodeFinder
-}
-
 LoaderData.Gunung = {
     {
         Name = "Teleport",
@@ -465,6 +404,60 @@ LoaderData.Gunung = {
     },
     SharedFeatures.WalkSpeed,
     SharedFeatures.InfiniteJump
+}
+
+LoaderData.Horor = {
+    {
+        Name = "Interactable / ITP",
+        Desc = "Memunculkan ESP Objek berdasarkan Promot, Touch, Click, Pintu atau Trigger",
+        RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Plugin/Interactable",
+        SubFeatures = {
+            SharedFeatures.ITP,
+            SharedFeatures.PPESP,
+            SharedFeatures.CDESP,
+            SharedFeatures.DESP,
+            SharedFeatures.ITESP,
+            SharedFeatures.TESP
+        }
+    },
+    {
+        Name = "Color ESP",
+        Desc = "Player & Enemy ESP",
+        RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Plugin/colorESP",
+        SubFeatures = {
+            SharedFeatures.PESP,
+            SharedFeatures.EESP
+        }
+    },
+    SharedFeatures.FullBright,
+    SharedFeatures.InstantPrompts,
+    SharedFeatures.MuteSound,
+    SharedFeatures.WalkSpeed,
+    SharedFeatures.Noclip,
+    SharedFeatures.CodeFinder
+}
+
+LoaderData.Tools = {
+    SharedFeatures.FullBright,
+    SharedFeatures.InstantPrompts,
+    SharedFeatures.WalkSpeed,
+    SharedFeatures.InfiniteJump,
+    SharedFeatures.AdminDetect,
+    SharedFeatures.Noclip,
+    SharedFeatures.CodeFinder,
+    SharedFeatures.AntiAFK,
+    SharedFeatures.Inspector,
+    {
+        Name = "Effect",
+        Desc = "Menghentikan Effect dan Part yang bandel",
+        RawUrl = "",
+        SubFeatures = {
+            SharedFeatures.AnchorVisual,
+            SharedFeatures.AntiShake,
+            SharedFeatures.AntiWind,
+            SharedFeatures.AntiTrigger
+        }
+    }
 }
 
 return LoaderData
