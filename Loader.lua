@@ -1,90 +1,251 @@
 local LoaderData = {}
 
 -- ==========================================================
--- 🛠️ GUDANG MASTER DATA (SEMUA FITUR ADA DI SINI)
+-- 🛠️ GUDANG MASTER DATA (SEMUA FITUR SERAGAM & INDEPENDEN)
 -- ==========================================================
 local SharedFeatures = {
-    InteractableITP = {
-        Name = "Interactable / ITP",
-        Desc = "Memunculkan ESP Objek berdasarkan Promot, Touch, Click, Pintu atau Trigger",
-        RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Plugin/Interactable",
-        SubFeatures = {
-            { Name = "ITP", Desc = "Memunculkan window berisikan list objek yang bisa diteleport", Cmd = "itp", UnCmd = "" },
-            { Name = "PPESP", Desc = "Masukan 1 nama objek untuk filter, kosongkan kolom untuk mendeteksi semua Objek", Cmd = "proximityesp", UnCmd = "unproximityesp", NeedInput = true },
-            { Name = "CDESP", Desc = "Masukan 1 nama objek untuk filter, kosongkan kolom untuk mendeteksi semua Objek", Cmd = "clickdetectoresp", UnCmd = "unclickdetectoresp", NeedInput = true },
-            { Name = "DESP", Desc = "Masukan 1 nama objek untuk filter, kosongkan kolom untuk mendeteksi semua Objek", Cmd = "dooresp", UnCmd = "undooresp", NeedInput = true },
-            { Name = "ITESP", Desc = "Masukan 1 nama objek untuk filter, kosongkan kolom untuk mendeteksi semua Objek", Cmd = "itemtouchesp", UnCmd = "untouchinterestesp", NeedInput = true },
-            { Name = "LOOT", Desc = "Memunculkan Box dan Nama ESP Item dengan interact Custom", Cmd = "loot", UnCmd = "unloot", NeedInput = true },
-            { Name = "TESP", Desc = "Memunculkan ESP Trigger / Scene Event", Cmd = "touchinterestesp", UnCmd = "untouchinterestesp" }
-        }
+    -- 1. Interactable Sub-Features
+    ITP = {
+        Name = "ITP",
+        Desc = "Memunculkan window berisikan list objek yang bisa diteleport",
+        Cmd = "itp",
+        UnCmd = "",
+        RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Plugin/Interactable"
     },
-    ColorESPPlayer = {
-        Name = "ESP Player",
-        Desc = "Player & Enemy ESP",
-        RawUrl = "",
-        SubFeatures = {
-            { Name = "PESP", Desc = "Menampilkan ESP Body dan mama Player", Cmd = "pesp", UnCmd = "unloadColorESP", RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Plugin/colorESP" },
-            { Name = "EESP", Desc = "Menampilkan ESP Musuh dan NPC", Cmd = "eesp", UnCmd = "unloadColorESP", RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Plugin/colorESP" }
-        }
+    PPESP = {
+        Name = "PPESP",
+        Desc = "Masukan 1 nama objek untuk filter, kosongkan kolom untuk mendeteksi semua Objek",
+        Cmd = "proximityesp",
+        UnCmd = "unproximityesp",
+        NeedInput = true,
+        RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Plugin/Interactable"
     },
-    WaypointTeleport = {
-        Name = "Teleport",
-        Desc = "Waypoint & Teleport",
-        RawUrl = "",
-        SubFeatures = {
-            { Name = "Radar Checkpoint", Desc = "Menampilkan Checkpoint yang belum di sentuh", Cmd = "scp", UnCmd = "", RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Plugin/Waypoint" },
-            { Name = "CP & Waypoint", Desc = "Menampilkan Checkpoint atau Waypoint", Cmd = "cpn", UnCmd = "", RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Plugin/Waypoint" },
-            { Name = "Teleport to Player", Desc = "Teleport ke player dengan 1 klik", Cmd = "tp", UnCmd = "", RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Plugin/PlayerTeleport" }
-        }
+    CDESP = {
+        Name = "CDESP",
+        Desc = "Masukan 1 nama objek untuk filter, kosongkan kolom untuk mendeteksi semua Objek",
+        Cmd = "clickdetectoresp",
+        UnCmd = "unclickdetectoresp",
+        NeedInput = true,
+        RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Plugin/Interactable"
     },
-    SoundAndView = {
-        Name = "Sound & View Manage",
-        Desc = "Mengatur suara di map dan memutar Lagu",
-        RawUrl = "",
-        SubFeatures = {
-            { Name = "Spectator", Desc = "Menonton dan menguping target dari jauh", Cmd = "spectate", UnCmd = "", RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Plugin/SoundandView" },
-            { Name = "Mute Sound", Desc = "Membisukan suara Latar Belakang Map", Cmd = "mutesound", UnCmd = "unmutesound", RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Plugin/SoundandView" },
-            { Name = "Play Music", Desc = "Mendengarkan musik", Cmd = "playmusic", UnCmd = "stopmusic", NeedInput = true, RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Plugin/MusicTimeML" }
-        }
+    DESP = {
+        Name = "DESP",
+        Desc = "Masukan 1 nama objek untuk filter, kosongkan kolom untuk mendeteksi semua Objek",
+        Cmd = "dooresp",
+        UnCmd = "undooresp",
+        NeedInput = true,
+        RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Plugin/Interactable"
     },
-    FunExtra = {
-        Name = "FUN",
-        Desc = "Fitur Tambahan",
-        RawUrl = "",
-        SubFeatures = {
-            { Name = "Teleport to Item", Desc = "Teleport Ke item yang di pilih dan kembali ketitik awal", Cmd = "rgrab", UnCmd = "", RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Plugin/TPitem", UpdateTimestamp = "061120260923, 43200", BadgeText = "Update!", BadgeColor = "pink" },
-            { Name = "Inspector", Desc = "Menemukan sebuah jalur path parent-child sebuah Part", Cmd = "mobileinspector", UnCmd = "", RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Tools/clickinspector", UpdateTimestamp = "061120260938, 43200", BadgeText = "Update!", BadgeColor = "white" },
-            { Name = "Anti AFK", Desc = "Membuat karakter tidak terpental saat Afk 20 menit di Map", Cmd = "antiafk", UnCmd = "unantiafk", RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Tools/AntiAFK" },
-        }
+    ITESP = {
+        Name = "ITESP",
+        Desc = "Masukan 1 nama objek untuk filter, kosongkan kolom untuk mendeteksi semua Objek",
+        Cmd = "itemtouchesp",
+        UnCmd = "untouchinterestesp",
+        NeedInput = true,
+        RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Plugin/Interactable"
     },
-    RejoinManager = {
-        Name = "REJOIN ( Public Server )",
-        Desc = "Rejoin Manage ( Tidak Support Game CO - OP )",
-        RawUrl = "",
-        SubFeatures = {
-            { Name = "Auto Save", Desc = "Auto save Place ID dan Job ID ketika berpindah tempat", Cmd = "autosaveserver", UnCmd = "", RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Plugin/LastRejoin" },
-            { Name = "Save Server", Desc = "Menyimpan Place ID dan Job ID secara manual", Cmd = "saveserver", UnCmd = "", RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Plugin/LastRejoin" },
-            { Name = "Last Rejoin", Desc = "Aktifkan untik Rejoin di server terakhir", Cmd = "rejoinlast", UnCmd = "", RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Plugin/LastRejoin" },
-            { Name = "Smart Rejoin", Desc = "Aktifkan untuk Rejoin ketika diconnect secara Real Time", Cmd = "smartrj", UnCmd = "smartrj", RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Plugin/SmartRejoin" }
-        }
+    LOOT = {
+        Name = "LOOT",
+        Desc = "Memunculkan Box dan Nama ESP Item dengan interact Custom",
+        Cmd = "loot",
+        UnCmd = "unloot",
+        NeedInput = true,
+        RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Plugin/Interactable"
     },
-    SimpleAimbot = {
-        Name = "Simple Aimbot",
-        Desc = "Aimbot Untuk Map yang mempunyai fitur Shooter",
-        RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Plugin/SimpleAimbot",
-        SubFeatures = {
-            { Name = "Aimbot", Desc = "Mengaktifkan/Menonaktifkan Aimbot", Cmd = "startaimbot", UnCmd = "stopaimbot" },
-            { Name = "Set Radius", Desc = "Menentukan Radius Aimbot", Cmd = "setradius", UnCmd = "", NeedInput = true }
-        }
+    TESP = {
+        Name = "TESP",
+        Desc = "Memunculkan ESP Trigger / Scene Event",
+        Cmd = "touchinterestesp",
+        UnCmd = "untouchinterestesp",
+        RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Plugin/Interactable"
     },
-    F1Lock = {
-        Name = "F1Lock ( Khusus Keyboard )",
-        Desc = "Mengubah Shift Lock ke F1",
-        RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Plugin/F1Lock",
-        SubFeatures = {
-            { Name = "F1LOCK", Desc = "Bind Shift Lock to F1", Cmd = "f1lock", UnCmd = "unlockedcam" }
-        }
+
+    -- 2. ESP Player Sub-Features
+    PESP = {
+        Name = "PESP",
+        Desc = "Menampilkan ESP Body dan mama Player",
+        Cmd = "pesp",
+        UnCmd = "unloadColorESP",
+        RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Plugin/colorESP"
     },
+    EESP = {
+        Name = "EESP",
+        Desc = "Menampilkan ESP Musuh dan NPC",
+        Cmd = "eesp",
+        UnCmd = "unloadColorESP",
+        RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Plugin/colorESP"
+    },
+
+    -- 3. Waypoint & Teleport Sub-Features
+    RadarCP = {
+        Name = "Radar Checkpoint",
+        Desc = "Menampilkan Checkpoint yang belum di sentuh",
+        Cmd = "scp",
+        UnCmd = "",
+        RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Plugin/Waypoint"
+    },
+    CPWp = {
+        Name = "CP & Waypoint",
+        Desc = "Menampilkan Checkpoint atau Waypoint",
+        Cmd = "cpn",
+        UnCmd = "",
+        RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Plugin/Waypoint"
+    },
+    TpPlayer = {
+        Name = "Teleport to Player",
+        Desc = "Teleport ke player dengan 1 klik",
+        Cmd = "tp",
+        UnCmd = "",
+        RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Plugin/PlayerTeleport"
+    },
+
+    -- 4. Sound & View Sub-Features
+    Spectator = {
+        Name = "Spectator",
+        Desc = "Menonton dan menguping target dari jauh",
+        Cmd = "spectate",
+        UnCmd = "",
+        RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Plugin/SoundandView"
+    },
+    MuteSound = {
+        Name = "Mute Sound",
+        Desc = "Membisukan suara Latar Belakang Map",
+        Cmd = "mutesound",
+        UnCmd = "unmutesound",
+        RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Plugin/SoundandView"
+    },
+    PlayMusic = {
+        Name = "Play Music",
+        Desc = "Mendengarkan musik",
+        Cmd = "playmusic",
+        UnCmd = "stopmusic",
+        NeedInput = true,
+        RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Plugin/MusicTimeML"
+    },
+    MuteSoundHoror = {
+        Name = "Mute Sound",
+        Desc = "Mematikan suara latar belakang Map",
+        Cmd = "mutesound",
+        UnCmd = "unmutesound",
+        RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Plugin/SoundManage"
+    },
+
+    -- 5. Fun Sub-Features & Standalone Tools
+    TeleportItem = {
+        Name = "Teleport to Item",
+        Desc = "Teleport Ke item yang di pilih dan kembali ketitik awal",
+        Cmd = "rgrab",
+        UnCmd = "",
+        RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Plugin/TPitem",
+        UpdateTimestamp = "061120260923, 43200",
+        BadgeText = "Update!",
+        BadgeColor = "pink"
+    },
+    Inspector = {
+        Name = "Inpector",
+        Desc = "Menemukan sebuah jalur path parent-child sebuah Part",
+        Cmd = "mobileinspector",
+        UnCmd = "",
+        RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Tools/clickinspector",
+        UpdateTimestamp = "061120260938, 43200",
+        BadgeText = "Update!",
+        BadgeColor = "white"
+    },
+    AntiAFK = {
+        Name = "Anti AFK",
+        Desc = "Membuat karakter tidak terpental saat Afk 20 menit di Map",
+        Cmd = "antiafk",
+        UnCmd = "unantiafk",
+        RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Tools/AntiAFK"
+    },
+
+    -- 6. Rejoin Sub-Features
+    AutoSave = {
+        Name = "Auto Save",
+        Desc = "Auto save Place ID dan Job ID ketika berpindah tempat",
+        Cmd = "autosaveserver",
+        UnCmd = "",
+        RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Plugin/LastRejoin"
+    },
+    SaveServer = {
+        Name = "Save Server",
+        Desc = "Menyimpan Place ID dan Job ID secara manual",
+        Cmd = "saveserver",
+        UnCmd = "",
+        RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Plugin/LastRejoin"
+    },
+    LastRejoin = {
+        Name = "Last Rejoin",
+        Desc = "Aktifkan untik Rejoin di server terakhir",
+        Cmd = "rejoinlast",
+        UnCmd = "",
+        RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Plugin/LastRejoin"
+    },
+    SmartRejoin = {
+        Name = "Smart Rejoin",
+        Desc = "Aktifkan untuk Rejoin ketika diconnect secara Real Time",
+        Cmd = "smartrj",
+        UnCmd = "smartrj",
+        RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Plugin/SmartRejoin"
+    },
+
+    -- 7. Aimbot Sub-Features
+    Aimbot = {
+        Name = "Aimbot",
+        Desc = "Mengaktifkan/Menonaktifkan Aimbot",
+        Cmd = "startaimbot",
+        UnCmd = "stopaimbot",
+        RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Plugin/SimpleAimbot"
+    },
+    SetRadius = {
+        Name = "Set Radius",
+        Desc = "Menentukan Radius Aimbot",
+        Cmd = "setradius",
+        UnCmd = "",
+        NeedInput = true,
+        RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Plugin/SimpleAimbot"
+    },
+
+    -- 8. F1Lock Sub-Features
+    F1LockBind = {
+        Name = "F1LOCK",
+        Desc = "Bind Shift Lock to F1",
+        Cmd = "f1lock",
+        UnCmd = "unlockedcam",
+        RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Plugin/F1Lock"
+    },
+
+    -- 9. Anti Effect Group Sub-Features
+    AnchorVisual = {
+        Name = "Anchor ( Hanya Visual )",
+        Desc = "Untuk menghentikan Part yang bergoyang",
+        Cmd = "anchor",
+        UnCmd = "unanchor",
+        RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Tools/AntiEffect"
+    },
+    AntiShake = {
+        Name = "Anti Shake",
+        Desc = "Untuk menghentikan Kamera yang bergoyang",
+        Cmd = "antishake",
+        UnCmd = "unshake",
+        RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Tools/AntiEffect"
+    },
+    AntiWind = {
+        Name = "Anti Wind ( Client Side )",
+        Desc = "Untuk menghentikan Angin yang menggeser karakter",
+        Cmd = "antiwind",
+        UnCmd = "unwind",
+        RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Tools/AntiEffect"
+    },
+    AntiTrigger = {
+        Name = "Anti Trigger",
+        Desc = "Untuk mematikan Trigger dalam map",
+        Cmd = "antitrigger",
+        UnCmd = "untrigger",
+        RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Tools/AntiEffect"
+    },
+
+    -- 10. Standalone Tools Lainnya
     FullBright = {
         Name = "Full Bright",
         Desc = "Membuat game menjadi terang, sudah termasuk anti kabut dan shadow",
@@ -137,29 +298,11 @@ local SharedFeatures = {
         Cmd = "code",
         UnCmd = "",
         RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Tools/CodeFinder"
-    },
-    AntiEffectGroup = {
-        Name = "Effect",
-        Desc = "Menghentikan Effect dan Part yang bandel",
-        RawUrl = "",
-        SubFeatures = {
-            { Name = "Anchor ( Hanya Visual )", Desc = "Untuk menghentikan Part yang bergoyang", Cmd = "anchor", UnCmd = "unanchor", RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Tools/AntiEffect" },
-            { Name = "Anti Shake", Desc = "Untuk menghentikan Kamera yang bergoyang", Cmd = "antishake", UnCmd = "unshake", RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Tools/AntiEffect" },
-            { Name = "Anti Wind ( Client Side )", Desc = "Untuk menghentikan Angin yang menggeser karakter", Cmd = "antiwind", UnCmd = "unwind", RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Tools/AntiEffect" },
-            { Name = "Anti Trigger", Desc = "Untuk mematikan Trigger dalam map", Cmd = "antitrigger", UnCmd = "untrigger", RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Tools/AntiEffect" }
-        }
-    },
-    MuteSoundSimple = {
-        Name = "Mute Sound",
-        Desc = "Mematikan suara latar belakang Map",
-        Cmd = "mutesound",
-        UnCmd = "unmutesound",
-        RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Plugin/SoundManage"
     }
 }
 
 -- ==========================================================
--- 📂 STRUKTUR TAB (TINGGAL PANGGIL VARIABEL MASTER)
+-- 📂 STRUKTUR TAB UTAMA
 -- ==========================================================
 LoaderData.Tabs = {
     { Name = "Main", DataKey = "Main" },
@@ -167,23 +310,96 @@ LoaderData.Tabs = {
     { Name = "Horor", DataKey = "Horor" },
     { Name = "Gunung", DataKey = "Gunung" },
     { 
-    --    Name = "", 
-      --  DataKey = "",
-      --   TabUpdateTimestamp = "061120260300, 172800",
-    --    TabBadgeText = "HOT",
-     --   TabBadgeColor = "green"
+        Name = "VIP", 
+        DataKey = "VipMenu",
+        TabUpdateTimestamp = "061120260300, 172800",
+        TabBadgeText = "HOT",
+        TabBadgeColor = "green"
     }
 }
 
 LoaderData.Main = {
-    SharedFeatures.InteractableITP,
-    SharedFeatures.ColorESPPlayer,
-    SharedFeatures.WaypointTeleport,
-    SharedFeatures.SoundAndView,
-    SharedFeatures.FunExtra,
-    SharedFeatures.RejoinManager,
-    SharedFeatures.SimpleAimbot,
-    SharedFeatures.F1Lock
+    {
+        Name = "Interactable / ITP",
+        Desc = "Memunculkan ESP Objek berdasarkan Promot, Touch, Click, Pintu atau Trigger",
+        RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Plugin/Interactable",
+        SubFeatures = {
+            SharedFeatures.ITP,
+            SharedFeatures.PPESP,
+            SharedFeatures.CDESP,
+            SharedFeatures.DESP,
+            SharedFeatures.ITESP,
+            SharedFeatures.LOOT,
+            SharedFeatures.TESP
+        }
+    },
+    {
+        Name = "ESP Player",
+        Desc = "Player & Enemy ESP",
+        RawUrl = "",
+        SubFeatures = {
+            SharedFeatures.PESP,
+            SharedFeatures.EESP
+        }
+    },
+    {
+        Name = "Teleport",
+        Desc = "Waypoint & Teleport",
+        RawUrl = "",
+        SubFeatures = {
+            SharedFeatures.RadarCP,
+            SharedFeatures.CPWp,
+            SharedFeatures.TpPlayer
+        }
+    },
+    {
+        Name = "Sound & View Manage",
+        Desc = "Mengatur suara di map dan memutar Lagu",
+        RawUrl = "",
+        SubFeatures = {
+            SharedFeatures.Spectator,
+            SharedFeatures.MuteSound,
+            SharedFeatures.PlayMusic
+        }
+    },
+    {
+        Name = "FUN",
+        Desc = "Fitur Tambahan",
+        RawUrl = "",
+        SubFeatures = {
+            SharedFeatures.TeleportItem,
+            SharedFeatures.Inspector,
+            SharedFeatures.AntiAFK
+        }
+    },
+    {
+        Name = "REJOIN ( Public Server )",
+        Desc = "Rejoin Manage ( Tidak Support Game CO - OP )",
+        RawUrl = "",
+        SubFeatures = {
+            SharedFeatures.AutoSave,
+            SharedFeatures.SaveServer,
+            SharedFeatures.LastRejoin,
+            SharedFeatures.SmartRejoin
+        }
+    },
+    {
+        Name = "Simple Aimbot",
+        Desc = "Aimbot Untuk Map yang mempunyai fitur Shooter",
+        RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Plugin/SimpleAimbot",
+        SubFeatures = {
+            SharedFeatures.Aimbot,
+            SharedFeatures.SetRadius
+        }
+    },
+    {
+        Name = "F1Lock ( Khusus Keyboard )",
+        Desc = "Mengubah Shift Lock ke F1",
+        RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Plugin/F1Lock",
+        SubFeatures = {
+            SharedFeatures.F1LockBind
+        }
+    }
 }
 
 LoaderData.Tools = {
@@ -194,24 +410,80 @@ LoaderData.Tools = {
     SharedFeatures.AdminDetect,
     SharedFeatures.Noclip,
     SharedFeatures.CodeFinder,
-    SharedFeatures.AntiEffectGroup
+    {
+        Name = "Effect",
+        Desc = "Menghentikan Effect dan Part yang bandel",
+        RawUrl = "",
+        SubFeatures = {
+            SharedFeatures.AnchorVisual,
+            SharedFeatures.AntiShake,
+            SharedFeatures.AntiWind,
+            SharedFeatures.AntiTrigger
+        }
+    }
 }
 
 LoaderData.Horor = {
-    SharedFeatures.InteractableITP,
-    SharedFeatures.ColorESPPlayer,
+    {
+        Name = "Interactable / ITP",
+        Desc = "Memunculkan ESP Objek berdasarkan Promot, Touch, Click, Pintu atau Trigger",
+        RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Plugin/Interactable",
+        SubFeatures = {
+            SharedFeatures.ITP,
+            SharedFeatures.PPESP,
+            SharedFeatures.CDESP,
+            SharedFeatures.DESP,
+            SharedFeatures.ITESP,
+            SharedFeatures.TESP
+        }
+    },
+    {
+        Name = "Color ESP",
+        Desc = "Player & Enemy ESP",
+        RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Plugin/colorESP",
+        SubFeatures = {
+            SharedFeatures.PESP,
+            SharedFeatures.EESP
+        }
+    },
     SharedFeatures.FullBright,
     SharedFeatures.InstantPrompts,
-    SharedFeatures.MuteSoundSimple,
+    SharedFeatures.MuteSoundHoror,
     SharedFeatures.WalkSpeed,
     SharedFeatures.Noclip,
     SharedFeatures.CodeFinder
 }
 
 LoaderData.Gunung = {
-    SharedFeatures.WaypointTeleport,
-    SharedFeatures.SoundAndView,
-    SharedFeatures.ColorESPPlayer,
+    {
+        Name = "Teleport",
+        Desc = "Waypoint & Teleport",
+        RawUrl = "",
+        SubFeatures = {
+            SharedFeatures.RadarCP,
+            SharedFeatures.CPWp,
+            SharedFeatures.TpPlayer
+        }
+    },
+    {
+        Name = "Sound & View Manage",
+        Desc = "Mengatur suara di map dan memutar Lagu",
+        RawUrl = "",
+        SubFeatures = {
+            SharedFeatures.Spectator,
+            SharedFeatures.MuteSound,
+            SharedFeatures.PlayMusic
+        }
+    },
+    {
+        Name = "ESP Player",
+        Desc = "Player & Enemy ESP",
+        RawUrl = "",
+        SubFeatures = {
+            SharedFeatures.PESP,
+            SharedFeatures.EESP
+        }
+    },
     SharedFeatures.WalkSpeed,
     SharedFeatures.InfiniteJump
 }
