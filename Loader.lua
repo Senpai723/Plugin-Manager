@@ -271,11 +271,11 @@ local SharedFeatures = {
     AdminDetect = {
         Name = "Admin Detect",
         Desc = "Mendeteksi Owner dan Admin, tunggu beberapa detik setelah Execute",
-        Cmd = "cad",
+        Cmd = "",
         UnCmd = "",
         RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Tools/AdminDetect",
-        UpdateTimestamp = "061120261925, 21600",
-        BadgeText = "Fix!",
+        UpdateTimestamp = "061120262136, 21600",
+        BadgeText = "Maintenance!",
         BadgeColor = "red"
     },
     Noclip = {
@@ -433,6 +433,7 @@ LoaderData.Horor = {
     SharedFeatures.InstantPrompts,
     SharedFeatures.MuteSound,
     SharedFeatures.WalkSpeed,
+    SharedFeatures.InfiniteJump,
     SharedFeatures.Noclip,
     SharedFeatures.CodeFinder
 }
