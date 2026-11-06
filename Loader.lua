@@ -53,7 +53,7 @@ local SharedFeatures = {
         RawUrl = "",
         SubFeatures = {
             { Name = "Teleport to Item", Desc = "Teleport Ke item yang di pilih dan kembali ketitik awal", Cmd = "rgrab", UnCmd = "", RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Plugin/TPitem", UpdateTimestamp = "061120260923, 43200", BadgeText = "Update!", BadgeColor = "pink" },
-            { Name = "Inpector", Desc = "Menemukan sebuah jalur path parent-child sebuah Part", Cmd = "mobileinspector", UnCmd = "", RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Tools/clickinspector", UpdateTimestamp = "061120260938, 43200", BadgeText = "Update!", BadgeColor = "white" },
+            { Name = "Inspector", Desc = "Menemukan sebuah jalur path parent-child sebuah Part", Cmd = "mobileinspector", UnCmd = "", RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Tools/clickinspector", UpdateTimestamp = "061120260938, 43200", BadgeText = "Update!", BadgeColor = "white" },
             { Name = "Anti AFK", Desc = "Membuat karakter tidak terpental saat Afk 20 menit di Map", Cmd = "antiafk", UnCmd = "unantiafk", RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Tools/AntiAFK" },
         }
     },
@@ -167,11 +167,11 @@ LoaderData.Tabs = {
     { Name = "Horor", DataKey = "Horor" },
     { Name = "Gunung", DataKey = "Gunung" },
     { 
-        Name = "", 
-        DataKey = "",
-        TabUpdateTimestamp = "061120260300, 172800",
-        TabBadgeText = "HOT",
-        TabBadgeColor = "green"
+    --    Name = "", 
+      --  DataKey = "",
+      --   TabUpdateTimestamp = "061120260300, 172800",
+    --    TabBadgeText = "HOT",
+     --   TabBadgeColor = "green"
     }
 }
 
