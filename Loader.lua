@@ -274,7 +274,7 @@ local SharedFeatures = {
         Cmd = "cad",
         UnCmd = "",
         RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Tools/AdminDetect",
-        UpdateTimestamp = "61120261925, 21600",
+        UpdateTimestamp = "061120261925, 21600",
         BadgeText = "Fix!",
         BadgeColor = "red"
     },
