@@ -870,7 +870,7 @@ return function(speaker)
                     otherScroll.Visible = false
                 end
 
-,                Btn.BackgroundColor3 = Color3.fromRGB(180, 30, 30)
+                Btn.BackgroundColor3 = Color3.fromRGB(180, 30, 30)
                 Btn.TextColor3 = Color3.fromRGB(255, 255, 255)
                 
                 SubMenuContainer.Visible = false
