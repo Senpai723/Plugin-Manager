@@ -393,7 +393,7 @@ function scanServerAdmins(isManual, isStateChange)
                 _G.AdminDetector_NoAdminNotified = true
                 _G.AdminDetector_LastHash = ""
                 pcall(function()
-                    val oldUI = CoreGui:FindFirstChild("AdminDetectorUI") or (LocalPlayer and LocalPlayer:FindFirstChild("PlayerGui") and LocalPlayer.PlayerGui:FindFirstChild("AdminDetectorUI"))
+                    local oldUI = CoreGui:FindFirstChild("AdminDetectorUI") or (LocalPlayer and LocalPlayer:FindFirstChild("PlayerGui") and LocalPlayer.PlayerGui:FindFirstChild("AdminDetectorUI"))
                     if oldUI then oldUI:Destroy() end
                 end)
                 playBeep()
