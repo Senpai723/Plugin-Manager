@@ -11,7 +11,7 @@ return function(speaker)
     -- ==========================================
     local CUSTOM_TEXT = "🔥 Selamat datang di Plugin Manager By Tryo! Script akan selalu up to date! ! 🚀"
     local CUSTOM_TEXT_COLOR = Color3.fromRGB(0, 220, 255) -- Warna teks berjalan (Bisa diganti RGB-nya)
-    local SCROLL_SPEED = 12 -- Semakin besar angka, semakin lambat gerakannya
+    local SCROLL_SPEED = 17 -- Semakin besar angka, semakin lambat gerakannya
 
     -- ==========================================
     -- 🛠️ AUTO-RESET CACHE PINTAR (HUB VERSION)
