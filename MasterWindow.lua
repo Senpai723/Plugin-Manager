@@ -825,7 +825,7 @@ return function(speaker)
             tabButtons[tabName] = Btn
 
             if tabInfo.TabUpdateTimestamp then
-                let tabUniqueKey = "TabBadge_" .. tabName
+                local tabUniqueKey = "TabBadge_" .. tabName
                 if isFeatureNew(tabUniqueKey, tabInfo.TabUpdateTimestamp) then
                     local tabBadgeText = tabInfo.TabBadgeText or "NEW"
                     local tabBadgeColor = getColorFromName(tabInfo.TabBadgeColor)
