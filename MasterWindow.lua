@@ -296,7 +296,7 @@ return function(speaker)
     HeaderContainer.Parent = Frame
     Instance.new("UICorner", HeaderContainer).CornerRadius = UDim.new(0, 4)
 
-    -- Foto Profil Lebih Besar di Kiri
+        -- Foto Profil Lebih Besar di Kiri
     local AvatarImg = Instance.new("ImageLabel")
     AvatarImg.Size = UDim2.new(0, 36, 0, 36)
     AvatarImg.Position = UDim2.new(0, 2, 0, 2)
@@ -305,12 +305,16 @@ return function(speaker)
     AvatarImg.Parent = HeaderContainer
     Instance.new("UICorner", AvatarImg).CornerRadius = UDim.new(0, 4)
 
-    pcall(function()
-        local userId = LocalPlayer.UserId
-        local content, isReady = Players:GetUserThumbnailAsync(userId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size42x42)
-        if content then
-            AvatarImg.Image = content
-        end
+    -- Ambil thumbnail foto profil player dengan aman
+    task.spawn(function()
+        pcall(function()
+            local userId = LocalPlayer.UserId
+            -- Menggunakan HeadShot dengan ukuran 150x150 agar lebih stabil di-load oleh Roblox
+            local content = Players:GetUserThumbnailAsync(userId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size150x150)
+            if content then
+                AvatarImg.Image = content
+            end
+        end)
     end)
 
     -- Teks Berjalan di Sebelah Kanan Foto
