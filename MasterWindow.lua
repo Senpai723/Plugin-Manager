@@ -196,7 +196,7 @@ return function(speaker)
     local BgImage = Instance.new("ImageLabel")
     BgImage.Size = UDim2.new(1, 0, 1, 0)
     BgImage.BackgroundTransparency = 1
-    BgImage.Image = "rbxassetid://6071573842" -- Coba tes ID ini dulu
+    BgImage.Image = "rbxassetid://6071575925" -- Coba tes ID ini dulu
     BgImage.ScaleType = Enum.ScaleType.Tile
     BgImage.TileSize = UDim2.new(0, 100, 0, 100)
     BgImage.ImageTransparency = 0.5 -- Transparansi gambar
