@@ -432,8 +432,8 @@ LoaderData.Horor = {
     SharedFeatures.FullBright,
     SharedFeatures.InstantPrompts,
     SharedFeatures.MuteSound,
-    SharedFeatures.WalkSpeed,
     SharedFeatures.InfiniteJump,
+    SharedFeatures.WalkSpeed,
     SharedFeatures.Noclip,
     SharedFeatures.CodeFinder
 }
