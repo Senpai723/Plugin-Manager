@@ -299,9 +299,9 @@ local SharedFeatures = {
 -- ==========================================================
 LoaderData.Tabs = {
     { Name = "Main", DataKey = "Main" },
-    { Name = "Tools", DataKey = "Tools" },
-    { Name = "Horor", DataKey = "Horor" },
     { Name = "Gunung", DataKey = "Gunung" },
+    { Name = "Horor", DataKey = "Horor" },
+    { Name = "Tools", DataKey = "Tools" },
     { 
         Name = "KAMING SUN", 
         DataKey = "",
