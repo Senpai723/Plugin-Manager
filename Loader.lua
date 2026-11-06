@@ -62,14 +62,14 @@ local SharedFeatures = {
 
     -- 2. ESP Player Sub-Features
     PESP = {
-        Name = "PESP",
+        Name = "Player ESP",
         Desc = "Menampilkan ESP Body dan mama Player",
         Cmd = "pesp",
         UnCmd = "unloadColorESP",
         RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Plugin/colorESP"
     },
     EESP = {
-        Name = "EESP",
+        Name = "Enemy ESP",
         Desc = "Menampilkan ESP Musuh dan NPC",
         Cmd = "eesp",
         UnCmd = "unloadColorESP",
@@ -133,7 +133,7 @@ local SharedFeatures = {
     -- 5. Fun Sub-Features & Standalone Tools
     TeleportItem = {
         Name = "Teleport to Item",
-        Desc = "Teleport Ke item yang di pilih dan kembali ketitik awal",
+        Desc = "tidak untuk semua map, hanya untuk Map yang bertema merapihkan Barang",
         Cmd = "rgrab",
         UnCmd = "",
         RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Plugin/TPitem",
@@ -318,22 +318,8 @@ LoaderData.Tabs = {
     }
 }
 
-LoaderData.Main = {
-    {
-        Name = "Interactable / ITP",
-        Desc = "Memunculkan ESP Objek berdasarkan Promot, Touch, Click, Pintu atau Trigger",
-        RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Plugin/Interactable",
-        SubFeatures = {
-            SharedFeatures.ITP,
-            SharedFeatures.PPESP,
-            SharedFeatures.CDESP,
-            SharedFeatures.DESP,
-            SharedFeatures.ITESP,
-            SharedFeatures.LOOT,
-            SharedFeatures.TESP
-        }
-    },
-    {
+LoaderData.Main = {    
+    }
         Name = "ESP Player",
         Desc = "Player & Enemy ESP",
         RawUrl = "",
@@ -349,7 +335,8 @@ LoaderData.Main = {
         SubFeatures = {
             SharedFeatures.RadarCP,
             SharedFeatures.CPWp,
-            SharedFeatures.TpPlayer
+            SharedFeatures.TpPlayer,
+            SharedFeatures.TeleportItem
         }
     },
     {
@@ -363,18 +350,8 @@ LoaderData.Main = {
         }
     },
     {
-        Name = "FUN",
-        Desc = "Fitur Tambahan",
-        RawUrl = "",
-        SubFeatures = {
-            SharedFeatures.TeleportItem,
-            SharedFeatures.Inspector,
-            SharedFeatures.AntiAFK
-        }
-    },
-    {
-        Name = "REJOIN ( Public Server )",
-        Desc = "Rejoin Manage ( Tidak Support Game CO - OP )",
+        Name = "Rejoin ( Public Server )",
+        Desc = "Rejoin Manage ( Tidak Support game Berlobby )",
         RawUrl = "",
         SubFeatures = {
             SharedFeatures.AutoSave,
@@ -410,6 +387,8 @@ LoaderData.Tools = {
     SharedFeatures.AdminDetect,
     SharedFeatures.Noclip,
     SharedFeatures.CodeFinder,
+    SharedFeatures.AntiAFK,
+    SharedFeatures.Inspector,
     {
         Name = "Effect",
         Desc = "Menghentikan Effect dan Part yang bandel",
