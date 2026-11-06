@@ -142,7 +142,7 @@ local SharedFeatures = {
         BadgeColor = "pink"
     },
     Inspector = {
-        Name = "Inpector",
+        Name = "Inspector",
         Desc = "Menemukan sebuah jalur path parent-child sebuah Part",
         Cmd = "mobileinspector",
         UnCmd = "",
@@ -310,11 +310,11 @@ LoaderData.Tabs = {
     { Name = "Horor", DataKey = "Horor" },
     { Name = "Gunung", DataKey = "Gunung" },
     { 
-        Name = "VIP", 
-        DataKey = "VipMenu",
-        TabUpdateTimestamp = "061120260300, 172800",
-        TabBadgeText = "HOT",
-        TabBadgeColor = "green"
+      --  Name = "VIP", 
+       -- DataKey = "VipMenu",
+     --   TabUpdateTimestamp = "061120260300, 172800",
+    --    TabBadgeText = "HOT",
+     --   TabBadgeColor = "green"
     }
 }
 
