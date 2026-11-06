@@ -319,7 +319,7 @@ LoaderData.Tabs = {
 }
 
 LoaderData.Main = {    
-    }
+    {
         Name = "ESP Player",
         Desc = "Player & Enemy ESP",
         RawUrl = "",
