@@ -218,21 +218,8 @@ local function parseCPIdentity(obj)
     end
 
     -- ==================================================
-    -- 2. PARSING NOMOR CHECKPOINT (Termasuk Teks Billboard & Part Polos)
+    -- 2. PARSING NOMOR CHECKPOINT (Akurat Tanpa Fallback Posisi Ngawur)
     -- ==================================================
-    local guiText = ""
-    local hasGui = validPart:FindFirstChildOfClass("BillboardGui") or validPart:FindFirstChildOfClass("SurfaceGui")
-    if not hasGui and validPart.Parent and validPart.Parent:IsA("Model") then
-        hasGui = validPart.Parent:FindFirstChildOfClass("BillboardGui") or validPart:FindFirstChildOfClass("SurfaceGui")
-    end
-    
-    if hasGui then
-        local textLabel = hasGui:FindFirstChildOfClass("TextLabel")
-        if textLabel and textLabel.Text ~= "" then
-            guiText = string.lower(textLabel.Text)
-        end
-    end
-
     local combined = lowerParent .. " " .. lowerName .. " " .. guiText
 
     local num = string.match(combined, "checkpoints?%s*[_]?%s*(%d+%.?%d*)") or
@@ -254,20 +241,13 @@ local function parseCPIdentity(obj)
         num = string.match(name, "^(%d+%.?%d*)$")
     end
 
-    -- Fallback khusus jika part bernama persis "Checkpoint" tanpa angka, ambil ID unik berdasarkan koordinat posisi agar tetap masuk list
-    if not num and (lowerName == "checkpoint" or lowerName == "cp") then
-        -- Buat nomor virtual berbasis posisi Z/Y agar tidak bentrok
-        num = math.abs(math.floor(validPart.Position.Z % 100))
-        if num == 0 then num = 1 end
-    end
-
+    -- JIKA NAMA PART POLOS TANPA ANGKA (Seperti "Checkpoint"): 
+    -- Daripada pakai angka posisi acak yang bikin 63, kita jadikan teks string "CP" atau biarkan terbaca teks aslinya
     if not num then
-        if string.find(combined, "cp") or string.find(combined, "checkpoint") or string.find(combined, "stage") or string.find(combined, "waypoint") then
-            return nil, nil, nil, 0
+        if lowerName == "checkpoint" or lowerName == "cp" then
+            -- Cek apakah ada nomor urut dari nama parent foldernya, kalau tidak ada jadikan teks string stabil
+            return "CP", (folderContext ~= "" and folderContext .. " - Checkpoint" or "Checkpoint"), validPart, 1
         end
-    end
-
-    if not num then
         return nil, nil, nil, 0
     end
 
