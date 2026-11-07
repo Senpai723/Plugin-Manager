@@ -483,10 +483,10 @@ return function(speaker)
         end)
     end)
 
-        -- 🕒 LABEL LAST UPDATE (DIGESER KE BAWAH BIAR SEJAJAR SAMA ID)
+        -- 🕒 LABEL LAST UPDATE (MENTOK PAS DI BAWAH BOX ABU-ABU)
     local LastUpdateLabel = Instance.new("TextLabel")
     LastUpdateLabel.Size = UDim2.new(0, 115, 0, 32)
-    LastUpdateLabel.Position = UDim2.new(1, -118, 0, 18) -- Diubah dari 14 ke 18 biar turun sejajar sama ID
+    LastUpdateLabel.Position = UDim2.new(1, -118, 0, 22) -- Diturunkan ke 22 biar mentok bawah box abu-abu
     LastUpdateLabel.BackgroundTransparency = 1
     LastUpdateLabel.Font = Enum.Font.Gotham
     LastUpdateLabel.Text = "Last Update :\nMemuat..."
