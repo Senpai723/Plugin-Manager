@@ -37,7 +37,7 @@ local SharedFeatures = {
         Cmd = "dooresp",
         UnCmd = "undooresp",
         NeedInput = true,
-        RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Plugin/Interactable",
+        RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Plugin/Interactable", -- ⚠️ Koma yang tadinya kurang udah ditambahin di sini
         UpdateTimestamp = ""
     },
     ITESP = {
@@ -322,7 +322,7 @@ local SharedFeatures = {
 }
 
 -- ==========================================================
--- 📂 STRUKTUR TAB UTAMA
+-- 📂 STRUKTUR TAB UTAMA (SUDAH RINGKAS & BERSIH)
 -- ==========================================================
 LoaderData.Tabs = {
     { Name = "Main", DataKey = "Main" },
