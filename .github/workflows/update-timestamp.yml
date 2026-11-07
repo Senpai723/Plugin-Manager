@@ -10,11 +10,13 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      pull-requests: write
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+          persist-credentials: true
 
       - name: Setup Node.js
         uses: actions/setup-node@v3
@@ -94,6 +96,7 @@ jobs:
 
             if (modified) {
               fs.writeFileSync("Loader.lua", loaderContent);
+              console.log("Loader.lua berhasil dimodifikasi di memori!");
             }
           '
 
@@ -102,7 +105,14 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add Loader.lua
-          git diff --staged --quiet || (git commit -m "bot: auto update bundled feature timestamps [skip ci]" && git push origin main)
+          
+          # Cek apakah ada perubahan, lalu commit dan push paksa ke branch main
+          if git diff --staged --quiet; then
+            echo "Tidak ada perubahan pada Loader.lua"
+          else
+            git commit -m "bot: auto update bundled feature timestamps [skip ci]"
+            git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git HEAD:main
+          fi
 
       - name: Send Timestamp to Google Sheets
         run: |
