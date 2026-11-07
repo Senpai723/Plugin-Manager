@@ -3,7 +3,7 @@ name: Auto Update Hub Metadata & Timestamps
 on:
   push:
     branches:
-      - main  # Sesuaikan nama branch utama lu (main/master)
+      - main  # Ganti jadi "master" kalau branch utama lu namanya master
 
 jobs:
   update-metadata-and-sheets:
@@ -17,14 +17,13 @@ jobs:
         with:
           node-version: '18'
 
-      # 1. STEP AUTO UPDATE FEATURE TIMESTAMP DI LOADER.LUA
+      # 1. STEP AUTO UPDATE FEATURE TIMESTAMP (SUPPORT MULTI-FEATURE / BUNDLING FILE)
       - name: Process Timestamp Updates in Loader.lua
         run: |
           node -e '
             const fs = require("fs");
             const { execSync } = require("child_process");
 
-            // Ambil daftar file yang di-commit / di-push
             const changedFiles = execSync("git diff-tree --no-commit-id --name-only -r HEAD")
               .toString()
               .trim()
@@ -44,24 +43,54 @@ jobs:
             const yyyy = now.getFullYear();
             const hh = pad(now.getHours());
             const min = pad(now.getMinutes());
-
-            // Format: DDMMYYYYHHMM, 86400
             const featureTimeStr = `${dd}${mm}${yyyy}${hh}${min}, 86400`;
 
             let loaderContent = fs.readFileSync("Loader.lua", "utf8");
             let modified = false;
 
+            // Mapping file bundling ke sub-fitur di Loader.lua
+            const bundleMapping = {
+              "Interactable": ["ITP", "PPESP", "CDESP", "DESP", "ITESP", "LOOT", "TESP"],
+              "colorESP": ["PESP", "EESP"],
+              "Waypoint": ["RadarCP", "CPWp"],
+              "PlayerTeleport": ["TpPlayer"],
+              "SoundandView": ["Spectator", "MuteSound"],
+              "MusicTimeML": ["PlayMusic"],
+              "TPitem": ["TeleportItem"],
+              "clickinspector": ["Inspector"],
+              "AntiAFK": ["AntiAFK"],
+              "LastRejoin": ["AutoSave", "SaveServer", "LastRejoin"],
+              "SmartRejoin": ["SmartRejoin"],
+              "SimpleAimbot": ["Aimbot", "SetRadius"],
+              "F1Lock": ["F1LockBind"],
+              "AntiEffect": ["AnchorVisual", "AntiShake", "AntiWind", "AntiTrigger"],
+              "Fullbright": ["FullBright"],
+              "InstanPrompt": ["InstantPrompts"],
+              "WalkSpeed": ["WalkSpeed"],
+              "InfiniteJump": ["InfiniteJump"],
+              "AdminDetect": ["AdminDetect"],
+              "Noclip": ["Noclip"],
+              "CodeFinder": ["CodeFinder"]
+            };
+
             changedFiles.forEach((file) => {
-              if (file.endsWith(".lua")) {
+              if (file.endsWith(".lua") || !file.includes(".")) {
                 const fileName = file.split("/").pop().replace(".lua", "");
                 
-                // Cari nama file plugin dan update UpdateTimestamp di Loader.lua
-                const regex = new RegExp(`(${fileName}[\\s\\S]*?UpdateTimestamp\\s*=\\s*")([^"]*)(")`, "g");
-                if (regex.test(loaderContent)) {
-                  loaderContent = loaderContent.replace(regex, `$1${featureTimeStr}$3`);
-                  modified = true;
-                  console.log(`Updated UpdateTimestamp for feature: ${fileName}`);
+                // Tentukan daftar key fitur yang harus di-update timestamp-nya
+                let keysToUpdate = [fileName]; // Default-nya nama filenya sendiri
+                if (bundleMapping[fileName]) {
+                  keysToUpdate = bundleMapping[fileName]; // Kalau file bundling, ambil semua anak buahnya!
                 }
+
+                keysToUpdate.forEach((keyName) => {
+                  const regex = new RegExp(`(${keyName}[\\s\\S]*?UpdateTimestamp\\s*=\\s*")([^"]*)(")`, "g");
+                  if (regex.test(loaderContent)) {
+                    loaderContent = loaderContent.replace(regex, `$1${featureTimeStr}$3`);
+                    modified = true;
+                    console.log(`Updated UpdateTimestamp for feature key: ${keyName}`);
+                  }
+                });
               }
             });
 
@@ -70,18 +99,19 @@ jobs:
             }
           '
 
-      # 2. STEP COMMIT & PUSH BILA ADA NAMA FEATURE YANG TER-UPDATE IN LOADER
+      # 2. STEP COMMIT & PUSH BILA ADA PERUBAHAN DI LOADER
       - name: Commit & Push Loader Changes
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add Loader.lua
-          git diff --quiet && git diff --staged --quiet || (git commit -m "bot: auto update feature timestamps" && git push)
+          git diff --quiet && git diff --staged --quiet || (git commit -m "bot: auto update bundled feature timestamps" && git push)
 
-      # 3. STEP KIRIM LAST UPDATE KE GOOGLE SHEETS VIA WEB APP API
+      # 3. STEP KIRIM LAST UPDATE KE GOOGLE SHEETS
       - name: Send Timestamp to Google Sheets
         run: |
           CURRENT_TIME=$(TZ='Asia/Jakarta' date +'%d%m%Y %H:%M')
           curl -X POST -H "Content-Type: application/json" \
           -d "{\"Type\":\"LastUpdate\",\"Timestamp\":\"$CURRENT_TIME\"}" \
           "https://script.google.com/macros/s/AKfycbxJzU3MiL_o9PjkF4h-prSw-P8vLVfJqGFXM7pFJOPzIzJXaGmu6z6oK0oJl54a6bQy0Q/exec"
+          
