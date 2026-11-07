@@ -483,7 +483,7 @@ return function(speaker)
         end)
     end)
 
-    -- 🕒 LABEL LAST UPDATE (LEBAR DILEBARKAN DAN POSISI DIGESER DIKIT)
+     -- 🕒 LABEL LAST UPDATE (POSISI & UKURAN PAS)
     local LastUpdateLabel = Instance.new("TextLabel")
     LastUpdateLabel.Size = UDim2.new(0, 115, 0, 26)
     LastUpdateLabel.Position = UDim2.new(1, -118, 0, 16)
@@ -501,7 +501,6 @@ return function(speaker)
             local response = game:HttpGet(SHEETS_WEB_APP_URL)
             if response and response ~= "" then
                 local data = HttpService:JSONDecode(response)
-                -- Ambil timestamp dari key SCP atau LastUpdate
                 local timestamp = data["SCP"] or data["LastUpdate"] or ""
                 
                 if timestamp and #timestamp >= 12 then
@@ -521,6 +520,7 @@ return function(speaker)
             end
         end)
     end)
+
 
     local ContentArea = Instance.new("Frame")
     ContentArea.Size = UDim2.new(1, -12, 1, -108)
