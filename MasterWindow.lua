@@ -483,10 +483,10 @@ return function(speaker)
         end)
     end)
 
-        -- 🕒 LABEL LAST UPDATE (POSISI & FORMAT REAL-TIME)
+    -- 🕒 LABEL LAST UPDATE (POSISI KANAN PAS, TINGGI Y PAS)
     local LastUpdateLabel = Instance.new("TextLabel")
-    LastUpdateLabel.Size = UDim2.new(0, 115, 0, 32)
-    LastUpdateLabel.Position = UDim2.new(1, -118, 0, 14)
+    LastUpdateLabel.Size = UDim2.new(0, 100, 0, 24)
+    LastUpdateLabel.Position = UDim2.new(1, -104, 0, 18)
     LastUpdateLabel.BackgroundTransparency = 1
     LastUpdateLabel.Font = Enum.Font.Gotham
     LastUpdateLabel.Text = "Last Update :\nMemuat..."
@@ -499,23 +499,14 @@ return function(speaker)
     task.spawn(function()
         pcall(function()
             local response = game:HttpGet(SHEETS_WEB_APP_URL)
-            if response and response ~= "" then
-                local data = HttpService:JSONDecode(response)
-                -- Langsung ambil key "LastUpdate" dari tab Metadata spreadsheet lu
-                local timestamp = data["LastUpdate"] or ""
+            if response and response ~= "" and response ~= "Belum ada update" then
+                local dd = response:sub(1, 2)
+                local mm = response:sub(3, 4)
+                local yyyy = response:sub(5, 8)
+                local timePart = response:sub(10)
                 
-                if timestamp and #timestamp >= 12 then
-                    local dd = timestamp:sub(1, 2)
-                    local mm = timestamp:sub(3, 4)
-                    local yyyy = timestamp:sub(5, 8)
-                    local hour = timestamp:sub(9, 10)
-                    local min = timestamp:sub(11, 12)
-                    
-                    local formattedDate = dd .. "/" .. mm .. "/" .. yyyy .. " " .. hour .. ":" .. min
-                    LastUpdateLabel.Text = "Last Update :\n" .. formattedDate
-                else
-                    LastUpdateLabel.Text = "Last Update :\n" .. tostring(timestamp)
-                end
+                local formattedDate = dd .. "/" .. mm .. "/" .. yyyy .. " " .. timePart
+                LastUpdateLabel.Text = "Last Update :\n" .. formattedDate
             else
                 LastUpdateLabel.Text = "Last Update :\n-"
             end
