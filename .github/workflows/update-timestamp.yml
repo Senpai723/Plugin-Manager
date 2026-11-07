@@ -1,18 +1,87 @@
-name: Auto Push Last Update to Sheets
+name: Auto Update Hub Metadata & Timestamps
 
 on:
   push:
     branches:
-      - main  # Ganti jadi "master" kalau branch utama lu namanya master
+      - main  # Sesuaikan nama branch utama lu (main/master)
 
 jobs:
-  report-update:
+  update-metadata-and-sheets:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      # 1. STEP AUTO UPDATE FEATURE TIMESTAMP DI LOADER.LUA
+      - name: Process Timestamp Updates in Loader.lua
+        run: |
+          node -e '
+            const fs = require("fs");
+            const { execSync } = require("child_process");
+
+            // Ambil daftar file yang di-commit / di-push
+            const changedFiles = execSync("git diff-tree --no-commit-id --name-only -r HEAD")
+              .toString()
+              .trim()
+              .split("\n");
+
+            if (!changedFiles.length || (changedFiles.length === 1 && changedFiles[0] === "")) {
+              console.log("Tidak ada perubahan file.");
+              process.exit(0);
+            }
+
+            // Format Waktu WIB (UTC+7)
+            const now = new Date();
+            now.setHours(now.getHours() + 7);
+            const pad = (n) => String(n).padStart(2, "0");
+            const dd = pad(now.getDate());
+            const mm = pad(now.getMonth() + 1);
+            const yyyy = now.getFullYear();
+            const hh = pad(now.getHours());
+            const min = pad(now.getMinutes());
+
+            // Format: DDMMYYYYHHMM, 86400
+            const featureTimeStr = `${dd}${mm}${yyyy}${hh}${min}, 86400`;
+
+            let loaderContent = fs.readFileSync("Loader.lua", "utf8");
+            let modified = false;
+
+            changedFiles.forEach((file) => {
+              if (file.endsWith(".lua")) {
+                const fileName = file.split("/").pop().replace(".lua", "");
+                
+                // Cari nama file plugin dan update UpdateTimestamp di Loader.lua
+                const regex = new RegExp(`(${fileName}[\\s\\S]*?UpdateTimestamp\\s*=\\s*")([^"]*)(")`, "g");
+                if (regex.test(loaderContent)) {
+                  loaderContent = loaderContent.replace(regex, `$1${featureTimeStr}$3`);
+                  modified = true;
+                  console.log(`Updated UpdateTimestamp for feature: ${fileName}`);
+                }
+              }
+            });
+
+            if (modified) {
+              fs.writeFileSync("Loader.lua", loaderContent);
+            }
+          '
+
+      # 2. STEP COMMIT & PUSH BILA ADA NAMA FEATURE YANG TER-UPDATE IN LOADER
+      - name: Commit & Push Loader Changes
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add Loader.lua
+          git diff --quiet && git diff --staged --quiet || (git commit -m "bot: auto update feature timestamps" && git push)
+
+      # 3. STEP KIRIM LAST UPDATE KE GOOGLE SHEETS VIA WEB APP API
       - name: Send Timestamp to Google Sheets
         run: |
           CURRENT_TIME=$(TZ='Asia/Jakarta' date +'%d%m%Y %H:%M')
           curl -X POST -H "Content-Type: application/json" \
           -d "{\"Type\":\"LastUpdate\",\"Timestamp\":\"$CURRENT_TIME\"}" \
           "https://script.google.com/macros/s/AKfycbxJzU3MiL_o9PjkF4h-prSw-P8vLVfJqGFXM7pFJOPzIzJXaGmu6z6oK0oJl54a6bQy0Q/exec"
-          
