@@ -35,11 +35,11 @@ jobs:
             }
 
             const now = new Date();
-            now.setHours(now.getHours() + 7); // Waktu WIB (UTC+7)
+            now.setHours(now.getHours() + 7);
             const pad = (n) => String(n).padStart(2, "0");
             const featureTimeStr = `${pad(now.getDate())}${pad(now.getMonth() + 1)}${now.getFullYear()}${pad(now.getHours())}${pad(now.getMinutes())}`;
 
-              const bundleMapping = {
+            const bundleMapping = {
               "Waypoint": ["SCP", "CPN"],
               "Interactable": ["ITP", "PPESP", "CDESP", "ITESP", "DESP", "TESP", "LOOT"],
               "LastRejoin": ["AutoSave", "SaveServer", "LastRejoin"],
@@ -63,7 +63,6 @@ jobs:
               "CodeFinder": ["CodeFinder"]
             };
 
-            // URL Google Sheets Web App lu yang baru
             const SHEET_URL = "https://script.google.com/macros/s/AKfycbxJzU3MiL_o9PjkF4h-prSw-P8vLVfJqGFXM7pFJOPzIzJXaGmu6z6oK0oJl54a6bQy0Q/exec";
 
             changedFiles.forEach((file) => {
@@ -72,9 +71,7 @@ jobs:
                 let keysToUpdate = bundleMapping[fileName] || [fileName];
 
                 keysToUpdate.forEach((keyName) => {
-                  console.log(`Mengirim update untuk ${keyName} ke Google Sheets...`);
                   const payload = JSON.stringify({ Type: "FeatureUpdate", Key: keyName, Timestamp: featureTimeStr });
-                  
                   execSync(`curl -X POST -H "Content-Type: application/json" -d '\''${payload}'\'' "${SHEET_URL}"`);
                 });
               }
