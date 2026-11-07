@@ -483,10 +483,10 @@ return function(speaker)
         end)
     end)
 
-     -- 🕒 LABEL LAST UPDATE (POSISI & UKURAN PAS)
+         -- 🕒 LABEL LAST UPDATE (TINGGI DIPERBESAR SUPAYA TIDAK KEPOTONG)
     local LastUpdateLabel = Instance.new("TextLabel")
-    LastUpdateLabel.Size = UDim2.new(0, 115, 0, 26)
-    LastUpdateLabel.Position = UDim2.new(1, -118, 0, 16)
+    LastUpdateLabel.Size = UDim2.new(0, 115, 0, 32)
+    LastUpdateLabel.Position = UDim2.new(1, -118, 0, 14)
     LastUpdateLabel.BackgroundTransparency = 1
     LastUpdateLabel.Font = Enum.Font.Gotham
     LastUpdateLabel.Text = "Last Update :\nMemuat..."
@@ -501,7 +501,7 @@ return function(speaker)
             local response = game:HttpGet(SHEETS_WEB_APP_URL)
             if response and response ~= "" then
                 local data = HttpService:JSONDecode(response)
-                local timestamp = data["SCP"] or data["LastUpdate"] or ""
+                local timestamp = data["LastUpdate"] or data["SCP"] or ""
                 
                 if timestamp and #timestamp >= 12 then
                     local dd = timestamp:sub(1, 2)
@@ -520,7 +520,6 @@ return function(speaker)
             end
         end)
     end)
-
 
     local ContentArea = Instance.new("Frame")
     ContentArea.Size = UDim2.new(1, -12, 1, -108)
