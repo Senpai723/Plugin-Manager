@@ -479,7 +479,7 @@ return function(speaker)
     -- 🕒 LABEL LAST UPDATE (DITURUNKAN DIKIT KE BAWAH)
     local LastUpdateLabel = Instance.new("TextLabel")
     LastUpdateLabel.Size = UDim2.new(0, 110, 0, 24)
-    LastUpdateLabel.Position = UDim2.new(1, -114, 0, 8) -- Diturunkan 8 pixel dari atas
+    LastUpdateLabel.Position = UDim2.new(1, -114, 0, 14) -- Diturunkan 8 pixel dari atas
     LastUpdateLabel.BackgroundTransparency = 1
     LastUpdateLabel.Font = Enum.Font.Gotham
     LastUpdateLabel.Text = "Last Update :\nMemuat..."
