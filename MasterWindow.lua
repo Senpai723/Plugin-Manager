@@ -476,32 +476,29 @@ return function(speaker)
     MapLabel.TextXAlignment = Enum.TextXAlignment.Left
     MapLabel.Parent = HeaderContainer
 
-    -- 🕒 LABEL LAST UPDATE (POSISI DI KANAN ATAS, FORMAT DENGAN /)
+    -- 🕒 LABEL LAST UPDATE (DITURUNKAN DIKIT KE BAWAH)
     local LastUpdateLabel = Instance.new("TextLabel")
-    LastUpdateLabel.Size = UDim2.new(0, 110, 1, 0)
-    LastUpdateLabel.Position = UDim2.new(1, -114, 0, 0)
+    LastUpdateLabel.Size = UDim2.new(0, 110, 0, 24)
+    LastUpdateLabel.Position = UDim2.new(1, -114, 0, 8) -- Diturunkan 8 pixel dari atas
     LastUpdateLabel.BackgroundTransparency = 1
     LastUpdateLabel.Font = Enum.Font.Gotham
     LastUpdateLabel.Text = "Last Update :\nMemuat..."
     LastUpdateLabel.TextColor3 = Color3.fromRGB(160, 175, 195)
     LastUpdateLabel.TextSize = 8
     LastUpdateLabel.TextXAlignment = Enum.TextXAlignment.Right
-    LastUpdateLabel.TextYAlignment = Enum.TextYAlignment.Center
+    LastUpdateLabel.TextYAlignment = Enum.TextYAlignment.Top
     LastUpdateLabel.Parent = HeaderContainer
 
     task.spawn(function()
         pcall(function()
             local response = game:HttpGet(SHEETS_WEB_APP_URL)
             if response and response ~= "" and response ~= "Belum ada update" then
-                -- Ambil tanggal dari string mentah, misal "07112026 18:46"
                 local dd = response:sub(1, 2)
                 local mm = response:sub(3, 4)
                 local yyyy = response:sub(5, 8)
-                local timePart = response:sub(10) -- Ambil jamnya (18:46)
+                local timePart = response:sub(10)
                 
-                -- Gabungkan pakai garis miring /
                 local formattedDate = dd .. "/" .. mm .. "/" .. yyyy .. " " .. timePart
-                
                 LastUpdateLabel.Text = "Last Update :\n" .. formattedDate
             else
                 LastUpdateLabel.Text = "Last Update :\n-"
