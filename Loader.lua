@@ -405,7 +405,7 @@ LoaderData.Gunung = {
         }
     },
     SharedFeatures.InfiniteJump,
-    SharedFeatures.InstantPrompts,
+    SharedFeatures.InstantPrompt,
     SharedFeatures.PESP,
     {
         Name = "Interactable / ITP",
