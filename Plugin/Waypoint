@@ -27,6 +27,7 @@ end
 
 local CURRENT_MAP_KEY = getMapKey()
 
+
 local IGNORE_KEYWORDS = {
     "teleport", "tp", "tele", "coin", "gold", "reward", "cash", "money", "gem", "stop", "jump", "ready", "inner", "outer", "damage",
     "time", "seluncur", "remove", "clone", "seat", "laying", "down", "fall", "jatuh", "chat", "block", "boost",
