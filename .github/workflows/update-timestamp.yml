@@ -17,10 +17,11 @@ jobs:
         with:
           node-version: '18'
 
-      # 1. STEP AUTO UPDATE FEATURE TIMESTAMP (SESUAI LOADER.LUA TERBARU)
+      # 1. STEP AUTO UPDATE FEATURE TIMESTAMP (FIXED FOLDER PATH ISSUE)
       - name: Process Timestamp Updates in Loader.lua
         run: |
           node -e '
+            const path = require("path");
             const fs = require("fs");
             const { execSync } = require("child_process");
 
@@ -48,7 +49,7 @@ jobs:
             let loaderContent = fs.readFileSync("Loader.lua", "utf8");
             let modified = false;
 
-            // Kamus Bundle Mapping Sesuai Loader.lua Lu yang Baru
+            // Kamus Bundle Mapping Sesuai Loader.lua Lu
             const bundleMapping = {
               "Interactable": ["ITP", "PPESP", "CDESP", "ITESP", "DESP", "TESP"],
               "LastRejoin": ["AutoSave", "SaveServer", "LastRejoin"],
@@ -77,7 +78,9 @@ jobs:
 
             changedFiles.forEach((file) => {
               if (file.endsWith(".lua") || !file.includes(".")) {
-                const fileName = file.split("/").pop().replace(".lua", "");
+                // Ambil murni nama file saja tanpa path folder dan tanpa ekstensi
+                const baseName = path.basename(file);
+                const fileName = baseName.replace(/\.[^/.]+$/, "");
                 
                 let keysToUpdate = [fileName]; 
                 if (bundleMapping[fileName]) {
