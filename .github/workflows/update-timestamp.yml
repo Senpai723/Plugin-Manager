@@ -1,0 +1,18 @@
+name: Auto Push Last Update to Sheets
+
+on:
+  push:
+    branches:
+      - main  # Ganti jadi "master" kalau branch utama lu namanya master
+
+jobs:
+  report-update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Timestamp to Google Sheets
+        run: |
+          CURRENT_TIME=$(TZ='Asia/Jakarta' date +'%d%m%Y %H:%M')
+          curl -X POST -H "Content-Type: application/json" \
+          -d "{\"Type\":\"LastUpdate\",\"Timestamp\":\"$CURRENT_TIME\"}" \
+          "https://script.google.com/macros/s/AKfycbxJzU3MiL_o9PjkF4h-prSw-P8vLVfJqGFXM7pFJOPzIzJXaGmu6z6oK0oJl54a6bQy0Q/exec"
+          
