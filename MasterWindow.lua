@@ -469,6 +469,20 @@ return function(speaker)
     MapLabel.TextXAlignment = Enum.TextXAlignment.Left
     MapLabel.Parent = HeaderContainer
 
+    -- 🗺️ TAMBAHKAN KODE INI SUPAYA NAMA MAP MUNCUL OTOMATIS DI UI
+    task.spawn(function()
+        pcall(function()
+            local success, placeInfo = pcall(function()
+                return MarketplaceService:GetProductInfo(game.PlaceId)
+            end)
+            if success and placeInfo and placeInfo.Name then
+                MapLabel.Text = "Map: " .. placeInfo.Name
+            else
+                MapLabel.Text = "Map: " .. game.Name
+            end
+        end)
+    end)
+
     -- 🕒 LABEL LAST UPDATE (POSISI KANAN PAS, TINGGI Y PAS)
     local LastUpdateLabel = Instance.new("TextLabel")
     LastUpdateLabel.Size = UDim2.new(0, 100, 0, 24)
