@@ -23,6 +23,7 @@ local function notify(text)
     end)
 end
 
+
 -- ==========================================
 -- 📱 CUSTOM SCROLLABLE UI NOTIFICATION
 -- ==========================================
