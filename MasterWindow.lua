@@ -99,7 +99,7 @@ return function(speaker)
     -- ==========================================
     -- 🛠️ AUTO-RESET CACHE PINTAR (HUB VERSION)
     -- ==========================================
-    local CURRENT_HUB_VERSION = 1 
+    local CURRENT_HUB_VERSION = 2
 
     local STORAGE_FILE = "MasterPluginHub_NewTracker.json"
     local userSeenTimestamps = {}
