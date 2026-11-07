@@ -11,6 +11,8 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 2  # PENTING: Supaya git bisa baca perbandingan dengan commit sebelumnya
 
       - name: Setup Node.js
         uses: actions/setup-node@v3
@@ -24,10 +26,13 @@ jobs:
             const fs = require("fs");
             const { execSync } = require("child_process");
 
-            const changedFiles = execSync("git diff-tree --no-commit-id --name-only -r HEAD")
+            // Ambil daftar file yang berubah dari commit terakhir
+            const changedFiles = execSync("git diff --name-only HEAD~1 HEAD")
               .toString()
               .trim()
               .split("\n");
+
+            console.log("File yang terdeteksi berubah:", changedFiles);
 
             if (!changedFiles.length || (changedFiles.length === 1 && changedFiles[0] === "")) {
               console.log("Tidak ada perubahan file.");
@@ -83,12 +88,11 @@ jobs:
                 }
 
                 keysToUpdate.forEach((keyName) => {
-                  // Regex yang lebih fleksibel mencari blok key sampai ketemu UpdateTimestamp
                   const regex = new RegExp(`(${keyName}\\s*=\\s*\\{[\\s\\S]*?UpdateTimestamp\\s*=\\s*")[^"]*(")`, "g");
                   if (regex.test(loaderContent)) {
                     loaderContent = loaderContent.replace(regex, `$1${featureTimeStr}$2`);
                     modified = true;
-                    console.log(`Successfully updated timestamp for: ${keyName}`);
+                    console.log(`Berhasil menyuntikkan timestamp untuk key: ${keyName}`);
                   }
                 });
               }
@@ -96,9 +100,9 @@ jobs:
 
             if (modified) {
               fs.writeFileSync("Loader.lua", loaderContent);
-              console.log("Loader.lua saved successfully!");
+              console.log("Loader.lua berhasil disimpan!");
             } else {
-              console.log("Warning: No matching keys found in Loader.lua for changed files.");
+              console.log("Peringatan: Tidak ada key yang cocok di Loader.lua untuk file yang diubah.");
             }
           '
 
