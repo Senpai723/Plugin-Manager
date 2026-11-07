@@ -298,13 +298,9 @@ local SharedFeatures = {
 -- 📂 STRUKTUR TAB UTAMA
 -- ==========================================================
 LoaderData.Tabs = {
-    { Name = "Main", DataKey = "Main" },
-    { Name = "Gunung", DataKey = "Gunung" },
-    { Name = "Horor", DataKey = "Horor" },
-    { Name = "Tools", DataKey = "Tools" },
     { 
-        Name = "KAMING SUN", 
-        DataKey = "",
+        Name = "Main", 
+        DataKey = "Main",
         TabUpdateTimestamp = "",
         TabBadgeText = "",
         TabBadgeColor = ""
@@ -315,6 +311,27 @@ LoaderData.Tabs = {
         TabUpdateTimestamp = "071120260857, 21600",
         TabBadgeText = "BARU!",
         TabBadgeColor = "yellow"
+    },
+    { 
+        Name = "Horor", 
+        DataKey = "Horor",
+        TabUpdateTimestamp = "",
+        TabBadgeText = "",
+        TabBadgeColor = ""
+    },
+    { 
+        Name = "Tools", 
+        DataKey = "Tools",
+        TabUpdateTimestamp = "",
+        TabBadgeText = "",
+        TabBadgeColor = ""
+    },
+    { 
+        Name = "KAMING SUN", 
+        DataKey = "",
+        TabUpdateTimestamp = "",
+        TabBadgeText = "",
+        TabBadgeColor = ""
     }
 }
 
