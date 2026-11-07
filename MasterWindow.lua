@@ -476,10 +476,10 @@ return function(speaker)
     MapLabel.TextXAlignment = Enum.TextXAlignment.Left
     MapLabel.Parent = HeaderContainer
 
-    -- 🕒 LABEL LAST UPDATE (MENTOK DI DALAM BOX ABU-ABU)
+    -- 🕒 LABEL LAST UPDATE (POSISI KANAN PAS SKRIP 1, TINGGI Y PAS SKRIP TERAKHIR)
     local LastUpdateLabel = Instance.new("TextLabel")
-    LastUpdateLabel.Size = UDim2.new(0, 104, 0, 24)
-    LastUpdateLabel.Position = UDim2.new(1, -112, 0, 18) -- Diatur -112 biar gak offset keluar box
+    LastUpdateLabel.Size = UDim2.new(0, 100, 0, 24)
+    LastUpdateLabel.Position = UDim2.new(1, -104, 0, 18) -- X dari skrip 1 (-104), Y dari skrip terakhir (18)
     LastUpdateLabel.BackgroundTransparency = 1
     LastUpdateLabel.Font = Enum.Font.Gotham
     LastUpdateLabel.Text = "Last Update :\nMemuat..."
