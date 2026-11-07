@@ -483,10 +483,10 @@ return function(speaker)
         end)
     end)
 
-    -- 🕒 LABEL LAST UPDATE (FORMAT BERSIH)
+    -- 🕒 LABEL LAST UPDATE (LEBAR DILEBARKAN DAN POSISI DIGESER DIKIT)
     local LastUpdateLabel = Instance.new("TextLabel")
-    LastUpdateLabel.Size = UDim2.new(0, 100, 0, 24)
-    LastUpdateLabel.Position = UDim2.new(1, -104, 0, 18)
+    LastUpdateLabel.Size = UDim2.new(0, 115, 0, 26)
+    LastUpdateLabel.Position = UDim2.new(1, -118, 0, 16)
     LastUpdateLabel.BackgroundTransparency = 1
     LastUpdateLabel.Font = Enum.Font.Gotham
     LastUpdateLabel.Text = "Last Update :\nMemuat..."
@@ -500,10 +500,9 @@ return function(speaker)
         pcall(function()
             local response = game:HttpGet(SHEETS_WEB_APP_URL)
             if response and response ~= "" then
-                -- Decode JSON dari Google Sheets
                 local data = HttpService:JSONDecode(response)
-                -- Ambil timestamp dari key utama atau global LastUpdate
-                local timestamp = data["LastUpdate"] or data["SCP"] or ""
+                -- Ambil timestamp dari key SCP atau LastUpdate
+                local timestamp = data["SCP"] or data["LastUpdate"] or ""
                 
                 if timestamp and #timestamp >= 12 then
                     local dd = timestamp:sub(1, 2)
@@ -515,7 +514,7 @@ return function(speaker)
                     local formattedDate = dd .. "/" .. mm .. "/" .. yyyy .. " " .. hour .. ":" .. min
                     LastUpdateLabel.Text = "Last Update :\n" .. formattedDate
                 else
-                    LastUpdateLabel.Text = "Last Update :\nTerbaru"
+                    LastUpdateLabel.Text = "Last Update :\n" .. tostring(timestamp)
                 end
             else
                 LastUpdateLabel.Text = "Last Update :\n-"
