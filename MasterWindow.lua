@@ -476,26 +476,26 @@ return function(speaker)
     MapLabel.TextXAlignment = Enum.TextXAlignment.Left
     MapLabel.Parent = HeaderContainer
 
-    -- 🕒 LABEL LAST UPDATE OTOMATIS DARI GOOGLE SHEETS
+    -- 🕒 LABEL LAST UPDATE (DI KANAN, 2 BARIS SESUAI GAMBAR)
     local LastUpdateLabel = Instance.new("TextLabel")
-    LastUpdateLabel.Size = UDim2.new(1, -44, 0, 12)
-    LastUpdateLabel.Position = UDim2.new(0, 42, 0, 36)
+    LastUpdateLabel.Size = UDim2.new(0, 100, 0, 24)
+    LastUpdateLabel.Position = UDim2.new(1, -104, 0, 16)
     LastUpdateLabel.BackgroundTransparency = 1
     LastUpdateLabel.Font = Enum.Font.Gotham
-    LastUpdateLabel.Text = "Last Update: Memuat..."
+    LastUpdateLabel.Text = "Last Update :\nMemuat..."
     LastUpdateLabel.TextColor3 = Color3.fromRGB(160, 175, 195)
     LastUpdateLabel.TextSize = 8
-    LastUpdateLabel.TextXAlignment = Enum.TextXAlignment.Left
+    LastUpdateLabel.TextXAlignment = Enum.TextXAlignment.Right
     LastUpdateLabel.Parent = HeaderContainer
 
     task.spawn(function()
         pcall(function()
-            -- Mengambil data Last Update dari endpoint Google Apps Script lu
             local response = game:HttpGet(SHEETS_WEB_APP_URL)
             if response and response ~= "" and response ~= "Belum ada update" then
-                LastUpdateLabel.Text = "Last Update: " .. response
+                -- Format jadi 2 baris (Label di atas, tanggal di bawah)
+                LastUpdateLabel.Text = "Last Update :\n" .. response
             else
-                LastUpdateLabel.Text = "Last Update: - "
+                LastUpdateLabel.Text = "Last Update :\n-"
             end
         end)
     end)
