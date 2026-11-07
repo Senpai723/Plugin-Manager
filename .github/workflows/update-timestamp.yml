@@ -24,7 +24,6 @@ jobs:
             const fs = require("fs");
             const { execSync } = require("child_process");
 
-            // Ambil daftar file yang baru saja di-commit menggunakan cara paling aman
             let changedFiles = [];
             try {
               changedFiles = execSync("git diff-tree --no-commit-id --name-only -r HEAD")
@@ -32,14 +31,13 @@ jobs:
                 .trim()
                 .split("\n");
             } catch (e) {
-              console.log("Gagal membaca git diff, membaca file status...");
               changedFiles = execSync("git ls-files --modified --others")
                 .toString()
                 .trim()
                 .split("\n");
             }
 
-            console.log("File terdeteksi:", changedFiles);
+            console.log("File terdeteksi berubah:", changedFiles);
 
             if (!changedFiles.length || (changedFiles.length === 1 && changedFiles[0] === "")) {
               console.log("Tidak ada perubahan file.");
@@ -85,7 +83,7 @@ jobs:
             };
 
             changedFiles.forEach((file) => {
-              if (file && (file.endsWith(".lua") || !file.includes("."))) {
+              if (file && (file.endsWith(".lua") || !file.includes("ļ"))) {
                 const baseName = path.basename(file);
                 const fileName = baseName.replace(/\.[^/.]+$/, "");
                 
@@ -95,13 +93,31 @@ jobs:
                 }
 
                 keysToUpdate.forEach((keyName) => {
-                  const regex = new RegExp(`(${keyName}\\s*=\\s*\\{[\\s\\S]*?UpdateTimestamp\\s*=\\s*")[^"]*(")`, "g");
-                  if (regex.test(loaderContent)) {
-                    loaderContent = loaderContent.replace(regex, `$1${featureTimeStr}$2`);
-                    modified = true;
-                    console.log(`Berhasil menyuntikkan timestamp untuk key: ${keyName}`);
-                  }
+                  // Cara Super Aman: Cari baris RawUrl yang mengandung nama file ini, 
+                  // lalu update UpdateTimestamp yang ada di sekitar blok tersebut.
+                  console.log(`Memproses update untuk key: ${keyName} (dari file ${fileName})`);
                 });
+
+                // Kita cari berdasarkan URL RawUrl yang merujuk ke fileName tersebut di Loader.lua
+                // Ubah file content dengan memecah baris-baris kodenya
+                let lines = loaderContent.split("\n");
+                let targetFileMatched = false;
+
+                for (let i = 0; i < lines.length; i++) {
+                  if (lines[i].includes(`Plugin/${fileName}`) || lines[i].includes(`Tools/${fileName}`)) {
+                    targetFileMatched = true;
+                    // Mundur ke atas untuk cari baris UpdateTimestamp terdekat milik item ini
+                    for (let j = i; j >= Math.max(0, i - 15); j--) {
+                      if (lines[j].includes("UpdateTimestamp =")) {
+                        lines[j] = lines[j].replace(/UpdateTimestamp\s*=\s*"[^"]*"/, `UpdateTimestamp = "${featureTimeStr}"`);
+                        modified = true;
+                        console.log(`Berhasil menyuntikkan timestamp di baris ${j + 1}`);
+                        break;
+                      }
+                    }
+                  }
+                }
+                loaderContent = lines.join("\n");
               }
             });
 
@@ -109,7 +125,7 @@ jobs:
               fs.writeFileSync("Loader.lua", loaderContent);
               console.log("Loader.lua berhasil diperbarui otomatis!");
             } else {
-              console.log("Tidak ada key yang cocok di Loader.lua untuk file ini.");
+              console.log("Peringatan: Gagal menemukan baris RawUrl yang cocok di Loader.lua.");
             }
           '
 
