@@ -407,6 +407,23 @@ LoaderData.Gunung = {
             SharedFeatures.TpPlayer
         }
     },
+    SharedFeatures.InfiniteJump,
+    SharedFeatures.InstantPrompts,
+    SharedFeatures.PESP,
+    {
+        Name = "Interactable / ITP",
+        Desc = "Memunculkan ESP Objek berdasarkan Promot, Touch, Click, Pintu atau Trigger",
+        RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Plugin/Interactable",
+        SubFeatures = {
+            SharedFeatures.ITP,
+            SharedFeatures.PPESP,
+            SharedFeatures.CDESP,
+            SharedFeatures.DESP,
+            SharedFeatures.ITESP,
+            SharedFeatures.TESP
+        }
+    },
+    SharedFeatures.WalkSpeed,
     {
         Name = "Sound & View Manage",
         Desc = "Mengatur suara di map dan memutar Lagu",
@@ -416,19 +433,7 @@ LoaderData.Gunung = {
             SharedFeatures.MuteSound,
             SharedFeatures.PlayMusic
         }
-    },
-    {
-        Name = "ESP Player",
-        Desc = "Player & Enemy ESP",
-        RawUrl = "",
-        SubFeatures = {
-            SharedFeatures.PESP,
-            SharedFeatures.EESP
-        }
-    },
-    SharedFeatures.InstantPrompts,
-    SharedFeatures.InfiniteJump,
-    SharedFeatures.WalkSpeed
+    }
 }
 
 LoaderData.Horor = {
