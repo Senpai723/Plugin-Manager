@@ -8,9 +8,13 @@ on:
 jobs:
   update-metadata-and-sheets:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Wajib ada agar bot diizinkan nge-push ke repository
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v3
@@ -83,7 +87,7 @@ jobs:
             };
 
             changedFiles.forEach((file) => {
-              if (file && (file.endsWith(".lua") || !file.includes("ļ"))) {
+              if (file && (file.endsWith(".lua") || !file.includes("."))) {
                 const baseName = path.basename(file);
                 const fileName = baseName.replace(/\.[^/.]+$/, "");
                 
@@ -92,26 +96,14 @@ jobs:
                   keysToUpdate = bundleMapping[fileName];
                 }
 
-                keysToUpdate.forEach((keyName) => {
-                  // Cara Super Aman: Cari baris RawUrl yang mengandung nama file ini, 
-                  // lalu update UpdateTimestamp yang ada di sekitar blok tersebut.
-                  console.log(`Memproses update untuk key: ${keyName} (dari file ${fileName})`);
-                });
-
-                // Kita cari berdasarkan URL RawUrl yang merujuk ke fileName tersebut di Loader.lua
-                // Ubah file content dengan memecah baris-baris kodenya
                 let lines = loaderContent.split("\n");
-                let targetFileMatched = false;
-
                 for (let i = 0; i < lines.length; i++) {
                   if (lines[i].includes(`Plugin/${fileName}`) || lines[i].includes(`Tools/${fileName}`)) {
-                    targetFileMatched = true;
-                    // Mundur ke atas untuk cari baris UpdateTimestamp terdekat milik item ini
                     for (let j = i; j >= Math.max(0, i - 15); j--) {
                       if (lines[j].includes("UpdateTimestamp =")) {
                         lines[j] = lines[j].replace(/UpdateTimestamp\s*=\s*"[^"]*"/, `UpdateTimestamp = "${featureTimeStr}"`);
                         modified = true;
-                        console.log(`Berhasil menyuntikkan timestamp di baris ${j + 1}`);
+                        console.log(`Berhasil menyuntikkan timestamp di baris ${j + 1} untuk file ${fileName}`);
                         break;
                       }
                     }
@@ -129,12 +121,21 @@ jobs:
             }
           '
 
-      - name: Commit & Push Loader Changes
+      - name: Force Commit & Push Loader Changes
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add Loader.lua
-          git diff --quiet && git diff --staged --quiet || (git commit -m "bot: auto update bundled feature timestamps" && git push)
+          
+          # Cek apakah ada perubahan status pada Loader.lua
+          git status
+          
+          if git diff --staged --quiet; then
+            console.log("Tidak ada perubahan staged pada Loader.lua")
+          else
+            git commit -m "bot: force update bundled feature timestamps [skip ci]"
+            git push origin main
+          fi
 
       - name: Send Timestamp to Google Sheets
         run: |
