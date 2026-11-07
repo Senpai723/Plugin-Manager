@@ -37,7 +37,7 @@ local SharedFeatures = {
         Cmd = "dooresp",
         UnCmd = "undooresp",
         NeedInput = true,
-        RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Plugin/Interactable"
+        RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Plugin/Interactable",
         UpdateTimestamp = ""
     },
     ITESP = {
