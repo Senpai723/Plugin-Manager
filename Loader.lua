@@ -270,7 +270,7 @@ local SharedFeatures = {
         RawUrl = "https://raw.githubusercontent.com/Tryofp/Plugin-Manager/refs/heads/main/Tools/Fullbright",
         UpdateTimestamp = ""
     },
-    InstantPrompts = {
+    InstantPrompt = {
         Name = "Instant Prompts",
         Desc = "Always instant interaction",
         Cmd = "instantprompts",
