@@ -1,12 +1,12 @@
-name: Auto Sync Timestamp to Google Sheets
+name: Auto Update Hub Metadata & Timestamps
 
 on:
   push:
     branches:
-      - main
+      - main  # Ganti jadi "master" kalau branch utama lu namanya master
 
 jobs:
-  sync-sheets:
+  update-metadata-and-sheets:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
@@ -17,37 +17,49 @@ jobs:
         with:
           node-version: '18'
 
-      - name: Send Timestamps to Google Sheets
+      # 1. STEP AUTO UPDATE FEATURE TIMESTAMP (SESUAI LOADER.LUA TERBARU)
+      - name: Process Timestamp Updates in Loader.lua
         run: |
           node -e '
-            const path = require("path");
+            const fs = require("fs");
             const { execSync } = require("child_process");
 
-            let changedFiles = [];
-            try {
-              changedFiles = execSync("git diff-tree --no-commit-id --name-only -r HEAD").toString().trim().split("\n");
-            } catch (e) {
-              changedFiles = execSync("git ls-files --modified --others").toString().trim().split("\n");
-            }
+            const changedFiles = execSync("git diff-tree --no-commit-id --name-only -r HEAD")
+              .toString()
+              .trim()
+              .split("\n");
 
             if (!changedFiles.length || (changedFiles.length === 1 && changedFiles[0] === "")) {
+              console.log("Tidak ada perubahan file.");
               process.exit(0);
             }
 
+            // Format Waktu WIB (UTC+7)
             const now = new Date();
             now.setHours(now.getHours() + 7);
             const pad = (n) => String(n).padStart(2, "0");
-            const featureTimeStr = `${pad(now.getDate())}${pad(now.getMonth() + 1)}${now.getFullYear()}${pad(now.getHours())}${pad(now.getMinutes())}`;
+            const dd = pad(now.getDate());
+            const mm = pad(now.getMonth() + 1);
+            const yyyy = now.getFullYear();
+            const hh = pad(now.getHours());
+            const min = pad(now.getMinutes());
+            const featureTimeStr = `${dd}${mm}${yyyy}${hh}${min}, 86400`;
 
+            let loaderContent = fs.readFileSync("Loader.lua", "utf8");
+            let modified = false;
+
+            // Kamus Bundle Mapping Sesuai Loader.lua Lu yang Baru
             const bundleMapping = {
-              "Waypoint": ["SCP", "CPN"],
-              "Interactable": ["ITP", "PPESP", "CDESP", "ITESP", "DESP", "TESP", "LOOT"],
+              "Interactable": ["ITP", "PPESP", "CDESP", "ITESP", "DESP", "TESP"],
               "LastRejoin": ["AutoSave", "SaveServer", "LastRejoin"],
               "MusicTimeML": ["PlayMusic"],
               "SimpleAimbot": ["Aimbot", "SetRadius"],
               "SoundandView": ["Spectator", "MuteSound"],
+              "Waypoint": ["SCP", "CPN"],
               "colorESP": ["PESP", "EESP"],
               "AntiEffect": ["Anchor", "AntiWind", "AntiShake", "AntiTrigger"],
+              
+              // File Satuan / Standalone
               "PlayerTeleport": ["PlayerTeleport"],
               "TPitem": ["TPitem"],
               "clickinspector": ["Clickinspector"],
@@ -63,18 +75,44 @@ jobs:
               "CodeFinder": ["CodeFinder"]
             };
 
-            const SHEET_URL = "https://script.google.com/macros/s/AKfycbxJzU3MiL_o9PjkF4h-prSw-P8vLVfJqGFXM7pFJOPzIzJXaGmu6z6oK0oJl54a6bQy0Q/exec";
-
             changedFiles.forEach((file) => {
-              if (file && (file.endsWith(".lua") || !file.includes("."))) {
-                const fileName = path.basename(file).replace(/\.[^/.]+$/, "");
-                let keysToUpdate = bundleMapping[fileName] || [fileName];
+              if (file.endsWith(".lua") || !file.includes(".")) {
+                const fileName = file.split("/").pop().replace(".lua", "");
+                
+                let keysToUpdate = [fileName]; 
+                if (bundleMapping[fileName]) {
+                  keysToUpdate = bundleMapping[fileName];
+                }
 
                 keysToUpdate.forEach((keyName) => {
-                  const payload = JSON.stringify({ Type: "FeatureUpdate", Key: keyName, Timestamp: featureTimeStr });
-                  execSync(`curl -X POST -H "Content-Type: application/json" -d '\''${payload}'\'' "${SHEET_URL}"`);
+                  const regex = new RegExp(`(${keyName}[\\s\\S]*?UpdateTimestamp\\s*=\\s*")([^"]*)(")`, "g");
+                  if (regex.test(loaderContent)) {
+                    loaderContent = loaderContent.replace(regex, `$1${featureTimeStr}$3`);
+                    modified = true;
+                    console.log(`Updated UpdateTimestamp for feature key: ${keyName}`);
+                  }
                 });
               }
             });
+
+            if (modified) {
+              fs.writeFileSync("Loader.lua", loaderContent);
+            }
           '
+
+      # 2. STEP COMMIT & PUSH BILA ADA PERUBAHAN DI LOADER
+      - name: Commit & Push Loader Changes
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add Loader.lua
+          git diff --quiet && git diff --staged --quiet || (git commit -m "bot: auto update bundled feature timestamps" && git push)
+
+      # 3. STEP KIRIM LAST UPDATE KE GOOGLE SHEETS
+      - name: Send Timestamp to Google Sheets
+        run: |
+          CURRENT_TIME=$(TZ='Asia/Jakarta' date +'%d%m%Y %H:%M')
+          curl -X POST -H "Content-Type: application/json" \
+          -d "{\"Type\":\"LastUpdate\",\"Timestamp\":\"$CURRENT_TIME\"}" \
+          "https://script.google.com/macros/s/AKfycbxJzU3MiL_o9PjkF4h-prSw-P8vLVfJqGFXM7pFJOPzIzJXaGmu6z6oK0oJl54a6bQy0Q/exec"
           
