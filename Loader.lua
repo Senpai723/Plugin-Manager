@@ -308,6 +308,13 @@ LoaderData.Tabs = {
         TabUpdateTimestamp = "",
         TabBadgeText = "",
         TabBadgeColor = ""
+    },
+    { 
+        Name = "Gunung", 
+        DataKey = "Gunung",
+        TabUpdateTimestamp = "071120260857, 21600",
+        TabBadgeText = "BARU!",
+        TabBadgeColor = "yellow"
     }
 }
 
@@ -402,8 +409,9 @@ LoaderData.Gunung = {
             SharedFeatures.EESP
         }
     },
-    SharedFeatures.WalkSpeed,
-    SharedFeatures.InfiniteJump
+    SharedFeatures.InstantPrompts,
+    SharedFeatures.InfiniteJump,
+    SharedFeatures.WalkSpeed
 }
 
 LoaderData.Horor = {
