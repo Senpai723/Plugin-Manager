@@ -3,7 +3,7 @@ name: Auto Update Hub Metadata & Timestamps
 on:
   push:
     branches:
-      - main  # Ganti jadi "master" kalau branch utama lu namanya master
+      - main
 
 jobs:
   update-metadata-and-sheets:
@@ -17,7 +17,6 @@ jobs:
         with:
           node-version: '18'
 
-      # 1. STEP AUTO UPDATE FEATURE TIMESTAMP (FIXED FOLDER PATH ISSUE)
       - name: Process Timestamp Updates in Loader.lua
         run: |
           node -e '
@@ -49,7 +48,6 @@ jobs:
             let loaderContent = fs.readFileSync("Loader.lua", "utf8");
             let modified = false;
 
-            // Kamus Bundle Mapping Sesuai Loader.lua Lu
             const bundleMapping = {
               "Interactable": ["ITP", "PPESP", "CDESP", "ITESP", "DESP", "TESP"],
               "LastRejoin": ["AutoSave", "SaveServer", "LastRejoin"],
@@ -59,8 +57,6 @@ jobs:
               "Waypoint": ["SCP", "CPN"],
               "colorESP": ["PESP", "EESP"],
               "AntiEffect": ["Anchor", "AntiWind", "AntiShake", "AntiTrigger"],
-              
-              // File Satuan / Standalone
               "PlayerTeleport": ["PlayerTeleport"],
               "TPitem": ["TPitem"],
               "clickinspector": ["Clickinspector"],
@@ -78,7 +74,6 @@ jobs:
 
             changedFiles.forEach((file) => {
               if (file.endsWith(".lua") || !file.includes(".")) {
-                // Ambil murni nama file saja tanpa path folder dan tanpa ekstensi
                 const baseName = path.basename(file);
                 const fileName = baseName.replace(/\.[^/.]+$/, "");
                 
@@ -88,11 +83,12 @@ jobs:
                 }
 
                 keysToUpdate.forEach((keyName) => {
-                  const regex = new RegExp(`(${keyName}[\\s\\S]*?UpdateTimestamp\\s*=\\s*")([^"]*)(")`, "g");
+                  // Regex yang lebih fleksibel mencari blok key sampai ketemu UpdateTimestamp
+                  const regex = new RegExp(`(${keyName}\\s*=\\s*\\{[\\s\\S]*?UpdateTimestamp\\s*=\\s*")[^"]*(")`, "g");
                   if (regex.test(loaderContent)) {
-                    loaderContent = loaderContent.replace(regex, `$1${featureTimeStr}$3`);
+                    loaderContent = loaderContent.replace(regex, `$1${featureTimeStr}$2`);
                     modified = true;
-                    console.log(`Updated UpdateTimestamp for feature key: ${keyName}`);
+                    console.log(`Successfully updated timestamp for: ${keyName}`);
                   }
                 });
               }
@@ -100,10 +96,12 @@ jobs:
 
             if (modified) {
               fs.writeFileSync("Loader.lua", loaderContent);
+              console.log("Loader.lua saved successfully!");
+            } else {
+              console.log("Warning: No matching keys found in Loader.lua for changed files.");
             }
           '
 
-      # 2. STEP COMMIT & PUSH BILA ADA PERUBAHAN DI LOADER
       - name: Commit & Push Loader Changes
         run: |
           git config --global user.name "github-actions[bot]"
@@ -111,7 +109,6 @@ jobs:
           git add Loader.lua
           git diff --quiet && git diff --staged --quiet || (git commit -m "bot: auto update bundled feature timestamps" && git push)
 
-      # 3. STEP KIRIM LAST UPDATE KE GOOGLE SHEETS
       - name: Send Timestamp to Google Sheets
         run: |
           CURRENT_TIME=$(TZ='Asia/Jakarta' date +'%d%m%Y %H:%M')
