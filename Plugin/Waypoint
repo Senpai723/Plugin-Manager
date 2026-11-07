@@ -199,13 +199,16 @@ local function parseCPIdentity(obj)
     local curr = validPart.Parent
     while curr and curr ~= Workspace do
         local lowerFolder = string.lower(curr.Name)
-        if string.find(lowerFolder, "gunung") or string.find(lowerFolder, "jalur") or string.find(lowerFolder, "track") or string.find(lowerFolder, "path") or string.find(lowerFolder, "route") or string.find(lowerFolder, "partsummitkit") then
+        if string.find(lowerFolder, "gunung") or string.find(lowerFolder, "jalur") or string.find(lowerFolder, "track") or string.find(lowerFolder, "path") or string.find(lowerFolder, "route") or string.find(lowerFolder, "partsummitkit") or string.find(lowerFolder, "mainfolder") then
             folderContext = curr.Name
             break
         end
         curr = curr.Parent
     end
 
+    -- ==================================================
+    -- 1. DETEKSI SUMMIT
+    -- ==================================================
     if string.find(lowerName, "summit", 1, true) or string.find(lowerParent, "summit", 1, true) or string.find(lowerName, "peak", 1, true) or string.find(lowerName, "finish", 1, true) or string.find(lowerName, "puncak", 1, true) then
         local summitDesc = name
         if folderContext ~= "" then
@@ -214,21 +217,23 @@ local function parseCPIdentity(obj)
         return "SUMMIT", summitDesc, validPart, 10
     end
 
-    local summitKeywords = {"reset"}
-    for _, kw in ipairs(summitKeywords) do
-        if string.find(lowerName, kw, 1, true) or string.find(lowerParent, kw, 1, true) then
-            local fullInstancePath = string.lower(getInstancePath(obj))
-            if string.find(fullInstancePath, "checkpoint") or string.find(fullInstancePath, "obby") or string.find(fullInstancePath, "gunung") then
-                local summitDesc = name
-                if folderContext ~= "" then
-                    summitDesc = folderContext .. " - " .. name
-                end
-                return "SUMMIT", summitDesc, validPart, 10
-            end
+    -- ==================================================
+    -- 2. PARSING NOMOR CHECKPOINT (Termasuk Teks Billboard & Part Polos)
+    -- ==================================================
+    local guiText = ""
+    local hasGui = validPart:FindFirstChildOfClass("BillboardGui") or validPart:FindFirstChildOfClass("SurfaceGui")
+    if not hasGui and validPart.Parent and validPart.Parent:IsA("Model") then
+        hasGui = validPart.Parent:FindFirstChildOfClass("BillboardGui") or validPart:FindFirstChildOfClass("SurfaceGui")
+    end
+    
+    if hasGui then
+        local textLabel = hasGui:FindFirstChildOfClass("TextLabel")
+        if textLabel and textLabel.Text ~= "" then
+            guiText = string.lower(textLabel.Text)
         end
     end
 
-    local combined = lowerParent .. " " .. lowerName
+    local combined = lowerParent .. " " .. lowerName .. " " .. guiText
 
     local num = string.match(combined, "checkpoints?%s*[_]?%s*(%d+%.?%d*)") or
                 string.match(combined, "checkpoint%s*[_]?%s*(%d+%.?%d*)") or
@@ -241,8 +246,19 @@ local function parseCPIdentity(obj)
                 string.match(combined, "wp%s*[_]?%s*(%d+%.?%d*)") or
                 string.match(combined, "ring%s*[_]?%s*(%d+%.?%d*)")
 
+    if not num and guiText ~= "" then
+        num = string.match(guiText, "(%d+%.?%d*)")
+    end
+
     if not num then
         num = string.match(name, "^(%d+%.?%d*)$")
+    end
+
+    -- Fallback khusus jika part bernama persis "Checkpoint" tanpa angka, ambil ID unik berdasarkan koordinat posisi agar tetap masuk list
+    if not num and (lowerName == "checkpoint" or lowerName == "cp") then
+        -- Buat nomor virtual berbasis posisi Z/Y agar tidak bentrok
+        num = math.abs(math.floor(validPart.Position.Z % 100))
+        if num == 0 then num = 1 end
     end
 
     if not num then
@@ -280,6 +296,9 @@ local function parseCPIdentity(obj)
     local descText = name
     if folderContext ~= "" then
         descText = folderContext .. " (" .. name .. ")"
+    end
+    if guiText ~= "" then
+        descText = folderContext ~= "" and (folderContext .. " - " .. guiText) or guiText
     end
 
     return nVal, descText, validPart, priorityScore
