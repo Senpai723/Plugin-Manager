@@ -476,16 +476,16 @@ return function(speaker)
     MapLabel.TextXAlignment = Enum.TextXAlignment.Left
     MapLabel.Parent = HeaderContainer
 
-    -- 🕒 LABEL LAST UPDATE (TINGGI TETEP PAS, MENTOK KANAN)
+    -- 🕒 LABEL LAST UPDATE (MENTOK DI DALAM BOX ABU-ABU)
     local LastUpdateLabel = Instance.new("TextLabel")
-    LastUpdateLabel.Size = UDim2.new(0, 110, 0, 24)
-    LastUpdateLabel.Position = UDim2.new(1, -104, 0, 18) -- Angka 18 bikin tinggi/turunnya persis kayak sebelumnya
+    LastUpdateLabel.Size = UDim2.new(0, 104, 0, 24)
+    LastUpdateLabel.Position = UDim2.new(1, -112, 0, 18) -- Diatur -112 biar gak offset keluar box
     LastUpdateLabel.BackgroundTransparency = 1
     LastUpdateLabel.Font = Enum.Font.Gotham
     LastUpdateLabel.Text = "Last Update :\nMemuat..."
     LastUpdateLabel.TextColor3 = Color3.fromRGB(160, 175, 195)
     LastUpdateLabel.TextSize = 8
-    LastUpdateLabel.TextXAlignment = Enum.TextXAlignment.Right -- Diatur rata kanan biar mentok ke pinggir kotak
+    LastUpdateLabel.TextXAlignment = Enum.TextXAlignment.Right
     LastUpdateLabel.TextYAlignment = Enum.TextYAlignment.Top
     LastUpdateLabel.Parent = HeaderContainer
 
