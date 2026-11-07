@@ -11,8 +11,6 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
-        with:
-          fetch-depth: 2  # PENTING: Supaya git bisa baca perbandingan dengan commit sebelumnya
 
       - name: Setup Node.js
         uses: actions/setup-node@v3
@@ -26,13 +24,22 @@ jobs:
             const fs = require("fs");
             const { execSync } = require("child_process");
 
-            // Ambil daftar file yang berubah dari commit terakhir
-            const changedFiles = execSync("git diff --name-only HEAD~1 HEAD")
-              .toString()
-              .trim()
-              .split("\n");
+            // Ambil daftar file yang baru saja di-commit menggunakan cara paling aman
+            let changedFiles = [];
+            try {
+              changedFiles = execSync("git diff-tree --no-commit-id --name-only -r HEAD")
+                .toString()
+                .trim()
+                .split("\n");
+            } catch (e) {
+              console.log("Gagal membaca git diff, membaca file status...");
+              changedFiles = execSync("git ls-files --modified --others")
+                .toString()
+                .trim()
+                .split("\n");
+            }
 
-            console.log("File yang terdeteksi berubah:", changedFiles);
+            console.log("File terdeteksi:", changedFiles);
 
             if (!changedFiles.length || (changedFiles.length === 1 && changedFiles[0] === "")) {
               console.log("Tidak ada perubahan file.");
@@ -78,7 +85,7 @@ jobs:
             };
 
             changedFiles.forEach((file) => {
-              if (file.endsWith(".lua") || !file.includes(".")) {
+              if (file && (file.endsWith(".lua") || !file.includes("."))) {
                 const baseName = path.basename(file);
                 const fileName = baseName.replace(/\.[^/.]+$/, "");
                 
@@ -100,9 +107,9 @@ jobs:
 
             if (modified) {
               fs.writeFileSync("Loader.lua", loaderContent);
-              console.log("Loader.lua berhasil disimpan!");
+              console.log("Loader.lua berhasil diperbarui otomatis!");
             } else {
-              console.log("Peringatan: Tidak ada key yang cocok di Loader.lua untuk file yang diubah.");
+              console.log("Tidak ada key yang cocok di Loader.lua untuk file ini.");
             }
           '
 
