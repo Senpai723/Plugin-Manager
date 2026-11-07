@@ -483,10 +483,10 @@ return function(speaker)
         end)
     end)
 
-    -- 🕒 LABEL LAST UPDATE (POSISI KANAN PAS, TINGGI Y PAS)
+    -- 🕒 LABEL LAST UPDATE (VERSI STRING MENTAH - PAS DENGAN SHEET LAMA)
     local LastUpdateLabel = Instance.new("TextLabel")
-    LastUpdateLabel.Size = UDim2.new(0, 100, 0, 24)
-    LastUpdateLabel.Position = UDim2.new(1, -104, 0, 18)
+    LastUpdateLabel.Size = UDim2.new(0, 115, 0, 32)
+    LastUpdateLabel.Position = UDim2.new(1, -118, 0, 14)
     LastUpdateLabel.BackgroundTransparency = 1
     LastUpdateLabel.Font = Enum.Font.Gotham
     LastUpdateLabel.Text = "Last Update :\nMemuat..."
@@ -500,13 +500,8 @@ return function(speaker)
         pcall(function()
             local response = game:HttpGet(SHEETS_WEB_APP_URL)
             if response and response ~= "" and response ~= "Belum ada update" then
-                local dd = response:sub(1, 2)
-                local mm = response:sub(3, 4)
-                local yyyy = response:sub(5, 8)
-                local timePart = response:sub(10)
-                
-                local formattedDate = dd .. "/" .. mm .. "/" .. yyyy .. " " .. timePart
-                LastUpdateLabel.Text = "Last Update :\n" .. formattedDate
+                -- Langsung tampilkan teks string yang dikirim dari Google Sheets lama
+                LastUpdateLabel.Text = "Last Update :\n" .. tostring(response)
             else
                 LastUpdateLabel.Text = "Last Update :\n-"
             end
