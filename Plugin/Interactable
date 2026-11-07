@@ -2337,9 +2337,21 @@ local function toggleITP()
     tabContainer.Position = UDim2.new(0, 6, 0, 34)
     tabContainer.BackgroundTransparency = 1
     tabContainer.BorderSizePixel = 0
-    tabContainer.CanvasSize = UDim2.new(0, 410, 0, 0)
+    tabContainer.CanvasSize = UDim2.new(0, 0, 0, 0) -- Biar nanti dihitung otomatis
     tabContainer.ScrollBarThickness = 0
     tabContainer.Parent = mainFrame
+
+    local tabLayout = Instance.new("UIListLayout")
+    tabLayout.FillDirection = Enum.FillDirection.Horizontal
+    tabLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
+    tabLayout.Padding = UDim.new(0, 4)
+    tabLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    tabLayout.Parent = tabContainer
+
+    -- Tambahan baris ini agar CanvasSize otomatis pas mentok di tab terakhir
+    tabLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        tabContainer.CanvasSize = UDim2.new(0, tabLayout.AbsoluteContentSize.X, 0, 0)
+    end)
 
     local tabLayout = Instance.new("UIListLayout")
     tabLayout.FillDirection = Enum.FillDirection.Horizontal
