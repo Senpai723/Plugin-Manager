@@ -1041,8 +1041,12 @@ return function(speaker)
             }
         end
 
-        local totalTabs = #detectedTabs
-        TabBar.CanvasSize = UDim2.new(0, totalTabs * 90, 0, 0)
+        -- Ubah CanvasSize awal jadi 0, lalu biarkan UIListLayout yang menghitung otomatis
+        TabBar.CanvasSize = UDim2.new(0, 0, 0, 0)
+
+        TabBarLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+            TabBar.CanvasSize = UDim2.new(0, TabBarLayout.AbsoluteContentSize.X, 0, 0)
+        end)
 
         for i, tabInfo in ipairs(detectedTabs) do
             local tabName = tabInfo.Name
