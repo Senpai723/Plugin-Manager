@@ -17,7 +17,7 @@ jobs:
         with:
           node-version: '18'
 
-      # 1. STEP AUTO UPDATE FEATURE TIMESTAMP (SUPPORT MULTI-FEATURE / BUNDLING FILE)
+      # 1. STEP AUTO UPDATE FEATURE TIMESTAMP (SESUAI LOADER.LUA TERBARU)
       - name: Process Timestamp Updates in Loader.lua
         run: |
           node -e '
@@ -48,23 +48,25 @@ jobs:
             let loaderContent = fs.readFileSync("Loader.lua", "utf8");
             let modified = false;
 
-            // Mapping file bundling ke sub-fitur di Loader.lua
+            // Kamus Bundle Mapping Sesuai Loader.lua Lu yang Baru
             const bundleMapping = {
-              "Interactable": ["ITP", "PPESP", "CDESP", "DESP", "ITESP", "LOOT", "TESP"],
-              "colorESP": ["PESP", "EESP"],
-              "Waypoint": ["RadarCP", "CPWp"],
-              "PlayerTeleport": ["TpPlayer"],
-              "SoundandView": ["Spectator", "MuteSound"],
-              "MusicTimeML": ["PlayMusic"],
-              "TPitem": ["TeleportItem"],
-              "clickinspector": ["Inspector"],
-              "AntiAFK": ["AntiAFK"],
+              "Interactable": ["ITP", "PPESP", "CDESP", "ITESP", "DESP", "TESP"],
               "LastRejoin": ["AutoSave", "SaveServer", "LastRejoin"],
-              "SmartRejoin": ["SmartRejoin"],
+              "MusicTimeML": ["PlayMusic"],
               "SimpleAimbot": ["Aimbot", "SetRadius"],
-              "F1Lock": ["F1LockBind"],
-              "AntiEffect": ["AnchorVisual", "AntiShake", "AntiWind", "AntiTrigger"],
-              "Fullbright": ["FullBright"],
+              "SoundandView": ["Spectator", "MuteSound"],
+              "Waypoint": ["SCP", "CPN"],
+              "colorESP": ["PESP", "EESP"],
+              "AntiEffect": ["Anchor", "AntiWind", "AntiShake", "AntiTrigger"],
+              
+              // File Satuan / Standalone
+              "PlayerTeleport": ["PlayerTeleport"],
+              "TPitem": ["TPitem"],
+              "clickinspector": ["Clickinspector"],
+              "AntiAFK": ["AntiAFK"],
+              "SmartRejoin": ["SmartRejoin"],
+              "F1Lock": ["F1Lock"],
+              "Fullbright": ["Fullbright"],
               "InstanPrompt": ["InstantPrompts"],
               "WalkSpeed": ["WalkSpeed"],
               "InfiniteJump": ["InfiniteJump"],
@@ -77,10 +79,9 @@ jobs:
               if (file.endsWith(".lua") || !file.includes(".")) {
                 const fileName = file.split("/").pop().replace(".lua", "");
                 
-                // Tentukan daftar key fitur yang harus di-update timestamp-nya
-                let keysToUpdate = [fileName]; // Default-nya nama filenya sendiri
+                let keysToUpdate = [fileName]; 
                 if (bundleMapping[fileName]) {
-                  keysToUpdate = bundleMapping[fileName]; // Kalau file bundling, ambil semua anak buahnya!
+                  keysToUpdate = bundleMapping[fileName];
                 }
 
                 keysToUpdate.forEach((keyName) => {
